@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "web28-boostcamp",
   "private": true,
   "scripts": {
     "build": "turbo run build",
