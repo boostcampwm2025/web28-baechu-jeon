@@ -3,16 +3,6 @@ export interface AnalysisResult {
   data: AnalysisData;
 }
 
-export interface AnalysisData {
-  projectInfo: ProjectInfo;
-  architecture: Architecture;
-  layers: Layer[];
-  visualization: Visualization;
-  fileTree: FileTreeNode[];
-  prompt?: string; // AI에게 보낸 프롬프트
-  rawAiResponse?: any; // 원본 AI 응답 (파싱 실패 시)
-}
-
 export interface ProjectInfo {
   name: string;
   detectedFramework: string[];
@@ -21,34 +11,46 @@ export interface ProjectInfo {
 }
 
 export interface Architecture {
-  type: string;
-  patterns: string[];
-  description: string;
+  [key: string]: any;
 }
 
 export interface Layer {
   name: string;
-  paths: string[];
-  description: string;
-  technicalDetails: string;
+  path: string;
 }
 
 export interface Visualization {
-  nodes: VisualizationNode[];
-  edges: VisualizationEdge[];
+  [key: string]: any;
 }
 
-export interface VisualizationNode {
-  id: string;
-  label: string;
-  type: 'frontend' | 'backend' | 'shared' | 'config';
-  layer: string;
+export interface AnalysisData {
+  projectInfo: ProjectInfo;
+  boundaries: Record<string, BoundaryAnalysis>;
+  architecture?: Architecture; // Legacy support or optional overall
+  layers?: Layer[]; // Legacy support
+  visualization?: Visualization;
+  fileTree: FileTreeNode[];
+  prompt?: string;
+  rawAiResponse?: any;
 }
 
-export interface VisualizationEdge {
-  from: string;
-  to: string;
-  relationship: string;
+export interface BoundaryAnalysis {
+  architecturePatterns: ArchitecturePattern[];
+  layers: BoundaryLayer[];
+  dependencyFlow: string;
+  assumptions: string[];
+}
+
+export interface ArchitecturePattern {
+  name: string;
+  evidence: string[];
+}
+
+export interface BoundaryLayer {
+  name: string;
+  responsibility: string;
+  folders: string[];
+  files: string[];
 }
 
 export interface FileTreeNode {

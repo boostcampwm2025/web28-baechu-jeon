@@ -93,67 +93,16 @@ function countFolders(tree) {
 }
 
 /**
- * AI 응답에서 JSON 추출
- * @param {Object} aiResult - Clova API 응답
- * @returns {Object}
- */
-function extractJSON(aiResult) {
-  try {
-    console.log('AI Result Structure:', JSON.stringify(aiResult, null, 2));
-
-    // Clova API 응답 구조 확인 (여러 가지 가능성)
-    let content = '';
-
-    if (aiResult.result?.message?.content) {
-      content = aiResult.result.message.content;
-    } else if (aiResult.message?.content) {
-      content = aiResult.message.content;
-    } else if (aiResult.choices?.[0]?.message?.content) {
-      content = aiResult.choices[0].message.content;
-    } else if (aiResult.content) {
-      content = aiResult.content;
-    } else if (typeof aiResult === 'string') {
-      content = aiResult;
-    } else {
-      console.error('Unknown AI response structure');
-      return null;
-    }
-
-    console.log('Extracted content:', content.substring(0, 500) + '...');
-
-    // JSON 코드블록에서 추출 시도
-    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[1]);
-    }
-
-    // 일반 코드블록에서 추출 시도
-    const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
-    if (codeMatch) {
-      return JSON.parse(codeMatch[1]);
-    }
-
-    // 직접 JSON 파싱 시도
-    return JSON.parse(content);
-  } catch (e) {
-    console.error('Failed to parse AI response as JSON:', e.message);
-    console.error('AI Result:', aiResult);
-    return null;
-  }
-}
-
-/**
- * 최종 응답 포매팅
- * @param {Object} aiResult - AI 분석 결과
+ * 최종 응답 포매팅 (2단계 분석 결과 처리)
+ * @param {Object} aiResult - 2단계 AI 분석 결과
  * @param {Object} parsedData - 파싱된 ZIP 데이터
- * @param {string} prompt - AI에게 보낸 프롬프트
  * @returns {Object}
  */
-function formatResponse(aiResult, parsedData, prompt = '') {
+function formatResponse(aiResult, parsedData) {
   const { tree, contents, fileCount, folderCount } = parsedData;
 
-  // AI 응답 파싱
-  const analyzed = extractJSON(aiResult);
+  // aiResult는 이미 통합된 결과 (stage1, stage2, boundaries 포함)
+  const { stage1, stage2, boundaries } = aiResult;
 
   return {
     success: true,
@@ -162,21 +111,20 @@ function formatResponse(aiResult, parsedData, prompt = '') {
         name: extractProjectName(contents),
         detectedFramework: detectFrameworks(tree, contents),
         fileCount: fileCount || countFiles(tree),
-        folderCount: folderCount || countFolders(tree)
+        folderCount: folderCount || countFolders(tree),
       },
-      architecture: analyzed.architecture || {
-        type: 'Unknown',
-        patterns: [],
-        description: 'Architecture analysis unavailable'
-      },
-      layers: analyzed.layers || [],
-      visualization: analyzed.visualization || {
-        nodes: [],
-        edges: []
-      },
+      // 통합된 boundaries (레이어 정의 + 파일 매핑)
+      boundaries: boundaries || {},
+      // 추가 정보
+      crossBoundaryInteraction: stage1?.crossBoundaryInteraction || '',
+      assumptions: stage2?.assumptions || [],
+      // 디버깅용 원본 데이터
       fileTree: tree,
-      prompt: prompt // AI에게 보낸 프롬프트 추가
-    }
+      _debug: {
+        stage1Result: stage1,
+        stage2Result: stage2,
+      },
+    },
   };
 }
 

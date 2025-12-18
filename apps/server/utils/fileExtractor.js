@@ -17,7 +17,11 @@ const TARGET_FILES = [
   'turbo.json', 'pnpm-workspace.yaml', 'lerna.json', 'nx.json',
 
   // 기타
-  '.gitignore', '.env.example', '.env.sample'
+  '.gitignore', '.env.example', '.env.sample',
+ 'main.js', 'main.ts', 'main.jsx', 'main.tsx',
+  'app.js', 'app.ts', 'app.jsx', 'app.tsx',
+  'index.js', 'index.ts', 'index.jsx', 'index.tsx',
+  'server.js', 'server.ts'
 ];
 
 /**
