@@ -15,7 +15,7 @@ function errorHandler(err, req, res, next) {
   const errorMap = {
     'LIMIT_FILE_SIZE': {
       code: 'FILE_TOO_LARGE',
-      message: '파일 크기는 100MB 이하여야 합니다.'
+      message: '파일 크기는 200MB 이하여야 합니다.'
     },
     'INVALID_ZIP': {
       code: 'INVALID_ZIP',

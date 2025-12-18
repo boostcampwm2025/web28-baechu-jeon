@@ -1,5 +1,5 @@
 const { parseZip } = require('../services/zipParser');
-const { analyzeArchitecture } = require('../services/aiAnalyzer');
+const { analyzeArchitecture, buildPrompt } = require('../services/aiAnalyzer');
 const { formatResponse } = require('../services/responseFormatter');
 const { deleteFile } = require('../utils/cleanup');
 
@@ -21,16 +21,19 @@ async function handleUpload(req, res, next) {
     // 1. ZIP 파싱
     const parsedData = await parseZip(filePath);
 
-    // 2. AI 분석
+    // 2. 프롬프트 생성 (화면 표시용)
+    const prompt = buildPrompt(parsedData);
+
+    // 3. AI 분석
     const aiResult = await analyzeArchitecture(parsedData);
 
-    // 3. 응답 포매팅
-    const response = formatResponse(aiResult, parsedData);
+    // 4. 응답 포매팅 (프롬프트 포함)
+    const response = formatResponse(aiResult, parsedData, prompt);
 
-    // 4. ZIP 파일 삭제
+    // 5. ZIP 파일 삭제
     await deleteFile(filePath);
 
-    // 5. 응답 전송
+    // 6. 응답 전송
     console.log(`[${new Date().toISOString()}] Analysis completed successfully`);
     res.json(response);
 

@@ -99,8 +99,27 @@ function countFolders(tree) {
  */
 function extractJSON(aiResult) {
   try {
-    // Clova API 응답 구조에서 실제 메시지 추출
-    const content = aiResult.result?.message?.content || aiResult.message?.content || '';
+    console.log('AI Result Structure:', JSON.stringify(aiResult, null, 2));
+
+    // Clova API 응답 구조 확인 (여러 가지 가능성)
+    let content = '';
+
+    if (aiResult.result?.message?.content) {
+      content = aiResult.result.message.content;
+    } else if (aiResult.message?.content) {
+      content = aiResult.message.content;
+    } else if (aiResult.choices?.[0]?.message?.content) {
+      content = aiResult.choices[0].message.content;
+    } else if (aiResult.content) {
+      content = aiResult.content;
+    } else if (typeof aiResult === 'string') {
+      content = aiResult;
+    } else {
+      console.error('Unknown AI response structure');
+      return null;
+    }
+
+    console.log('Extracted content:', content.substring(0, 500) + '...');
 
     // JSON 코드블록에서 추출 시도
     const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
@@ -108,11 +127,18 @@ function extractJSON(aiResult) {
       return JSON.parse(jsonMatch[1]);
     }
 
+    // 일반 코드블록에서 추출 시도
+    const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
+    if (codeMatch) {
+      return JSON.parse(codeMatch[1]);
+    }
+
     // 직접 JSON 파싱 시도
     return JSON.parse(content);
   } catch (e) {
     console.error('Failed to parse AI response as JSON:', e.message);
-    throw new Error('Invalid AI response format');
+    console.error('AI Result:', aiResult);
+    return null;
   }
 }
 
@@ -120,9 +146,10 @@ function extractJSON(aiResult) {
  * 최종 응답 포매팅
  * @param {Object} aiResult - AI 분석 결과
  * @param {Object} parsedData - 파싱된 ZIP 데이터
+ * @param {string} prompt - AI에게 보낸 프롬프트
  * @returns {Object}
  */
-function formatResponse(aiResult, parsedData) {
+function formatResponse(aiResult, parsedData, prompt = '') {
   const { tree, contents, fileCount, folderCount } = parsedData;
 
   // AI 응답 파싱
@@ -147,7 +174,8 @@ function formatResponse(aiResult, parsedData) {
         nodes: [],
         edges: []
       },
-      fileTree: tree
+      fileTree: tree,
+      prompt: prompt // AI에게 보낸 프롬프트 추가
     }
   };
 }
