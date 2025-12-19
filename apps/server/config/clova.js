@@ -5,11 +5,11 @@ module.exports = {
   apiKey: process.env.CLOVA_API_KEY,
   defaultParams: {
     maxCompletionTokens: 2000,
-    temperature: 0.5,
-    topP: 0.8,
-    topK: 0,
-    repetitionPenalty: 1.1,
+    temperature: 0,
+    topP: 0.1,
+    topK: 1,
+    repetitionPenalty: 1,
     stop: [],
-    thinking: { effort: 'medium' }
-  }
+    thinking: { effort: 'medium' },
+  },
 };

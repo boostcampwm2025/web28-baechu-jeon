@@ -2,11 +2,43 @@ const axios = require('axios');
 const clovaConfig = require('../config/clova');
 
 /**
- * 1단계: 아키텍처 패턴 및 레이어 구조 정의 프롬프트
+ * 1단계 시스템 프롬프트 (고정된 지시사항)
+ */
+const STAGE1_SYSTEM_PROMPT = `당신은 전문 소프트웨어 아키텍트입니다.
+
+STAGE 1: Architecture Pattern & Layer Structure Definition
+
+Instructions:
+1. Identify Project Boundaries (frontend, backend, shared, etc.)
+2. Determine Architecture Patterns per boundary with evidence
+3. Define Layer Structure (5+ layers) per boundary:
+   - name: 레이어 이름
+   - responsibility: 책임
+   - characteristics: 파일 식별 방법
+4. Define Dependency Flow per boundary
+5. Describe Cross-Boundary Relationships
+
+Output VALID JSON ONLY (no markdown). Respond in Korean.
+
+{
+  "boundaries": {
+    "boundaryName": {
+      "architecturePatterns": [{"name": "패턴", "evidence": ["증거1"]}],
+      "layers": [{"name": "레이어", "responsibility": "책임", "characteristics": ["특성"]}],
+      "dependencyFlow": "의존성 설명"
+    }
+  },
+  "crossBoundaryInteraction": "경계 간 상호작용"
+}
+
+Do NOT map files to layers yet.`;
+
+/**
+ * 1단계 유저 프롬프트 (변하는 데이터)
  * @param {Object} parsedData - 파싱된 ZIP 데이터
  * @returns {string}
  */
-function buildFirstStagePrompt(parsedData) {
+function buildFirstStageUserPrompt(parsedData) {
   const { tree, contents } = parsedData;
 
   // 파일 트리를 텍스트로 변환
@@ -26,113 +58,55 @@ function buildFirstStagePrompt(parsedData) {
 
   const treeText = treeToText(tree);
 
-  // 주요 설정 파일 내용
-  const contentsText = Object.entries(contents)
-    .map(([path, content]) => {
-      return `### ${path}\n\`\`\`\n${content}\n\`\`\``;
-    })
-    .join('\n\n');
+  // 설정 파일 목록만 (내용 제외 - 토큰 절약)
+  const configFiles = Object.keys(contents).join(', ');
 
-  return `
-You are an expert software architect.
-You are given:
-- Complete folder structure
-- File names and paths
-- Configuration files
-
-⚠️ This is STAGE 1: Architecture Pattern & Layer Structure Definition
-⚠️ Do NOT map files to layers yet. Focus ONLY on defining the architecture.
-⚠️ **IMPORTANT: Respond in Korean (한글)**
-
----
-# Project Structure
+  return `# Project Structure
 ${treeText}
 
-# Configuration Files
-${contentsText}
-
----
-## STAGE 1 Instructions: Define Architecture & Layers
-
-### Step 1. Identify Project Boundaries
-1. Identify all logical runtime boundaries (frontend, backend, shared, etc.)
-2. Each boundary represents a separate deployable or logical unit
-3. List all boundaries that exist in this project
-
-### Step 2. Determine Architecture Patterns (Per Boundary)
-For EACH boundary:
-1. Identify the PRIMARY architectural pattern(s)
-2. Provide concrete evidence from folder structure and file naming
-3. Justify why this pattern fits the project structure
-
-Common patterns: MVC, Layered, Clean Architecture, Feature-based, Domain-driven, etc.
-
-### Step 3. Define Layer Structure (Per Boundary)
-For EACH boundary:
-1. Define AT LEAST 3 layers
-2. Each layer MUST have:
-   - **name**: Clear layer name
-   - **responsibility**: What this layer is responsible for
-   - **characteristics**: How to identify if a file/folder belongs to this layer
-3. Layers should represent RESPONSIBILITIES, not just folder names
-
-Example layer characteristics:
-- "Contains React components that render UI"
-- "Handles business logic and use cases"
-- "Manages data fetching and API calls"
-- "Defines data models and types"
-
-### Step 4. Define Dependency Flow
-For EACH boundary:
-- Describe the intended dependency direction between layers
-- Which layers can depend on which layers
-
-### Step 5. Cross-Boundary Relationships
-If multiple boundaries exist:
-- Explain how they interact
-- Describe the role of shared code
-
----
-## Output Format (STRICT JSON ONLY)
-
-Respond with VALID JSON ONLY. No markdown. No explanations outside JSON.
-**All text values inside JSON must be in Korean (한글).**
-
-{
-  "boundaries": {
-    "frontend": {
-      "architecturePatterns": [
-        {
-          "name": "패턴 이름 (Korean)",
-          "evidence": ["증거 1 (Korean)", "증거 2"]
-        }
-      ],
-      "layers": [
-        {
-          "name": "레이어 이름 (Korean)",
-          "responsibility": "이 레이어가 하는 일 (Korean)",
-          "characteristics": ["파일 식별 방법 (Korean)"]
-        }
-      ],
-      "dependencyFlow": "의존성 설명 (Korean)"
-    },
-    "backend": { ... },
-    ...
-  },
-  "crossBoundaryInteraction": "경계 간 상호작용 (Korean)"
-}
-
-⚠️ Do NOT include file/folder mappings in this stage.
-`;
+# Configuration Files Found
+${configFiles}`;
 }
 
 /**
- * 2단계: 파일/폴더를 레이어에 매핑하는 프롬프트
+ * 2단계 시스템 프롬프트 (고정된 지시사항)
+ */
+const STAGE2_SYSTEM_PROMPT = `당신은 레이어 아키텍처 다이어그램 생성을 위해 코드를 분석하는 전문 소프트웨어 아키텍트입니다.
+
+STAGE 2: Complete File-to-Layer Mapping
+
+PURPOSE: Generate data for layer architecture diagram - EVERY file must be mapped.
+
+CRITICAL: Map EVERY file to its layer. Output will be used to draw layer architecture diagram.
+
+Instructions:
+- Assign ALL files/folders to layers based on Stage 1 characteristics
+- List ALL individual files explicitly for diagram generation
+
+Output VALID JSON ONLY (no markdown). Respond in Korean.
+
+{
+  "boundaries": {
+    "boundaryName": {
+      "layers": [
+        {
+          "name": "레이어명 (match Stage 1)",
+          "folders": ["path1", "path2"],
+          "files": ["file1.js", "file2.tsx", ...]
+        }
+      ]
+    }
+  },
+  "assumptions": ["설명"]
+}`;
+
+/**
+ * 2단계 유저 프롬프트 (변하는 데이터)
  * @param {Object} parsedData - 파싱된 ZIP 데이터
  * @param {Object} firstStageResult - 1단계 분석 결과
  * @returns {string}
  */
-function buildSecondStagePrompt(parsedData, firstStageResult) {
+function buildSecondStageUserPrompt(parsedData, firstStageResult) {
   const { tree } = parsedData;
 
   // 파일 트리를 텍스트로 변환 (경로 포함)
@@ -141,7 +115,9 @@ function buildSecondStagePrompt(parsedData, firstStageResult) {
       .map((node) => {
         const indent = '  '.repeat(depth);
         const icon = node.type === 'folder' ? '📁' : '📄';
-        const currentPath = parentPath ? `${parentPath}/${node.name}` : node.name;
+        const currentPath = parentPath
+          ? `${parentPath}/${node.name}`
+          : node.name;
         let text = `${indent}${icon} ${node.name} (${currentPath})`;
         if (node.children && node.children.length > 0) {
           text += '\n' + treeToText(node.children, depth + 1, currentPath);
@@ -153,73 +129,21 @@ function buildSecondStagePrompt(parsedData, firstStageResult) {
 
   const treeText = treeToText(tree);
 
-  return `
-You are an expert software architect.
-
-⚠️ This is STAGE 2: Map ALL Files and Folders to Defined Layers
-⚠️ **IMPORTANT: Respond in Korean (한글)**
-
-You previously defined the following architecture:
+  return `# Stage 1 Architecture
 ${JSON.stringify(firstStageResult, null, 2)}
 
----
-# Complete Project Structure (with paths)
-${treeText}
-
----
-## STAGE 2 Instructions: Map Files to Layers
-
-### Your Task
-For EACH boundary defined in Stage 1:
-1. Go through EVERY folder and file in the project structure
-2. Assign each folder/file to the appropriate layer based on:
-   - The layer characteristics defined in Stage 1
-   - The file/folder path and naming
-   - The folder hierarchy
-
-### Mapping Rules
-1. **Every file and folder MUST be assigned to exactly ONE layer**
-2. Use the "characteristics" from Stage 1 to determine which layer each file belongs to
-3. If a file is ambiguous, use your best judgment and note it in "assumptions"
-4. For folders: assign based on the PRIMARY purpose of files within
-5. **Do NOT skip files** - include configuration files, entry points, everything
-
-### Output Format (STRICT JSON ONLY)
-
-Respond with VALID JSON ONLY. No markdown.
-**All text values in "assumptions" must be in Korean (한글).**
-
-{
-  "boundaries": {
-    "frontend": {
-      "layers": [
-        {
-          "name": "layer name (must match Stage 1)",
-          "folders": ["folder/path1", "folder/path2"],
-          "files": ["file/path1.js", "file/path2.tsx"]
-        }
-      ]
-    },
-    "backend": { ... },
-    ...
-  },
-  "assumptions": [
-    "애매한 매핑 설명 (Korean)"
-  ]
-}
-
-⚠️ All paths must be exact paths from the project structure above.
-⚠️ Every file/folder from the tree must appear in exactly one layer.
-`;
+# Project Structure
+${treeText}`;
 }
 
 /**
  * Clova Studio API 단일 호출 헬퍼
- * @param {string} prompt - 프롬프트
+ * @param {string} systemPrompt - 시스템 프롬프트 (고정된 지시사항)
+ * @param {string} userPrompt - 유저 프롬프트 (변하는 데이터)
  * @param {string} stageName - 단계 이름 (로깅용)
  * @returns {Promise<Object>}
  */
-async function callClovaAPI(prompt, stageName) {
+async function callClovaAPI(systemPrompt, userPrompt, stageName) {
   try {
     console.log(`[${new Date().toISOString()}] Starting ${stageName}...`);
 
@@ -229,12 +153,11 @@ async function callClovaAPI(prompt, stageName) {
         messages: [
           {
             role: 'system',
-            content:
-              '당신은 전문 소프트웨어 아키텍트입니다. 프로젝트 구조를 분석하고 아키텍처 패턴에 대한 통찰을 제공합니다. 항상 유효한 JSON 형식으로만 응답하세요. 모든 응답은 한글로 작성하세요.',
+            content: systemPrompt,
           },
           {
             role: 'user',
-            content: prompt,
+            content: userPrompt,
           },
         ],
         model: 'HCX-007',
@@ -284,6 +207,13 @@ function extractJSON(aiResult) {
     // Clova API 응답 구조 확인
     let content = '';
 
+    // 디버깅: 응답 구조 로깅
+    console.log('AI Response keys:', Object.keys(aiResult));
+    console.log(
+      'AI Response sample:',
+      JSON.stringify(aiResult).substring(0, 300),
+    );
+
     if (aiResult.result?.message?.content) {
       content = aiResult.result.message.content;
     } else if (aiResult.message?.content) {
@@ -296,6 +226,7 @@ function extractJSON(aiResult) {
       content = aiResult;
     } else {
       console.error('Unknown AI response structure');
+      console.error('Full response:', JSON.stringify(aiResult, null, 2));
       return null;
     }
 
@@ -326,7 +257,7 @@ function extractJSON(aiResult) {
  * @returns {Promise<void>}
  */
 function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -336,11 +267,17 @@ function delay(ms) {
  */
 async function analyzeArchitecture(parsedData) {
   try {
-    console.log(`[${new Date().toISOString()}] Starting 2-stage AI analysis...`);
+    console.log(
+      `[${new Date().toISOString()}] Starting 2-stage AI analysis...`,
+    );
 
     // === 1단계: 아키텍처 패턴 및 레이어 구조 정의 ===
-    const firstStagePrompt = buildFirstStagePrompt(parsedData);
-    const firstStageResponse = await callClovaAPI(firstStagePrompt, 'Stage 1: Architecture Definition');
+    const firstStageUserPrompt = buildFirstStageUserPrompt(parsedData);
+    const firstStageResponse = await callClovaAPI(
+      STAGE1_SYSTEM_PROMPT,
+      firstStageUserPrompt,
+      'Stage 1: Architecture Definition',
+    );
 
     const firstStageResult = extractJSON(firstStageResponse);
     if (!firstStageResult) {
@@ -349,13 +286,22 @@ async function analyzeArchitecture(parsedData) {
 
     console.log('Stage 1 Result:', JSON.stringify(firstStageResult, null, 2));
 
-    // Rate limit 방지를 위한 딜레이 (10초)
-    console.log(`[${new Date().toISOString()}] Waiting 10 seconds to avoid rate limit...`);
-    await delay(10000);
+    // Rate limit 방지를 위한 딜레이 (15초)
+    console.log(
+      `[${new Date().toISOString()}] Waiting 15 seconds to avoid rate limit...`,
+    );
+    await delay(15000);
 
     // === 2단계: 파일/폴더를 레이어에 매핑 ===
-    const secondStagePrompt = buildSecondStagePrompt(parsedData, firstStageResult);
-    const secondStageResponse = await callClovaAPI(secondStagePrompt, 'Stage 2: File Mapping');
+    const secondStageUserPrompt = buildSecondStageUserPrompt(
+      parsedData,
+      firstStageResult,
+    );
+    const secondStageResponse = await callClovaAPI(
+      STAGE2_SYSTEM_PROMPT,
+      secondStageUserPrompt,
+      'Stage 2: File Mapping',
+    );
 
     const secondStageResult = extractJSON(secondStageResponse);
     if (!secondStageResult) {
@@ -373,7 +319,6 @@ async function analyzeArchitecture(parsedData) {
 
     console.log(`[${new Date().toISOString()}] 2-stage AI analysis completed`);
     return combinedResult;
-
   } catch (error) {
     console.error(
       `[${new Date().toISOString()}] AI analysis failed:`,
@@ -407,8 +352,8 @@ function mergeStagedResults(stage1, stage2) {
     const stage2Boundary = stage2.boundaries?.[boundaryName];
     const stage2Layers = stage2Boundary?.layers || [];
 
-    stage1Layers.forEach(stage1Layer => {
-      const stage2Layer = stage2Layers.find(l => l.name === stage1Layer.name);
+    stage1Layers.forEach((stage1Layer) => {
+      const stage2Layer = stage2Layers.find((l) => l.name === stage1Layer.name);
 
       merged[boundaryName].layers.push({
         name: stage1Layer.name,
@@ -425,6 +370,4 @@ function mergeStagedResults(stage1, stage2) {
 
 module.exports = {
   analyzeArchitecture,
-  buildFirstStagePrompt,
-  buildSecondStagePrompt,
 };

@@ -11,7 +11,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const timestamp = Date.now();
     cb(null, `${timestamp}-${file.originalname}`);
-  }
+  },
 });
 
 /**
@@ -32,8 +32,8 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 200 * 1024 * 1024 // 200MB 제한
-  }
+    fileSize: 250 * 1024 * 1024, // 250MB 제한
+  },
 });
 
 module.exports = upload;
