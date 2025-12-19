@@ -203,10 +203,8 @@ async function callClovaAPI(systemPrompt, userPrompt, stageName) {
  * @returns {Object}
  */
 function extractJSON(aiResult) {
+  let content = '';
   try {
-    // Clova API 응답 구조 확인
-    let content = '';
-
     // 디버깅: 응답 구조 로깅
     console.log('AI Response keys:', Object.keys(aiResult));
     console.log(

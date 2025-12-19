@@ -1,13 +1,14 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import FileUploader from '@/components/upload/FileUploader';
-import PreprocessInfo from '@/components/analysis/PreprocessInfo';
-import AnalysisResult from '@/components/analysis/AnalysisResult';
-import { AnalysisResult as AnalysisResultType } from '@/types/analysis';
+import { useState } from "react";
+import FileUploader from "@/components/upload/FileUploader";
+import PreprocessInfo from "@/components/analysis/PreprocessInfo";
+import AnalysisResult from "@/components/analysis/AnalysisResult";
+import { AnalysisResult as AnalysisResultType } from "@/types/analysis";
 
 export default function HomePage() {
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResultType | null>(null);
+  const [analysisResult, setAnalysisResult] =
+    useState<AnalysisResultType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleUploadSuccess = (result: AnalysisResultType) => {
@@ -25,15 +26,17 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto max-w-7xl px-4 py-8">
         {/* 헤더 */}
         <header className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">프로토타입</h1>
-          <p className="text-gray-600">프로젝트 구조 분석 및 아키텍처 시각화 도구</p>
+          <h1 className="mb-2 text-4xl font-bold text-gray-900">프로토타입</h1>
+          <p className="text-gray-600">
+            프로젝트 구조 분석 및 아키텍처 시각화 도구
+          </p>
         </header>
 
         {/* 메인 컨텐츠 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* 왼쪽: 업로드 */}
           <div>
             <FileUploader
@@ -47,11 +50,11 @@ export default function HomePage() {
           <div className="space-y-6">
             {/* 로딩 상태 */}
             {isLoading && (
-              <div className="bg-white rounded-lg shadow p-12 text-center">
+              <div className="rounded-lg bg-white p-12 text-center shadow">
                 <div className="flex flex-col items-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                  <p className="text-gray-600 font-medium">분석 중...</p>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <div className="mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                  <p className="font-medium text-gray-600">분석 중...</p>
+                  <p className="mt-2 text-sm text-gray-500">
                     AI가 프로젝트 구조를 분석하고 있습니다.
                   </p>
                 </div>
@@ -68,8 +71,8 @@ export default function HomePage() {
 
             {/* 초기 상태 안내 */}
             {!analysisResult && !isLoading && (
-              <div className="bg-white rounded-lg shadow p-12 text-center">
-                <div className="text-gray-400 mb-4">
+              <div className="rounded-lg bg-white p-12 text-center shadow">
+                <div className="mb-4 text-gray-400">
                   <svg
                     className="mx-auto h-16 w-16"
                     fill="none"
@@ -97,8 +100,9 @@ export default function HomePage() {
         {/* 푸터 안내 */}
         <footer className="mt-12 text-center text-sm text-gray-500">
           <p>
-            최대 200MB의 ZIP 파일을 업로드할 수 있습니다. <br />
-            프로젝트 구조가 분석되면 아키텍처 패턴과 레이어 정보를 확인할 수 있습니다.
+            최대 250MB의 ZIP 파일을 업로드할 수 있습니다. <br />
+            프로젝트 구조가 분석되면 아키텍처 패턴과 레이어 정보를 확인할 수
+            있습니다.
           </p>
         </footer>
       </div>
