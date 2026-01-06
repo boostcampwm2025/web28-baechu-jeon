@@ -1,4 +1,9 @@
+"use client";
+
+import ProgressBar from "@/components/analyzing/ProgressBar";
+
 export default function AnalyzingPage() {
+
   return (
     <div className="h-full flex flex-col items-center justify-center bg-gray-50">
       <div className="w-full max-w-2xl px-6">
@@ -12,10 +17,11 @@ export default function AnalyzingPage() {
           </p>
         </div>
 
-        {/* 여기에 나중에 프로그레스 바와 분석 단계가 들어갈 자리 */}
+        {/* 프로그레스 바 영역 */}
         <div className="bg-white rounded-lg shadow-md p-8">
-          <p className="text-center text-gray-500">
-            분석이 진행 중입니다...
+          <ProgressBar />
+          <p className="mt-3 text-center text-xs text-gray-500">
+            약 40초~1분 소요 예상
           </p>
         </div>
       </div>

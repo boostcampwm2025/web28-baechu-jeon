@@ -1,0 +1,13 @@
+@keyframes progress-slide {
+  0% {
+    left: -40%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.progressBarAnimate {
+  animation: progress-slide 1.5s ease-in-out infinite;
+}
+
