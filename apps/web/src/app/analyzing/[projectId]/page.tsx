@@ -12,9 +12,20 @@ const ANALYSIS_STEPS = [
   "결과 생성 중...",
 ];
 
-export default function AnalyzingPage() {
-  // 현재 분석 단계 (Mock 데이터)
+export default function AnalyzingPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  const [projectId, setProjectId] = useState<string>("");
   const [currentStep, setCurrentStep] = useState(0);
+
+  // params에서 projectId 추출
+  useEffect(() => {
+    params.then((resolvedParams) => {
+      setProjectId(resolvedParams.projectId);
+    });
+  }, [params]);
 
   // Mock 데이터: 분석 단계 순환
   useEffect(() => {
