@@ -1,5 +1,6 @@
 interface NodeCardProps {
   title: string;
+  path?: string;
   x: number;
   y: number;
   color?: "blue" | "purple";
