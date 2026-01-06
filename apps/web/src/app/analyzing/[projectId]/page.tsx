@@ -1,24 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import ProgressBar from "@/components/analyzing/ProgressBar";
-
-// 분석 단계 목록
-const ANALYSIS_STEPS = [
-  "프로젝트 추출 중...",
-  "폴더 구조 전처리 중...",
-  "의존성 분석 중...",
-  "AI 분석 중...",
-  "결과 생성 중...",
-];
 
 export default function AnalyzingPage({
   params,
 }: {
   params: Promise<{ projectId: string }>;
 }) {
+  const router = useRouter();
   const [projectId, setProjectId] = useState<string>("");
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState<string>("분석 준비 중...");
 
   // params에서 projectId 추출
   useEffect(() => {
@@ -27,14 +20,39 @@ export default function AnalyzingPage({
     });
   }, [params]);
 
-  // Mock 데이터: 분석 단계 순환
+  // SSE 연결 및 실시간 상태 업데이트
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentStep((prev) => (prev + 1) % ANALYSIS_STEPS.length);
-    }, 2000); // 2초마다 단계 변경
+    if (!projectId) return;
 
-    return () => clearInterval(interval);
-  }, []);
+    const eventSource = new EventSource(
+      `http://localhost:3001/api/analysis/${projectId}/stream`,
+    );
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setCurrentStep(data.currentStep);
+
+        // 분석 완료 시 결과 페이지로 이동
+        if (data.status === "completed") {
+          eventSource.close();
+          router.push(`/result/${projectId}`);
+        }
+      } catch (error) {
+        console.error("Failed to parse SSE data:", error);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error("SSE connection error:", error);
+      eventSource.close();
+    };
+
+    // 컴포넌트 언마운트 시 연결 종료
+    return () => {
+      eventSource.close();
+    };
+  }, [projectId, router]);
 
   return (
     <div className="h-full flex flex-col items-center justify-center bg-gray-50">
@@ -53,7 +71,7 @@ export default function AnalyzingPage({
         <div className="bg-white rounded-lg shadow-md p-8">
           {/* 현재 분석 단계 표시 */}
           <p className="mb-4 text-center text-sm font-medium text-gray-700">
-            {ANALYSIS_STEPS[currentStep]}
+            {currentStep}
           </p>
           
           <ProgressBar />
