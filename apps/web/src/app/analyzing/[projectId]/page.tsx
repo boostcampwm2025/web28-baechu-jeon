@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ProgressBar from "@/components/analyzing/ProgressBar";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+
 export default function AnalyzingPage({
   params,
 }: {
@@ -25,7 +28,7 @@ export default function AnalyzingPage({
     if (!projectId) return;
 
     const eventSource = new EventSource(
-      `http://localhost:3001/api/analysis/${projectId}/stream`,
+      `${API_BASE_URL}/api/analysis/${projectId}/stream`,
     );
 
     eventSource.onmessage = (event) => {

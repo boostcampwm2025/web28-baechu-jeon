@@ -7,4 +7,3 @@ import { AnalysisService } from './analysis.service';
   providers: [AnalysisService],
 })
 export class AnalysisModule {}
-
