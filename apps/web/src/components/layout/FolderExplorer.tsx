@@ -1,16 +1,46 @@
+"use client";
+
+import { useState } from "react";
+import FolderItem from "./FolderItem";
+import FileItem from "./FileItem";
+
 export default function FolderExplorer() {
-  const menus = [
-    { name: "AI 분석" },
-    { name: "JSON 결과" },
-    { name: "시각화" },
-  ];
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(["src"]));
+
+  const toggleFolder = (path: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
+      return next;
+    });
+  };
 
   return (
-    <section className="flex flex-col gap-2 p-4">
-      <p className="mb-4 text-sm font-semibold text-gray-400">메뉴</p>
-      {menus.map((menu, index) => (
-        <div key={index}>{menu.name}</div>
-      ))}
-    </section>
+    <div className="p-4">
+      <h3 className="mb-4 text-sm font-bold uppercase">Project Files</h3>
+      {/*TODO: mock 데이터 적용하기 */}
+      <div className="space-y-1">
+        <FolderItem
+          name="src"
+          expanded={expanded.has("src")}
+          onToggle={() => toggleFolder("src")}
+        >
+          <FileItem name="index.ts" />
+          <FileItem name="app.ts" />
+          <FolderItem
+            name="components"
+            expanded={expanded.has("components")}
+            onToggle={() => toggleFolder("components")}
+          >
+            <FileItem name="header.ts" />
+            <FileItem name="footer.ts" />
+          </FolderItem>
+        </FolderItem>
+      </div>
+    </div>
   );
 }
