@@ -3,9 +3,8 @@ import { Observable, interval, map } from 'rxjs';
 
 @Injectable()
 export class AnalysisService {
-  // 분석 단계 목록
+  // 분석 단계 목록 (업로드는 별도 API로 완료된 후 분석 시작)
   private readonly analysisSteps = [
-    '프로젝트 추출 중...',
     '폴더 구조 전처리 중...',
     '의존성 분석 중...',
     'AI 분석 중...',
