@@ -1,52 +1,59 @@
 "use client";
-import JsonView from "@uiw/react-json-view";
-import { useState } from "react";
+
+import React, { useState, useCallback } from "react";
+import CodeMirror from "@uiw/react-codemirror";
+import { json } from "@codemirror/lang-json";
 
 export default function JsonViewComponent() {
+  // JSON object 상태
   const [jsonData, setJsonData] = useState({
-    architecture: {
-      layers: {
-        presentation: ["components", "pages"],
-        application: ["layout", "hooks"],
-        domain: ["models", "services"],
-        infrastructure: ["api", "database"],
+    layers: [
+      {
+        name: "presentation",
+        description: "UI 컴포넌트 레이어",
+        files: ["src/components/Header.tsx", "src/components/Footer.tsx"],
+        dependencies: ["business"],
       },
-    },
+      {
+        name: "business",
+        description: "비즈니스 로직 레이어",
+        files: ["src/services/AnalysisService.ts"],
+        dependencies: ["data"],
+      },
+      {
+        name: "data",
+        description: "데이터 접근 레이어",
+        files: ["src/repositories/AnalysisRepository.ts"],
+        dependencies: [],
+      },
+    ],
   });
 
-  const [editMode, setEditMode] = useState(false);
+  // CodeMirror는 string만 받으므로 stringify
+  const value = JSON.stringify(jsonData, null, 2); // 2칸 들여쓰기
+
+  const onChange = useCallback((val: string) => {
+    try {
+      // 변경 내용을 다시 object로 파싱
+      const parsed = JSON.parse(val);
+      setJsonData(parsed);
+      console.log("JSON updated:", parsed);
+    } catch (err) {
+      console.log("Invalid JSON:", err);
+      // 유효하지 않은 JSON은 상태에 적용하지 않음
+    }
+  }, []);
 
   return (
     <div>
-      <button
-        onClick={() => setEditMode(!editMode)}
-        className="mb-4 rounded bg-blue-500 px-4 py-2 text-white"
-      >
-        {editMode ? "뷰 모드" : "편집 모드"}
-      </button>
-
-      {editMode ? (
-        <textarea
-          value={JSON.stringify(jsonData, null, 2)}
-          onChange={(e) => {
-            try {
-              setJsonData(JSON.parse(e.target.value));
-            } catch (err) {
-              // JSON 파싱 에러 무시
-            }
-          }}
-          className="h-96 w-full rounded border p-4 font-mono text-sm"
-        />
-      ) : (
-        <JsonView
-          value={jsonData}
-          style={{
-            padding: "1rem",
-            borderRadius: "8px",
-            fontSize: "14px",
-          }}
-        />
-      )}
+      <h1>JSON Editor</h1>
+      <CodeMirror
+        value={value}
+        // height="400px"
+        extensions={[json()]}
+        onChange={onChange}
+        theme="light"
+      />
     </div>
   );
 }
