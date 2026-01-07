@@ -22,8 +22,7 @@ export default function Uploader() {
     try {
       const result = await uploadZipFile(file);
 
-      sessionStorage.setItem("projectId", JSON.stringify(result));
-      router.push("/analyzing");
+      router.push(`/analyzing?projectId=${result.projectId}`);
     } catch (error) {
       const errorMessage =
         error instanceof UploadError || error instanceof Error
@@ -37,8 +36,7 @@ export default function Uploader() {
   };
 
   const handleGithubSubmit = (url: string) => {
-    sessionStorage.setItem("projectId", url);
-    router.push("/analyzing");
+    router.push(`/analyzing?projectId=${encodeURIComponent(url)}`);
   };
 
   return (
@@ -85,7 +83,11 @@ export default function Uploader() {
 
       {/* 탭 콘텐츠 */}
       {activeTab === "zip" ? (
-        <ZipUploadTab onSubmit={handleZipSubmit} />
+        <ZipUploadTab
+          onSubmit={handleZipSubmit}
+          uploadError={uploadError}
+          isUploading={isUploading}
+        />
       ) : (
         <GithubUploadTab onSubmit={handleGithubSubmit} />
       )}
