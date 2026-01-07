@@ -13,6 +13,12 @@ export interface ZipFileEntry {
   isDirectory: boolean;
 }
 
+export interface ZipMetadata {
+  totalFiles: number;
+  totalSize: number;
+  files: ZipFileEntry[];
+}
+
 export interface ZipParseResult {
   projectId: string;
 }
@@ -23,26 +29,23 @@ export class UploadService {
     const projectId = randomUUID();
 
     try {
-      const result = await this.readZipMetadata(file.path);
-      console.log('파일 목록', result);
+      const metadata = await this.readZipMetadata(file.path);
+
+      // TODO: 메타데이터를 DB에 저장
+      // await this.saveProject(projectId, metadata);
+      console.log('프로젝트 ID:', projectId);
+      console.log('메타데이터:', metadata);
 
       await this.cleanupFile(file.path);
 
-      // TODO: 메타데이터를 DB에 저장하는 로직 추가 예정
-
-      return {
-        projectId,
-      };
+      return { projectId };
     } catch (error) {
-      // 에러 발생 시 임시 파일 삭제
       await this.cleanupFile(file.path);
       throw error;
     }
   }
 
-  private async readZipMetadata(
-    zipPath: string,
-  ): Promise<Omit<ZipParseResult, 'projectId'>> {
+  private async readZipMetadata(zipPath: string): Promise<ZipMetadata> {
     return new Promise((resolve, reject) => {
       const files: ZipFileEntry[] = [];
       let totalSize = 0;
