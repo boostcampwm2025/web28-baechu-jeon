@@ -12,7 +12,10 @@ export class UploadError extends Error {
   }
 }
 
-export async function uploadZipFile(file: File): Promise<ZipUploadResponse> {
+export async function uploadZipFile(
+  file: File,
+  signal?: AbortSignal,
+): Promise<ZipUploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
 
@@ -20,6 +23,7 @@ export async function uploadZipFile(file: File): Promise<ZipUploadResponse> {
     const response = await fetch(`${API_BASE_URL}/upload/zip`, {
       method: "POST",
       body: formData,
+      signal,
     });
 
     if (!response.ok) {
@@ -35,6 +39,11 @@ export async function uploadZipFile(file: File): Promise<ZipUploadResponse> {
   } catch (error) {
     if (error instanceof UploadError) {
       throw error;
+    }
+
+    // AbortError 처리
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new UploadError("Upload cancelled", 0);
     }
 
     throw new UploadError(

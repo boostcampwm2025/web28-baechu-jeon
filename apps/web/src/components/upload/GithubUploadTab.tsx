@@ -5,13 +5,24 @@ import { GITHUB_UPLOAD } from "@/constants/upload";
 
 interface GithubUploadTabProps {
   onSubmit: (url: string) => void;
+  projectId?: string | null;
+  onAnalyze?: () => void;
 }
 
-export default function GithubUploadTab({ onSubmit }: GithubUploadTabProps) {
+export default function GithubUploadTab({
+  onSubmit,
+  projectId = null,
+  onAnalyze,
+}: GithubUploadTabProps) {
   const [githubUrl, setGithubUrl] = useState<string>("");
 
-  const handleSubmitClick = () => {
-    if (githubUrl) {
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setGithubUrl(url);
+  };
+
+  const handleConfirm = () => {
+    if (githubUrl && !projectId) {
       onSubmit(githubUrl);
     }
   };
@@ -40,9 +51,11 @@ export default function GithubUploadTab({ onSubmit }: GithubUploadTabProps) {
           <input
             type="text"
             value={githubUrl}
-            onChange={(e) => setGithubUrl(e.target.value)}
+            onChange={handleUrlChange}
+            onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
             placeholder={GITHUB_UPLOAD.PLACEHOLDER}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-3.5 pr-4 pl-12 text-slate-900 placeholder-slate-400 transition-all focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:outline-none"
+            disabled={!!projectId}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-3.5 pr-4 pl-12 text-slate-900 placeholder-slate-400 transition-all focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
           />
         </div>
       </div>
@@ -75,10 +88,34 @@ export default function GithubUploadTab({ onSubmit }: GithubUploadTabProps) {
         </div>
       </div>
 
-      {/* 제출 버튼 */}
+      {/* URL 확인 버튼 (projectId 없을 때) */}
+      {!projectId && (
+        <button
+          onClick={handleConfirm}
+          disabled={!githubUrl}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-600 px-6 py-4 text-base font-semibold text-white shadow-sm transition-all hover:bg-slate-700 hover:shadow-md disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+        >
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          URL 확인
+        </button>
+      )}
+
+      {/* 분석 시작하기 버튼 - 항상 표시, URL 확인 시 활성화 */}
       <button
-        onClick={handleSubmitClick}
-        disabled={!githubUrl}
+        onClick={onAnalyze}
+        disabled={!projectId}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-sm transition-all hover:bg-blue-600 hover:shadow-md disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
       >
         <svg

@@ -7,12 +7,18 @@ interface ZipUploadTabProps {
   onSubmit: (file: File) => void;
   uploadError?: string | null;
   isUploading?: boolean;
+  projectId?: string | null;
+  onAnalyze?: () => void;
+  onCancel?: () => void;
 }
 
 export default function ZipUploadTab({
   onSubmit,
   uploadError,
   isUploading = false,
+  projectId = null,
+  onAnalyze,
+  onCancel,
 }: ZipUploadTabProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -65,6 +71,7 @@ export default function ZipUploadTab({
     } else {
       setError(null);
       setSelectedFile(file);
+      onSubmit(file);
     }
   };
 
@@ -81,18 +88,17 @@ export default function ZipUploadTab({
     } else {
       setError(null);
       setSelectedFile(file);
+      onSubmit(file);
     }
   };
 
   const handleRemoveFile = () => {
+    // 업로드 중이면 취소
+    if ((isUploading && onCancel) || (projectId && onCancel)) {
+      onCancel();
+    }
     setSelectedFile(null);
     setError(null);
-  };
-
-  const handleSubmitClick = () => {
-    if (selectedFile) {
-      onSubmit(selectedFile);
-    }
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -170,7 +176,7 @@ export default function ZipUploadTab({
                 {selectedFile.name}
               </p>
               <p className="text-sm text-slate-600">
-                {formatFileSize(selectedFile.size)} • {ZIP_UPLOAD.UPLOAD_READY}
+                {formatFileSize(selectedFile.size)}
               </p>
             </div>
           </div>
@@ -261,10 +267,10 @@ export default function ZipUploadTab({
         </div>
       </div>
 
-      {/* 제출 버튼 */}
+      {/* 분석 시작하기 버튼 - 업로드 성공 시 활성화 */}
       <button
-        onClick={handleSubmitClick}
-        disabled={!selectedFile || !!error || isUploading}
+        onClick={onAnalyze}
+        disabled={!projectId || isUploading}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-sm transition-all hover:bg-blue-600 hover:shadow-md disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
       >
         {isUploading ? (
