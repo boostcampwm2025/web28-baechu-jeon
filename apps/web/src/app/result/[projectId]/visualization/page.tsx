@@ -22,14 +22,13 @@ export default function VisualizationPage({
   };
 
   return (
-    <div className="flex h-full">
-      <main className="relative flex-1 bg-slate-900">
+    <div className="relative h-full">
+      <main className="h-full bg-slate-900">
         <VisualizationView
           projectId={params.id}
           onNodeClick={handleNodeClick}
         />
       </main>
-
       <DetailsPanel
         isOpen={isPanelOpen}
         onClose={handleClosePanel}

@@ -28,20 +28,10 @@ export default function DetailsPanel({
     return null;
   }
 
-  const complexityColors = {
-    Low: "text-green-400",
-    Medium: "text-amber-400",
-    High: "text-red-400",
-  };
-
   return (
-    <aside
-      className={`flex w-96 flex-col border-l border-slate-800 bg-slate-900 transition-transform duration-300 ${
-        isOpen ? "translate-x-0" : "translate-x-full"
-      }`}
-    >
-      <div className="flex items-center justify-between border-b border-slate-800 p-4">
-        <h3 className="flex items-center gap-2 font-bold text-white">
+    <aside className="absolute top-6 right-6 bottom-6 z-100 flex w-96 flex-col overflow-hidden rounded-2xl border border-slate-700/50 bg-slate-900/95 shadow-2xl backdrop-blur-md">
+      <div className="flex items-center justify-between border-b border-slate-800 p-5">
+        <h3 className="flex items-center gap-2 text-lg font-bold text-white">
           <svg
             className="h-5 w-5 text-blue-400"
             fill="none"
@@ -59,7 +49,7 @@ export default function DetailsPanel({
         </h3>
         <button
           onClick={onClose}
-          className="rounded p-1 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+          className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
         >
           <svg
             className="h-5 w-5"
@@ -77,21 +67,17 @@ export default function DetailsPanel({
         </button>
       </div>
 
-      <div className="flex-1 space-y-8 overflow-y-auto p-6">
+      <div className="flex-1 space-y-6 overflow-y-auto p-6">
         <div>
-          <div className="mb-2 flex items-center gap-3">
-            <h2 className="text-2xl font-bold text-white">{node.title}</h2>
-          </div>
-          <div className="mb-4 font-mono text-sm text-blue-400">
-            {node.path}
-          </div>
+          <h2 className="mb-2 text-2xl font-bold text-white">{node.title}</h2>
+          <p className="mb-4 font-mono text-sm text-blue-400">{node.path}</p>
           <p className="text-sm leading-relaxed text-slate-400">
             {node.description}
           </p>
         </div>
 
-        <div className="space-y-3">
-          <h4 className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+        <div>
+          <h4 className="mb-3 text-xs font-bold tracking-wider text-slate-500 uppercase">
             Dependencies ({node.dependencies.length})
           </h4>
           <div className="space-y-2">
@@ -129,12 +115,12 @@ export default function DetailsPanel({
           </div>
         </div>
 
-        <div className="mt-4 border-t border-slate-800 pt-6">
+        <div className="border-t border-slate-800 pt-4">
           <h4 className="mb-3 text-xs font-bold tracking-wider text-slate-500 uppercase">
             Save Analysis
           </h4>
           <div className="mb-3 grid grid-cols-2 gap-3">
-            <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 p-3 text-slate-300 transition-all hover:bg-slate-700 hover:text-white">
+            <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 p-4 text-slate-300 transition-all hover:bg-slate-700 hover:text-white">
               <svg
                 className="h-5 w-5 text-slate-500 transition-colors group-hover:text-white"
                 fill="none"
