@@ -47,9 +47,9 @@ export class UploadController {
       // ZIP 파일 형식 문제는 클라이언트 에러
       if (
         error instanceof Error &&
-        (error.message.includes('invalid') ||
-          error.message.includes('corrupt') ||
-          error.message.includes('not a zip'))
+        (error.message.toLowerCase().includes('invalid') ||
+          error.message.toLowerCase().includes('corrupt') ||
+          error.message.toLowerCase().includes('signature not found'))
       ) {
         throw new BadRequestException('Invalid or corrupted ZIP file');
       }
