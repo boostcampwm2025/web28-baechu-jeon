@@ -26,22 +26,18 @@ export interface ZipParseResult {
 @Injectable()
 export class UploadService {
   async parseZipFile(file: Express.Multer.File): Promise<ZipParseResult> {
-    const projectId = randomUUID();
-
     try {
       const metadata = await this.readZipMetadata(file.path);
 
+      const projectId = randomUUID();
       // TODO: 메타데이터를 DB에 저장
       // await this.saveProject(projectId, metadata);
       console.log('프로젝트 ID:', projectId);
       console.log('메타데이터:', metadata);
 
-      await this.cleanupFile(file.path);
-
       return { projectId };
-    } catch (error) {
+    } finally {
       await this.cleanupFile(file.path);
-      throw error;
     }
   }
 
