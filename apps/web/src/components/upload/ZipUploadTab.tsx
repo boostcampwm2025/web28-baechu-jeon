@@ -1,28 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ZIP_UPLOAD, FILE_SIZE } from "@/constants/upload";
+import { uploadZipFile, UploadError } from "@/api/upload";
 
-interface ZipUploadTabProps {
-  onSubmit: (file: File) => void;
-  uploadError?: string | null;
-  isUploading?: boolean;
-  projectId?: string | null;
-  onAnalyze?: () => void;
-  onCancel?: () => void;
-}
-
-export default function ZipUploadTab({
-  onSubmit,
-  uploadError,
-  isUploading = false,
-  projectId = null,
-  onAnalyze,
-  onCancel,
-}: ZipUploadTabProps) {
+export default function ZipUploadTab() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [abortController, setAbortController] =
+    useState<AbortController | null>(null);
+  const router = useRouter();
 
   // 파일 유효성 검사 (확장자 및 크기 체크)
   const validateFile = (file: File): string | null => {
@@ -54,6 +46,38 @@ export default function ZipUploadTab({
     e.stopPropagation();
   };
 
+  const handleUpload = async (file: File) => {
+    setUploadError(null);
+    setIsUploading(true);
+    setProjectId(null);
+
+    const controller = new AbortController();
+    setAbortController(controller);
+
+    try {
+      const result = await uploadZipFile(file, controller.signal);
+      setProjectId(result.projectId);
+    } catch (error) {
+      // 취소된 경우 에러 메시지 표시하지 않음
+      if (
+        error instanceof UploadError &&
+        error.message === "Upload cancelled"
+      ) {
+        return;
+      }
+
+      const errorMessage =
+        error instanceof UploadError || error instanceof Error
+          ? error.message
+          : "파일 업로드 중 오류가 발생했습니다.";
+
+      setUploadError(errorMessage);
+    } finally {
+      setIsUploading(false);
+      setAbortController(null);
+    }
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -71,7 +95,7 @@ export default function ZipUploadTab({
     } else {
       setError(null);
       setSelectedFile(file);
-      onSubmit(file);
+      handleUpload(file);
     }
   };
 
@@ -88,17 +112,31 @@ export default function ZipUploadTab({
     } else {
       setError(null);
       setSelectedFile(file);
-      onSubmit(file);
+      handleUpload(file);
     }
   };
 
   const handleRemoveFile = () => {
     // 업로드 중이면 취소
-    if ((isUploading && onCancel) || (projectId && onCancel)) {
-      onCancel();
+    if (abortController) {
+      abortController.abort();
+      setIsUploading(false);
+      setAbortController(null);
+      setSelectedFile(null);
+      setError(null);
+      return;
     }
+
+    // 서버에 업로드를 마쳤는데, cancel을 한 경우
+    setProjectId(null);
     setSelectedFile(null);
     setError(null);
+  };
+
+  const handleAnalyze = () => {
+    if (projectId) {
+      router.push(`/analyzing?projectId=${encodeURIComponent(projectId)}`);
+    }
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -269,7 +307,7 @@ export default function ZipUploadTab({
 
       {/* 분석 시작하기 버튼 - 업로드 성공 시 활성화 */}
       <button
-        onClick={onAnalyze}
+        onClick={handleAnalyze}
         disabled={!projectId || isUploading}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-sm transition-all hover:bg-blue-600 hover:shadow-md disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
       >

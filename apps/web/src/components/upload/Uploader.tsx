@@ -1,85 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import ZipUploadTab from "./ZipUploadTab";
 import GithubUploadTab from "./GithubUploadTab";
 import { TAB_LABELS } from "@/constants/upload";
-import { uploadZipFile, UploadError } from "@/api/upload";
 
 type UploadTab = "zip" | "github";
 
 export default function Uploader() {
   const [activeTab, setActiveTab] = useState<UploadTab>("zip");
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [zipProjectId, setZipProjectId] = useState<string | null>(null);
-  const [githubProjectId, setGithubProjectId] = useState<string | null>(null);
-  const [abortController, setAbortController] =
-    useState<AbortController | null>(null);
-  const router = useRouter();
-
-  const handleZipSubmit = async (file: File) => {
-    setUploadError(null);
-    setIsUploading(true);
-    setZipProjectId(null);
-
-    const controller = new AbortController();
-    setAbortController(controller);
-
-    try {
-      const result = await uploadZipFile(file, controller.signal);
-      setZipProjectId(result.projectId);
-    } catch (error) {
-      // 취소된 경우 에러 메시지 표시하지 않음
-      if (
-        error instanceof UploadError &&
-        error.message === "Upload cancelled"
-      ) {
-        return;
-      }
-
-      const errorMessage =
-        error instanceof UploadError || error instanceof Error
-          ? error.message
-          : "파일 업로드 중 오류가 발생했습니다.";
-
-      setUploadError(errorMessage);
-    } finally {
-      setIsUploading(false);
-      setAbortController(null);
-    }
-  };
-
-  const handleCancelUpload = () => {
-    if (abortController) {
-      abortController.abort();
-      setIsUploading(false);
-      setAbortController(null);
-      return;
-    }
-
-    // 서버에 업로드를 마쳤는데, cancel을 한 경우
-    setZipProjectId(null);
-  };
-
-  const handleGithubSubmit = (url: string) => {
-    setGithubProjectId(url);
-  };
-
-  const handleZipAnalyze = () => {
-    if (zipProjectId) {
-      router.push(`/analyzing?projectId=${encodeURIComponent(zipProjectId)}`);
-    }
-  };
-
-  const handleGithubAnalyze = () => {
-    if (githubProjectId) {
-      router.push(
-        `/analyzing?projectId=${encodeURIComponent(githubProjectId)}`,
-      );
-    }
-  };
 
   return (
     <div className="mx-auto w-full max-w-2xl rounded-2xl bg-white p-8 shadow-sm">
@@ -124,29 +53,7 @@ export default function Uploader() {
       </div>
 
       {/* 탭 콘텐츠 */}
-      {activeTab === "zip" ? (
-        <ZipUploadTab
-          onSubmit={handleZipSubmit}
-          uploadError={uploadError}
-          isUploading={isUploading}
-          projectId={zipProjectId}
-          onAnalyze={handleZipAnalyze}
-          onCancel={handleCancelUpload}
-        />
-      ) : (
-        <GithubUploadTab
-          onSubmit={handleGithubSubmit}
-          projectId={githubProjectId}
-          onAnalyze={handleGithubAnalyze}
-        />
-      )}
-
-      {/* 에러 메시지 표시 (선택 사항: UI에 추가하고 싶을 경우) */}
-      {uploadError && (
-        <div className="mt-4 text-center text-sm text-red-500">
-          {uploadError}
-        </div>
-      )}
+      {activeTab === "zip" ? <ZipUploadTab /> : <GithubUploadTab />}
     </div>
   );
 }

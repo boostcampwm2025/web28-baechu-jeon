@@ -1,20 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { GITHUB_UPLOAD } from "@/constants/upload";
 
-interface GithubUploadTabProps {
-  onSubmit: (url: string) => void;
-  projectId?: string | null;
-  onAnalyze?: () => void;
-}
-
-export default function GithubUploadTab({
-  onSubmit,
-  projectId = null,
-  onAnalyze,
-}: GithubUploadTabProps) {
+export default function GithubUploadTab() {
   const [githubUrl, setGithubUrl] = useState<string>("");
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
@@ -23,7 +16,13 @@ export default function GithubUploadTab({
 
   const handleConfirm = () => {
     if (githubUrl && !projectId) {
-      onSubmit(githubUrl);
+      setProjectId(githubUrl);
+    }
+  };
+
+  const handleAnalyze = () => {
+    if (projectId) {
+      router.push(`/analyzing?projectId=${encodeURIComponent(projectId)}`);
     }
   };
 
@@ -114,7 +113,7 @@ export default function GithubUploadTab({
 
       {/* 분석 시작하기 버튼 - 항상 표시, URL 확인 시 활성화 */}
       <button
-        onClick={onAnalyze}
+        onClick={handleAnalyze}
         disabled={!projectId}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-sm transition-all hover:bg-blue-600 hover:shadow-md disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
       >
