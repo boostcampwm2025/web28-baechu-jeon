@@ -3,8 +3,8 @@ import {
   Post,
   UploadedFile,
   UseInterceptors,
-  HttpException,
-  HttpStatus,
+  BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './upload.service';
@@ -22,10 +22,7 @@ export class UploadController {
       fileFilter: (req, file, cb) => {
         if (!file.originalname.endsWith('.zip')) {
           return cb(
-            new HttpException(
-              'Only ZIP files are allowed',
-              HttpStatus.BAD_REQUEST,
-            ),
+            new BadRequestException('Only ZIP files are allowed'),
             false,
           );
         }
@@ -35,7 +32,7 @@ export class UploadController {
   )
   async uploadZip(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      throw new HttpException('No file uploaded', HttpStatus.BAD_REQUEST);
+      throw new BadRequestException('No file uploaded');
     }
 
     try {
@@ -45,9 +42,20 @@ export class UploadController {
         projectId,
       };
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to process ZIP file';
-      throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('ZIP file processing failed:', error);
+
+      // ZIP 파일 형식 문제는 클라이언트 에러
+      if (
+        error instanceof Error &&
+        (error.message.includes('invalid') ||
+          error.message.includes('corrupt') ||
+          error.message.includes('not a zip'))
+      ) {
+        throw new BadRequestException('Invalid or corrupted ZIP file');
+      }
+
+      // 그 외는 서버 에러
+      throw new InternalServerErrorException('Failed to process ZIP file');
     }
   }
 }
