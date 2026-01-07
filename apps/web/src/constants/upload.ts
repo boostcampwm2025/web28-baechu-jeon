@@ -5,7 +5,7 @@ export const TAB_LABELS = {
 
 export const ZIP_UPLOAD = {
   DRAG_DROP_TITLE: "드래그앤드롭",
-  DRAG_DROP_SUBTITLE: "또는 클릭하여 파일 선택 (ZIP)",
+  DRAG_DROP_SUBTITLE: "또는 클릭하여 파일 선택 (ZIP, 최대 300MB)",
   FILE_EXTENSION: ".zip",
   UPLOAD_READY: "업로드 준비",
   WARNING_TITLE: "압축드린 파일은 분석 후 즉시 파기됩니다.",
