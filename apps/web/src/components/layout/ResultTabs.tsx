@@ -20,23 +20,39 @@ export default function ResultTabs() {
 
   return (
     <nav className="flex items-center gap-1 rounded-lg border-2 border-sky-100 bg-sky-50 p-1 shadow-sm">
-      {tabs.map((tab) => {
-        const isActive = pathname?.includes(tab.id);
-
-        return (
-          <Link
-            key={tab.id}
-            href={tab.href}
-            className={`rounded-lg px-5 py-1.5 text-sm font-semibold transition-all ${
-              isActive
-                ? "border border-sky-200 bg-white text-sky-500 shadow-sm"
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-            }`}
-          >
-            {tab.label}
-          </Link>
-        );
-      })}
+      {tabs.map((tab) => (
+        <TabLink
+          key={tab.id}
+          href={tab.href}
+          label={tab.label}
+          isActive={pathname === tab.href}
+        />
+      ))}
     </nav>
+  );
+}
+
+function TabLink({
+  href,
+  label,
+  isActive,
+}: {
+  href: string;
+  label: string;
+  isActive: boolean;
+}) {
+  const baseStyles =
+    "rounded-lg px-5 py-1.5 text-sm font-semibold transition-all";
+  const activeStyles = "border border-sky-200 bg-white text-sky-500 shadow-sm";
+  const inactiveStyles =
+    "text-slate-500 hover:bg-slate-50 hover:text-slate-900";
+
+  return (
+    <Link
+      href={href}
+      className={`${baseStyles} ${isActive ? activeStyles : inactiveStyles}`}
+    >
+      {label}
+    </Link>
   );
 }
