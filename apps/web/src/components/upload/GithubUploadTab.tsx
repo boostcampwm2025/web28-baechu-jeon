@@ -22,7 +22,7 @@ export default function GithubUploadTab() {
 
   const handleAnalyze = () => {
     if (projectId) {
-      router.push(`/analyzing?projectId=${encodeURIComponent(projectId)}`);
+      router.push(`/analyzing/${encodeURIComponent(projectId)}`);
     }
   };
 

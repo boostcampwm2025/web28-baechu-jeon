@@ -1,3 +1,5 @@
+import Uploader from "@/components/upload/Uploader";
+
 export default function Home() {
   return (
     <main className="overflow-y-auto bg-sky-50">
@@ -15,7 +17,7 @@ export default function Home() {
         </p>
       </section>
 
-      {/* TODO: 업로드 영역 */}
+      <Uploader />
 
       <section className="mx-auto max-w-5xl px-6 pb-24">
         <div className="relative overflow-hidden rounded-3xl border border-sky-100 bg-white p-12 shadow-sm md:p-16">

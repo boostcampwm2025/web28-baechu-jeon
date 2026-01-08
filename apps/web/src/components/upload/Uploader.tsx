@@ -11,7 +11,7 @@ export default function Uploader() {
   const [activeTab, setActiveTab] = useState<UploadTab>("zip");
 
   return (
-    <div className="mx-auto w-full max-w-2xl rounded-2xl bg-white p-8 shadow-sm">
+    <div className="mx-auto mb-16 w-full max-w-2xl rounded-2xl bg-white p-8 shadow-sm">
       {/* 탭 메뉴 */}
       <div className="mb-6 flex gap-3">
         <button
