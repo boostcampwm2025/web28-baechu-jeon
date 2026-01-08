@@ -20,7 +20,7 @@ export default function ResultLayout({
             : "w-0 -translate-x-full opacity-0"
         } `}
       >
-        <div className="custom-scrollbar h-full w-72 overflow-y-auto">
+        <div className="custom-scrollbar h-full overflow-y-auto">
           <FolderExplorer onClose={() => setIsExplorerOpen(false)} />
         </div>
       </aside>
