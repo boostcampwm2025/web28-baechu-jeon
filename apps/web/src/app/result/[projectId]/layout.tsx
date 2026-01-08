@@ -7,7 +7,6 @@ export default function ResultLayout({
   children,
 }: {
   children: React.ReactNode;
-  params: { projectId: string };
 }) {
   const [isExplorerOpen, setIsExplorerOpen] = useState(true);
 

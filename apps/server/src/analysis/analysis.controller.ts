@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { AnalysisService } from './analysis.service';
 
-@Controller('api/analysis')
+@Controller('analysis')
 export class AnalysisController {
   constructor(private readonly analysisService: AnalysisService) {}
 
