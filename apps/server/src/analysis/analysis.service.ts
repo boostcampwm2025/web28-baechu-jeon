@@ -6,14 +6,21 @@ export enum AnalysisStatus {
   COMPLETED = 'completed',
 }
 
+export enum AnalysisStep {
+  PREPROCESSING = 'preprocessing',
+  DEPENDENCY_ANALYSIS = 'dependency_analysis',
+  AI_ANALYSIS = 'ai_analysis',
+  RESULT_GENERATION = 'result_generation',
+}
+
 @Injectable()
 export class AnalysisService {
   // 분석 단계 목록 (업로드는 별도 API로 완료된 후 분석 시작)
   private readonly analysisSteps = [
-    '폴더 구조 전처리 중...',
-    '의존성 분석 중...',
-    'AI 분석 중...',
-    '결과 생성 중...',
+    AnalysisStep.PREPROCESSING,
+    AnalysisStep.DEPENDENCY_ANALYSIS,
+    AnalysisStep.AI_ANALYSIS,
+    AnalysisStep.RESULT_GENERATION,
   ];
 
   /**
@@ -25,7 +32,7 @@ export class AnalysisService {
    */
   getStatusStream(projectId: string): Observable<{
     status: AnalysisStatus;
-    currentStep: string;
+    currentStep: AnalysisStep | null;
     projectId: string;
   }> {
     let stepIndex = 0;
@@ -37,7 +44,7 @@ export class AnalysisService {
         if (stepIndex >= this.analysisSteps.length) {
           return {
             status: AnalysisStatus.COMPLETED,
-            currentStep: '분석 완료',
+            currentStep: null,
             projectId,
           };
         }

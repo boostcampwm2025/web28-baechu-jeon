@@ -7,6 +7,22 @@ import ProgressBar from "@/components/analyzing/ProgressBar";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
+// 분석 단계 enum
+enum AnalysisStep {
+  PREPROCESSING = 'preprocessing',
+  DEPENDENCY_ANALYSIS = 'dependency_analysis',
+  AI_ANALYSIS = 'ai_analysis',
+  RESULT_GENERATION = 'result_generation',
+}
+
+
+const STEP_MESSAGES: Record<AnalysisStep, string> = {
+  [AnalysisStep.PREPROCESSING]: '폴더 구조 전처리 중...',
+  [AnalysisStep.DEPENDENCY_ANALYSIS]: '의존성 분석 중...',
+  [AnalysisStep.AI_ANALYSIS]: 'AI 분석 중...',
+  [AnalysisStep.RESULT_GENERATION]: '결과 생성 중...',
+};
+
 export default function AnalyzingPage({
   params,
 }: {
@@ -34,7 +50,13 @@ export default function AnalyzingPage({
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        setCurrentStep(data.currentStep);
+        
+        // currentStep이 enum 값이면 매핑된 문구로 변환
+        if (data.currentStep && STEP_MESSAGES[data.currentStep as AnalysisStep]) {
+          setCurrentStep(STEP_MESSAGES[data.currentStep as AnalysisStep]);
+        } else if (data.status === "completed") {
+          setCurrentStep("분석 완료");
+        }
 
         // 분석 완료 시 결과 페이지로 이동
         if (data.status === "completed") {
@@ -87,4 +109,3 @@ export default function AnalyzingPage({
     </div>
   );
 }
-
