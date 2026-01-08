@@ -136,7 +136,7 @@ export function useZipUpload() {
 
   const handleAnalyze = () => {
     if (projectId) {
-      router.push(`/analyzing?projectId=${encodeURIComponent(projectId)}`);
+      router.push(`/analyzing/${encodeURIComponent(projectId)}`);
     }
   };
 
