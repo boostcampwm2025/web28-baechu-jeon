@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Observable, interval, map } from 'rxjs';
+import { Observable, interval, map, take } from 'rxjs';
+
+export enum AnalysisStatus {
+  PROCESSING = 'processing',
+  COMPLETED = 'completed',
+}
 
 @Injectable()
 export class AnalysisService {
@@ -19,18 +24,19 @@ export class AnalysisService {
    * @returns 분석 상태 Observable
    */
   getStatusStream(projectId: string): Observable<{
-    status: string;
+    status: AnalysisStatus;
     currentStep: string;
     projectId: string;
   }> {
     let stepIndex = 0;
 
     return interval(2000).pipe(
+      take(this.analysisSteps.length + 1), // 모든 단계 + 완료 상태까지 emit 후 종료
       map(() => {
         // 모든 단계 완료
         if (stepIndex >= this.analysisSteps.length) {
           return {
-            status: 'completed',
+            status: AnalysisStatus.COMPLETED,
             currentStep: '분석 완료',
             projectId,
           };
@@ -40,7 +46,7 @@ export class AnalysisService {
         stepIndex++;
 
         return {
-          status: 'processing',
+          status: AnalysisStatus.PROCESSING,
           currentStep,
           projectId,
         };
