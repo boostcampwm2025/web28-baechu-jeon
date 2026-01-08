@@ -39,7 +39,7 @@ export default function AnalyzingPage({
         // 분석 완료 시 결과 페이지로 이동
         if (data.status === "completed") {
           eventSource.close();
-          router.push(`/result/${projectId}`);
+          router.replace(`/result/${projectId}`);
         }
       } catch (error) {
         console.error("Failed to parse SSE data:", error);
