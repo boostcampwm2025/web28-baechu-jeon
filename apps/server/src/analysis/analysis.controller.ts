@@ -15,14 +15,9 @@ export class AnalysisController {
   @Sse(':projectId/stream')
   streamAnalysisStatus(
     @Param('projectId') projectId: string,
-  ): Observable<MessageEvent> {
-    return this.analysisService.getStatusStream(projectId).pipe(
-      map(
-        (data) =>
-          new MessageEvent('message', {
-            data: JSON.stringify(data),
-          }),
-      ),
-    );
+  ): Observable<{ data: any }> {
+    return this.analysisService
+      .getStatusStream(projectId)
+      .pipe(map((data) => ({ data })));
   }
 }
