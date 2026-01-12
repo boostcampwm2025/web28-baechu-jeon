@@ -1,0 +1,15 @@
+// Project 테이블 스키마
+
+model Project {
+  id        String   @id @default(uuid()) @db.Uuid
+  title     String   @db.VarChar
+  structure Json     @db.JsonB
+  files     Json     @db.JsonB
+  status    String   @db.VarChar
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  analysisResults AnalysisResult[]
+  visualizations  Visualization[]
+
+  @@map("projects")
+}
