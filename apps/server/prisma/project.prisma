@@ -1,12 +1,19 @@
 // Project 테이블 스키마
 
+enum ProjectStatus {
+  UPLOADED   // 업로드 완료
+  ANALYZING  // 분석 중
+  COMPLETED  // 분석 완료
+  FAILED     // 분석 실패 시
+}
+
 model Project {
-  id        String   @id @default(uuid()) @db.Uuid
-  title     String   @db.VarChar
-  structure Json     @db.JsonB
-  files     Json     @db.JsonB
-  status    String   @db.VarChar
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  id        String        @id @default(uuid()) @db.Uuid
+  title     String        @db.VarChar
+  structure Json          @db.JsonB
+  files     Json          @db.JsonB
+  status    ProjectStatus @default(UPLOADED) // 기본값을 UPLOADED로 설정
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamp
 
   analysisResults AnalysisResult[]
   visualizations  Visualization[]
