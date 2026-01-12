@@ -4,22 +4,21 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ProgressBar from "@/components/analyzing/ProgressBar";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // 분석 단계 enum
 enum AnalysisStep {
-  PREPROCESSING = 'preprocessing',
-  DEPENDENCY_ANALYSIS = 'dependency_analysis',
-  AI_ANALYSIS = 'ai_analysis',
-  RESULT_GENERATION = 'result_generation',
+  PREPROCESSING = "preprocessing",
+  DEPENDENCY_ANALYSIS = "dependency_analysis",
+  AI_ANALYSIS = "ai_analysis",
+  RESULT_GENERATION = "result_generation",
 }
 
 const STEP_MESSAGES: Record<AnalysisStep, string> = {
-  [AnalysisStep.PREPROCESSING]: '폴더 구조 전처리 중...',
-  [AnalysisStep.DEPENDENCY_ANALYSIS]: '의존성 분석 중...',
-  [AnalysisStep.AI_ANALYSIS]: 'AI 분석 중...',
-  [AnalysisStep.RESULT_GENERATION]: '결과 생성 중...',
+  [AnalysisStep.PREPROCESSING]: "폴더 구조 전처리 중...",
+  [AnalysisStep.DEPENDENCY_ANALYSIS]: "의존성 분석 중...",
+  [AnalysisStep.AI_ANALYSIS]: "AI 분석 중...",
+  [AnalysisStep.RESULT_GENERATION]: "결과 생성 중...",
 };
 
 interface AnalyzingViewProps {
@@ -33,7 +32,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
   // SSE 연결 및 실시간 상태 업데이트
   useEffect(() => {
     const eventSource = new EventSource(
-      `${API_BASE_URL}/api/analysis/${projectId}/stream`,
+      `${API_BASE_URL}/analysis/${projectId}/stream`,
     );
 
     eventSource.onmessage = (event) => {
@@ -41,7 +40,10 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
         const data = JSON.parse(event.data);
 
         // currentStep이 enum 값이면 매핑된 문구로 변환
-        if (data.currentStep && STEP_MESSAGES[data.currentStep as AnalysisStep]) {
+        if (
+          data.currentStep &&
+          STEP_MESSAGES[data.currentStep as AnalysisStep]
+        ) {
           setCurrentStep(STEP_MESSAGES[data.currentStep as AnalysisStep]);
         } else if (data.status === "completed") {
           setCurrentStep("분석 완료");
@@ -69,11 +71,11 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
   }, [projectId, router]);
 
   return (
-    <div className="h-full flex flex-col items-center justify-center bg-gray-50">
+    <div className="flex h-full flex-col items-center justify-center bg-gray-50">
       <div className="w-full max-w-2xl px-6">
         {/* 제목 영역 */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 text-3xl font-bold text-gray-900">
             Analyzing Project Structure...
           </h1>
           <p className="text-gray-600">
@@ -82,7 +84,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
         </div>
 
         {/* 프로그레스 바 영역 */}
-        <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="rounded-lg bg-white p-8 shadow-md">
           {/* 현재 분석 단계 표시 */}
           <p className="mb-4 text-center text-sm font-medium text-gray-700">
             {currentStep}
@@ -98,4 +100,3 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
     </div>
   );
 }
-

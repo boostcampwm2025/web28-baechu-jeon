@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { json } from "@codemirror/lang-json";
 
@@ -62,7 +62,7 @@ export default function JsonViewComponent() {
   };
 
   const handleReset = () => {
-    setJsonData({ reset: [] });
+    setJsonData({ layers: [] });
     console.log("JSON reset to initial state");
   };
 
