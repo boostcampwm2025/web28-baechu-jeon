@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { promisify } from 'util';
 import * as fs from 'fs';
-import { ZipParserService } from './zip-parser.service';
-import { ProjectStructureService } from './project-structure.service';
-import { GitignoreMatcherService } from './gitignore-matcher.service';
-import { PrismaService } from './prisma.service';
-import { Prisma } from '@prisma/client';
+import { ZipParserService } from './services/zip-parser.service';
+import { ProjectStructureService } from './services/project-structure.service';
+import { GitignoreMatcherService } from './services/gitignore-matcher.service';
+import { ProjectRepository } from './repositories/project.repository';
 
 const unlink = promisify(fs.unlink);
 
@@ -19,7 +18,7 @@ export class UploadService {
     private readonly zipParser: ZipParserService,
     private readonly projectStructure: ProjectStructureService,
     private readonly gitignoreMatcher: GitignoreMatcherService,
-    private readonly prisma: PrismaService,
+    private readonly projectRepository: ProjectRepository,
   ) {}
 
   async parseZipFile(file: Express.Multer.File): Promise<ZipParseResult> {
@@ -41,12 +40,10 @@ export class UploadService {
         );
 
       // 프로젝트 저장
-      const savedProject = await this.prisma.project.create({
-        data: {
-          title: file.originalname,
-          structure: structure as unknown as Prisma.InputJsonValue,
-          files: filesWithContent as unknown as Prisma.InputJsonValue,
-        },
+      const savedProject = await this.projectRepository.create({
+        title: file.originalname,
+        structure,
+        files: filesWithContent,
       });
 
       console.log('프로젝트 저장 완료');
