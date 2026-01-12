@@ -1,9 +1,14 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body } from '@nestjs/common';
 import { AiService } from './ai.service';
+import { ClovaProvider } from './providers/clova/clova.provider';
+import type { AIAnalysisRequest } from './types/ai-request.types';
 
 @Controller('ai')
 export class AiController {
-  constructor(private readonly aiService: AiService) {}
+  constructor(
+    private readonly aiService: AiService,
+    private readonly clovaProvider: ClovaProvider,
+  ) {}
 
   /**
    * AI 분석 결과 조회
@@ -13,5 +18,15 @@ export class AiController {
   @Get(':projectId/result')
   getAnalysisResult(@Param('projectId') projectId: string) {
     return this.aiService.getAnalysisResult(projectId);
+  }
+
+  /**
+   * Clova API 테스트 엔드포인트
+   * @param request 분석 요청 데이터
+   * @returns Clova API 응답
+   */
+  @Post('test/clova')
+  async testClova(@Body() request: AIAnalysisRequest) {
+    return await this.clovaProvider.analyze(request);
   }
 }
