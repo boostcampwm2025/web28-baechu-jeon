@@ -6,6 +6,7 @@ import { UploadService } from './upload.service';
 import { ZipParserService } from './zip-parser.service';
 import { ProjectStructureService } from './project-structure.service';
 import { GitignoreMatcherService } from './gitignore-matcher.service';
+import { PrismaService } from './prisma.service';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -34,6 +35,7 @@ if (!fs.existsSync(uploadDir)) {
     ZipParserService,
     ProjectStructureService,
     GitignoreMatcherService,
+    PrismaService,
   ],
 })
 export class UploadModule {}

@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { promisify } from 'util';
 import * as fs from 'fs';
-import { randomUUID } from 'crypto';
 import { ZipParserService } from './zip-parser.service';
 import { ProjectStructureService } from './project-structure.service';
 import { GitignoreMatcherService } from './gitignore-matcher.service';
+import { PrismaService } from './prisma.service';
+import { Prisma } from '@prisma/client';
 
 const unlink = promisify(fs.unlink);
 
@@ -18,6 +19,7 @@ export class UploadService {
     private readonly zipParser: ZipParserService,
     private readonly projectStructure: ProjectStructureService,
     private readonly gitignoreMatcher: GitignoreMatcherService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async parseZipFile(file: Express.Multer.File): Promise<ZipParseResult> {
@@ -38,14 +40,19 @@ export class UploadService {
           fileContents,
         );
 
-      const projectId = randomUUID();
-      // TODO: 구조를 DB에 저장
-      // await this.saveProject(projectId, structure, filesWithContent);
-      console.log('프로젝트 ID:', projectId);
-      console.log('프로젝트 구조:', structure);
-      console.log('파일 내용:', filesWithContent);
+      // 프로젝트 저장
+      const savedProject = await this.prisma.project.create({
+        data: {
+          title: file.originalname,
+          structure: structure as unknown as Prisma.InputJsonValue,
+          files: filesWithContent as unknown as Prisma.InputJsonValue,
+        },
+      });
 
-      return { projectId };
+      console.log('프로젝트 저장 완료');
+
+      // 저장된 결과에서 ID를 가져옴
+      return { projectId: savedProject.id };
     } finally {
       await this.cleanupFile(file.path);
     }
