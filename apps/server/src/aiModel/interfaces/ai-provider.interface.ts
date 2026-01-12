@@ -3,6 +3,7 @@ import { AIAnalysisResponse } from '../types/ai-response.types';
 
 /**
  * AI Provider 공통 인터페이스
+ * 모든 AI 모델 Provider는 이 인터페이스를 구현해야 합니다.
  */
 export interface AIProvider {
   /**

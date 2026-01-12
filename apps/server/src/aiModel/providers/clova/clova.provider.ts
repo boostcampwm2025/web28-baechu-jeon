@@ -17,7 +17,7 @@ export class ClovaProvider implements AIProvider {
    * @returns 분석 결과
    */
   async analyze(request: AIAnalysisRequest): Promise<AIAnalysisResponse> {
-    // 시스템 프롬프트와 유저 프롬프트
+    // 시스템 프롬프트와 유저 프롬프트 구성
     const { systemPrompt, userPrompt } = this.buildPrompts(request);
 
     // Clova API 호출
@@ -26,7 +26,7 @@ export class ClovaProvider implements AIProvider {
       userPrompt,
     );
 
-    // 응답 그대로 반환
+    // 응답을 그대로 반환
     return {
       projectId: request.projectId,
       result: apiResponse as Record<string, unknown>,
