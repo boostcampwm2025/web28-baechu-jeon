@@ -6,6 +6,11 @@ import { randomUUID } from 'crypto';
 
 const unlink = promisify(fs.unlink);
 
+export interface FileWithContent {
+  path: string;
+  content: string;
+}
+
 export interface ProjectStructure {
   folders: string[];
   files: string[];
@@ -24,13 +29,16 @@ export interface ZipParseResult {
 export class UploadService {
   async parseZipFile(file: Express.Multer.File): Promise<ZipParseResult> {
     try {
-      const structure = await this.readZipStructure(file.path);
+      const { structure, filesWithContent } = await this.readZipStructure(
+        file.path,
+      );
 
       const projectId = randomUUID();
       // TODO: 구조를 DB에 저장
-      // await this.saveProject(projectId, structure);
+      // await this.saveProject(projectId, structure, filesWithContent);
       console.log('프로젝트 ID:', projectId);
       console.log('프로젝트 구조:', structure);
+      console.log('파일 내용:', filesWithContent);
 
       return { projectId };
     } finally {
@@ -38,7 +46,26 @@ export class UploadService {
     }
   }
 
-  private async readZipStructure(zipPath: string): Promise<ProjectStructure> {
+  private async readZipStructure(zipPath: string): Promise<{
+    structure: ProjectStructure;
+    filesWithContent: FileWithContent[];
+  }> {
+    // 1st pass: 엔트리 목록과 .gitignore 수집
+    const { allEntries, gitignoreContent } = await this.collectEntries(zipPath);
+
+    // ignore 패턴 파싱
+    const ignorePatterns = this.parseGitignore(gitignoreContent);
+
+    // 2nd pass: 특정 파일 내용 읽기
+    const fileContents = await this.readFileContents(zipPath, allEntries);
+
+    // 프로젝트 구조 생성
+    return this.buildProjectStructure(allEntries, ignorePatterns, fileContents);
+  }
+
+  private async collectEntries(
+    zipPath: string,
+  ): Promise<{ allEntries: string[]; gitignoreContent: string | null }> {
     return new Promise((resolve, reject) => {
       const allEntries: string[] = [];
       let gitignoreContent: string | null = null;
@@ -77,12 +104,71 @@ export class UploadService {
         });
 
         zipfile.on('end', () => {
-          const ignorePatterns = this.parseGitignore(gitignoreContent);
-          const structure = this.buildProjectStructure(
-            allEntries,
-            ignorePatterns,
-          );
-          resolve(structure);
+          resolve({ allEntries, gitignoreContent });
+        });
+
+        zipfile.on('error', (error) => {
+          reject(error instanceof Error ? error : new Error(String(error)));
+        });
+      });
+    });
+  }
+
+  private shouldReadFileContent(fileName: string): boolean {
+    const lowerFileName = fileName.toLowerCase();
+
+    // 파일명에 특정 키워드가 포함되어 있는지 체크
+    const keywords = ['package', 'readme', 'config'];
+
+    return keywords.some((keyword) => lowerFileName.includes(keyword));
+  }
+
+  private async readFileContents(
+    zipPath: string,
+    allEntries: string[],
+  ): Promise<Map<string, string>> {
+    const fileContents = new Map<string, string>();
+
+    // 읽어야 할 파일들만 필터링
+    const filesToRead = allEntries.filter(
+      (entry) => !entry.endsWith('/') && this.shouldReadFileContent(entry),
+    );
+
+    if (filesToRead.length === 0) {
+      return fileContents;
+    }
+
+    return new Promise((resolve, reject) => {
+      yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
+        if (err) {
+          return reject(err instanceof Error ? err : new Error(String(err)));
+        }
+
+        zipfile.readEntry();
+
+        zipfile.on('entry', (entry: yauzl.Entry) => {
+          if (filesToRead.includes(entry.fileName)) {
+            zipfile.openReadStream(entry, (err, readStream) => {
+              if (err) {
+                zipfile.readEntry();
+                return;
+              }
+
+              const chunks: Buffer[] = [];
+              readStream.on('data', (chunk) => chunks.push(chunk));
+              readStream.on('end', () => {
+                const content = Buffer.concat(chunks).toString('utf8');
+                fileContents.set(entry.fileName, content);
+                zipfile.readEntry();
+              });
+            });
+          } else {
+            zipfile.readEntry();
+          }
+        });
+
+        zipfile.on('end', () => {
+          resolve(fileContents);
         });
 
         zipfile.on('error', (error) => {
@@ -143,9 +229,11 @@ export class UploadService {
   private buildProjectStructure(
     entries: string[],
     ignorePatterns: string[],
-  ): ProjectStructure {
+    fileContents: Map<string, string>,
+  ): { structure: ProjectStructure; filesWithContent: FileWithContent[] } {
     const folders = new Set<string>();
     const files: string[] = [];
+    const filesWithContent: FileWithContent[] = [];
     let maxDepth = 0;
 
     for (const entry of entries) {
@@ -166,6 +254,15 @@ export class UploadService {
         // 파일인 경우
         files.push(entry);
 
+        // 파일 내용이 있으면 filesWithContent에 추가
+        const content = fileContents.get(entry);
+        if (content) {
+          filesWithContent.push({
+            path: entry,
+            content: content,
+          });
+        }
+
         // 파일의 부모 폴더들을 모두 추출
         const parts = entry.split('/');
         for (let i = 0; i < parts.length - 1; i++) {
@@ -184,13 +281,18 @@ export class UploadService {
     }
 
     return {
-      folders: Array.from(folders).sort(),
-      files: files.sort(),
-      stats: {
-        maxDepth,
-        totalFolders: folders.size,
-        totalFiles: files.length,
+      structure: {
+        folders: Array.from(folders).sort(),
+        files: files.sort(),
+        stats: {
+          maxDepth,
+          totalFolders: folders.size,
+          totalFiles: files.length,
+        },
       },
+      filesWithContent: filesWithContent.sort((a, b) =>
+        a.path.localeCompare(b.path),
+      ),
     };
   }
 
