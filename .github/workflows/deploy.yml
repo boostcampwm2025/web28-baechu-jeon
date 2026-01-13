@@ -30,7 +30,7 @@ jobs:
           port: 22
           script: mkdir -p ~/web28-baechu-jeon
 
-      # docker-compose.yml 파일을 서버로
+      # docker-compose.yml, nginx.conf 파일을 서버로
       - name: Copy docker-compose to Server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
-          source: 'docker-compose.yml'
+          source: 'docker-compose.yml, nginx/nginx.conf'
           target: 'web28-baechu-jeon/'
 
       # 배포 실행
