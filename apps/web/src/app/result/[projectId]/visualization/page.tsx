@@ -2,17 +2,21 @@
 
 import { useState } from "react";
 import VisualizationView from "@/components/result/visualization/VisualizationView";
-import DetailsPanel from "@/components/result/visualization/DetailsPanel";
+import DetailsPanel, {
+  DetailsPanelProps,
+} from "@/components/result/visualization/DetailsPanel";
 
 export default function VisualizationPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const [selectedNode, setSelectedNode] = useState<any>(null);
+  const [selectedNode, setSelectedNode] = useState<
+    DetailsPanelProps["node"] | null
+  >(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
-  const handleNodeClick = (node: any) => {
+  const handleNodeClick = (node: DetailsPanelProps["node"]) => {
     setSelectedNode(node);
     setIsPanelOpen(true);
   };
@@ -32,7 +36,7 @@ export default function VisualizationPage({
       <DetailsPanel
         isOpen={isPanelOpen}
         onClose={handleClosePanel}
-        node={selectedNode}
+        node={selectedNode ?? undefined}
       />
     </div>
   );
