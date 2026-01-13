@@ -1,8 +1,6 @@
 services:
   web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
+    image: ghcr.io/${GITHUB_ACTOR}/repository-name/client:latest
     ports:
       - '${WEB_PORT}:${WEB_PORT}'
     environment:
@@ -21,9 +19,8 @@ services:
       - server
 
   server:
-    build:
-      context: .
-      dockerfile: apps/server/Dockerfile
+    # build 대신 image 사용
+    image: ghcr.io/${GITHUB_ACTOR}/repository-name/server:latest
     ports:
       - '${SERVER_PORT}:${SERVER_PORT}'
     environment:
