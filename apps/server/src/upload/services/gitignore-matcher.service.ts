@@ -17,15 +17,16 @@ export class GitignoreMatcherService {
   ];
 
   parseGitignore(content: string | null): string[] {
-    if (!content) {
-      return this.DEFAULT_PATTERNS;
-    }
+    const uploadPatterns = content
+      ? content
+          .split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line && !line.startsWith('#'))
+          .map((line) => line.replace(/^\//, ''))
+      : [];
 
-    return content
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line && !line.startsWith('#'))
-      .map((line) => line.replace(/^\//, ''));
+    const combinedPatterns = [...this.DEFAULT_PATTERNS, ...uploadPatterns];
+    return Array.from(new Set(combinedPatterns));
   }
 
   shouldIgnore(path: string, patterns: string[]): boolean {
