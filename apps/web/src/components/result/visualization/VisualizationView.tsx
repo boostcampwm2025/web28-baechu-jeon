@@ -1,19 +1,19 @@
 "use client";
 
 import NodeCard from "./NodeCard";
+import { DetailsPanelProps } from "./DetailsPanel";
 import { useState, useRef } from "react";
 
 interface VisualizationViewProps {
   projectId: string;
-  onNodeClick: (node: any) => void;
+  onNodeClick: (node: DetailsPanelProps["node"]) => void;
 }
 
 export default function VisualizationView({
-  projectId,
   onNodeClick,
 }: VisualizationViewProps) {
   const [zoom, setZoom] = useState(100);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [position] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 10, 200));
