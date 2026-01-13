@@ -3,6 +3,10 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { UploadController } from './upload.controller';
 import { UploadService } from './upload.service';
+import { ZipParserService } from './services/zip-parser.service';
+import { ProjectStructureService } from './services/project-structure.service';
+import { GitignoreMatcherService } from './services/gitignore-matcher.service';
+import { ProjectRepository } from './repositories/project.repository';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -26,6 +30,12 @@ if (!fs.existsSync(uploadDir)) {
     }),
   ],
   controllers: [UploadController],
-  providers: [UploadService],
+  providers: [
+    UploadService,
+    ZipParserService,
+    ProjectStructureService,
+    GitignoreMatcherService,
+    ProjectRepository,
+  ],
 })
 export class UploadModule {}
