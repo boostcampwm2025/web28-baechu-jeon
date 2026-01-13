@@ -1,6 +1,6 @@
 "use client";
 
-interface DetailsPanelProps {
+export interface DetailsPanelProps {
   isOpen: boolean;
   onClose: () => void;
   node?: {

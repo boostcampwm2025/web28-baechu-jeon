@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: ['main', 'dev']
+  pull_request:
+    branches: ['main', 'dev']
+
+# 중복 실행 방지: 동일 브랜치에 새 푸시가 오면 진행 중인 기존 작업은 취소
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: FE Lint & Type Check
+        run: pnpm turbo run lint check-types --filter=web
+
+      - name: FE Test
+        run: pnpm turbo run test --filter=web
+        continue-on-error: true # 현재 테스트 코드가 없으므로 실패해도 빌드 진행
+
+      - name: FE Build
+        run: pnpm turbo run build --filter=web
+
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: BE Lint & Type Check
+        run: pnpm turbo run lint check-types --filter=server
+
+      - name: BE Test
+        run: pnpm turbo run test --filter=server
+
+      - name: BE Build
+        run: pnpm turbo run build --filter=server
+
+  # Docker 이미지 빌드 및 푸시
+  build-docker-images:
+    name: Build & Push Docker Images
+    needs: [frontend-ci, backend-ci] # CI 테스트가 통과해야만 실행
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' # main 브랜치에 push 때만 실행
+    permissions:
+      contents: read
+      packages: write # 만들어진 이미지를 GHCR에 업로드할 수 있는 권한
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 레포지토리 이름을 소문자로 변환 (GHCR 주소용)
+      - name: Convert repo name to lowercase
+        id: repo
+        run: echo "name=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 클라이언트 이미지 빌드 및 푸시
+      - name: Build and push Client image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/web/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.repo.outputs.name }}/client:latest
+            ghcr.io/${{ steps.repo.outputs.name }}/client:${{ github.sha }}
+          cache-from: type=gha,scope=client
+          cache-to: type=gha,mode=max,scope=client
+
+      # 서버 이미지 빌드 및 푸시
+      - name: Build and push Server image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/server/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.repo.outputs.name }}/server:latest
+            ghcr.io/${{ steps.repo.outputs.name }}/server:${{ github.sha }}
+          cache-from: type=gha,scope=server
+          cache-to: type=gha,mode=max,scope=server
