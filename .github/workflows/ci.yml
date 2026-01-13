@@ -102,7 +102,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.client # TODO: Dockerfile 이름, 위치에 따라 변경
+          file: ./apps/web/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ steps.repo.outputs.name }}/client:latest
@@ -115,7 +115,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.server # TODO: Dockerfile 이름, 위치에 따라 변경
+          file: ./apps/server/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ steps.repo.outputs.name }}/server:latest
