@@ -72,10 +72,45 @@ export class ZipParserService {
     });
   }
 
+  /**
+   * AI 분석에 필요한 핵심 파일인지 확인하는 로직 (내용 수집 여부 결정)
+   */
   private shouldReadFileContent(fileName: string): boolean {
-    const lowerFileName = fileName.toLowerCase();
-    const keywords = ['package', 'readme', 'config'];
-    return keywords.some((keyword) => lowerFileName.includes(keyword));
+    // 1. 경로 정규화 (OS 구분자 대응) 및 소문자화
+    const normalizedPath = fileName.replace(/\\/g, '/').toLowerCase();
+    const parts = normalizedPath.split('/');
+
+    // 2. packages/ 폴더 내부는 무조건 제외
+    // parts 배열 중 어느 하나라도 packages라면 내용을 읽지 않음
+    if (parts.includes('packages')) {
+      return false;
+    }
+
+    // 3. 수집 대상 파일 정의
+    const name = parts[parts.length - 1];
+
+    // 테스트 관련 파일 (.spec, .test, e2e-spec)
+    const isTestFile = /\.(spec|test|e2e-spec)\.[tj]sx?$/.test(name);
+
+    // 테스트 전용 폴더 내부 파일들
+    const isInTestFolder = parts.some((p) =>
+      ['test', 'tests', '__tests__'].includes(p),
+    );
+
+    // 핵심 설정 및 문서 (package.json, README.md 등)
+    // 여기서 .md 파일 확장자 체크
+    const isDocumentOrConfig = name === 'package.json' || name.endsWith('.md');
+
+    // 기타 분석에 필요한 config 파일들 (필요시 추가)
+    // const configFiles = [
+    //   'turbo.json',
+    //   'nest-cli.json',
+    //   'vite.config.ts',
+    //   'tsconfig.json',
+    // ];
+    // const isMainConfig = configFiles.includes(name);
+
+    return isTestFile || isInTestFolder || isDocumentOrConfig;
   }
 
   private async readFileContents(
