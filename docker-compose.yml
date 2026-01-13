@@ -4,9 +4,9 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
     ports:
-      - '3001:3001'
+      - '${WEB_PORT}:${WEB_PORT}'
     environment:
-      - PORT=3001
+      - PORT=${WEB_PORT}
     depends_on:
       - server
 
@@ -25,21 +25,21 @@ services:
       context: .
       dockerfile: apps/server/Dockerfile
     ports:
-      - '3000:3000'
+      - '${SERVER_PORT}:${SERVER_PORT}'
     environment:
-      - PORT=3000
-      - DATABASE_URL=postgresql://postgres:password@db:5432/mydb?schema=public
+      - PORT=${SERVER_PORT}
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?schema=public
     depends_on:
       - db
 
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydb
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - '5432:5432'
+      - '${DB_PORT}:${DB_PORT}'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
