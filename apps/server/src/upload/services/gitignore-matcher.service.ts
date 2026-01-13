@@ -47,7 +47,7 @@ export class GitignoreMatcherService {
     return pathParts.includes(pattern.replace(/\/$/, ''));
   }
 
-  // 이제 parseGitignore는 .gitignore 파일의 내용만 순수하게 파싱합니다.
+  // 이제 parseGitignore는 .gitignore 파일의 내용만 순수하게 파싱.
   parseGitignore(content: string | null): string[] {
     if (!content) return [];
     return content
@@ -61,13 +61,13 @@ export class GitignoreMatcherService {
     const pathParts = path.split('/');
 
     // [1순위] DEFAULT_PATTERNS (절대 무시)
-    // 경로 어디에든 node_modules나 .git이 있으면 ALWAYS_INCLUDE 검사도 안 하고 바로 차단합니다.
+    // 경로 어디에든 node_modules나 .git이 있으면 ALWAYS_INCLUDE 검사도 안 하고 바로 차단.
     if (this.DEFAULT_PATTERNS.some((p) => this.isMatch(pathParts, p))) {
       return true;
     }
 
     // [2순위] ALWAYS_INCLUDE (화이트리스트)
-    // 1순위를 통과한(즉, node_modules가 아닌 곳에 있는) 중요 파일은 무조건 살립니다.
+    // 1순위를 통과한(즉, node_modules가 아닌 곳에 있는) 중요 파일은 살림.
     if (this.ALWAYS_INCLUDE.some((name) => pathParts.includes(name))) {
       return false;
     }
