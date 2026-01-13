@@ -1,7 +1,7 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { AiService } from './ai.service';
 
-@Controller('api/ai')
+@Controller('ai')
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
@@ -15,4 +15,3 @@ export class AiController {
     return this.aiService.getAnalysisResult(projectId);
   }
 }
-
