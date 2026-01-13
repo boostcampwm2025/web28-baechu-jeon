@@ -7,4 +7,3 @@ import { AiService } from './ai.service';
   providers: [AiService],
 })
 export class AiModule {}
-

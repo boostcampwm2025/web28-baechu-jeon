@@ -53,7 +53,7 @@ export class ZipParserService {
             }
 
             const chunks: Buffer[] = [];
-            readStream.on('data', (chunk) => chunks.push(chunk));
+            readStream.on('data', (chunk: Buffer) => chunks.push(chunk));
             readStream.on('end', () => {
               gitignoreContent = Buffer.concat(chunks).toString('utf8');
               zipfile.readEntry();
@@ -113,7 +113,7 @@ export class ZipParserService {
             }
 
             const chunks: Buffer[] = [];
-            readStream.on('data', (chunk) => chunks.push(chunk));
+            readStream.on('data', (chunk: Buffer) => chunks.push(chunk));
             readStream.on('end', () => {
               const content = Buffer.concat(chunks).toString('utf8');
               fileContents.set(entry.fileName, content);
