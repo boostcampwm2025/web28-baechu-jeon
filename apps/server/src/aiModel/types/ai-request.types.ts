@@ -9,6 +9,11 @@ export interface AIAnalysisRequest {
   projectId: string;
 
   /**
+   * AI 모델 (e.g., 'gemini', 'clova')
+   */
+  model?: string;
+
+  /**
    * 분석할 데이터 (형식은 나중에 구체화)
    */
   data: Record<string, unknown>;

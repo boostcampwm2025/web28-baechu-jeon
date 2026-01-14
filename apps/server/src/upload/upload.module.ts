@@ -7,6 +7,7 @@ import { ZipParserService } from './services/zip-parser.service';
 import { ProjectStructureService } from './services/project-structure.service';
 import { GitignoreMatcherService } from './services/gitignore-matcher.service';
 import { ProjectRepository } from './repositories/project.repository';
+import { AnalysisModule } from '../analysis/analysis.module';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -28,6 +29,7 @@ if (!fs.existsSync(uploadDir)) {
         },
       }),
     }),
+    AnalysisModule,
   ],
   controllers: [UploadController],
   providers: [
