@@ -6,7 +6,7 @@ import { useParams, usePathname } from "next/navigation";
 export default function ResultTabs() {
   const params = useParams();
   const pathname = usePathname();
-  const projectId = params?.id;
+  const projectId = params?.projectId;
 
   const tabs = [
     {
