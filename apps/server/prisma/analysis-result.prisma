@@ -2,7 +2,7 @@
 
 model AnalysisResult {
   id            String   @id @default(uuid()) @db.Uuid
-  projectId     String   @map("project_id") @db.Uuid
+  projectId     String   @unique @map("project_id") @db.Uuid
   originalJson  Json     @map("original_json") @db.JsonB
   currentJson   Json     @map("current_json") @db.JsonB
   aiAnalysis    Json     @map("ai_analysis") @db.JsonB

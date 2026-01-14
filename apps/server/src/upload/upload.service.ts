@@ -5,6 +5,7 @@ import { ZipParserService } from './services/zip-parser.service';
 import { ProjectStructureService } from './services/project-structure.service';
 import { GitignoreMatcherService } from './services/gitignore-matcher.service';
 import { ProjectRepository } from './repositories/project.repository';
+import { AnalysisService } from '../analysis/analysis.service';
 
 const unlink = promisify(fs.unlink);
 
@@ -19,6 +20,7 @@ export class UploadService {
     private readonly projectStructure: ProjectStructureService,
     private readonly gitignoreMatcher: GitignoreMatcherService,
     private readonly projectRepository: ProjectRepository,
+    private readonly analysisService: AnalysisService,
   ) {}
 
   async parseZipFile(file: Express.Multer.File): Promise<ZipParseResult> {
@@ -47,6 +49,9 @@ export class UploadService {
       });
 
       console.log('프로젝트 저장 완료');
+
+      // AI 분석 시작
+      this.analysisService.startAiAnalysis(savedProject.id);
 
       // 저장된 결과에서 ID를 가져옴
       return { projectId: savedProject.id };

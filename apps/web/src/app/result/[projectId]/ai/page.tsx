@@ -1,6 +1,4 @@
-import AiAnalysisView from "@/components/result/ai/AiAnalysisView";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+import { getAiAnalysisResult } from '@/api/analysis';
 
 export default async function AiAnalysisPage({
   params,
@@ -9,20 +7,11 @@ export default async function AiAnalysisPage({
 }) {
   const { projectId } = await params;
 
-  // 백엔드 API 호출
-  let data;
+  let aiAnalysisJson: string;
   try {
-    const response = await fetch(`${API_BASE_URL}/ai/${projectId}/result`, {
-      cache: "no-store", // 항상 최신 데이터 가져오기
-    });
-
-    if (!response.ok) {
-      throw new Error(`API 호출 실패: ${response.status}`);
-    }
-
-    data = await response.json();
+    const data = await getAiAnalysisResult(projectId);
+    aiAnalysisJson = JSON.stringify(data, null, 2);
   } catch (error) {
-    // 에러 발생 시 에러 메시지 표시
     return (
       <div className="p-6">
         <div className="mb-6">
@@ -61,7 +50,9 @@ export default async function AiAnalysisPage({
         </p>
       </div>
 
-      <AiAnalysisView data={data} />
+      <div className="overflow-auto rounded-lg bg-gray-800 p-4 font-mono text-sm text-green-300 shadow-md">
+        <pre>{aiAnalysisJson}</pre>
+      </div>
     </div>
   );
 }
