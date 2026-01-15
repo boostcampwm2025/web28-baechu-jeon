@@ -7,6 +7,15 @@ import {
   AIProviderTimeoutError,
 } from '../../types/ai-error.types';
 
+interface GeminiCallResult {
+  text: string;
+  usage: {
+    promptTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  } | null;
+}
+
 /**
  * Gemini API 클라이언트 서비스 (SDK 사용)
  */
@@ -41,29 +50,39 @@ export class GeminiService {
    * @param userPrompt 유저 프롬프트 (변하는 데이터)
    * @returns API 응답
    */
-  async callAPI(systemPrompt: string, userPrompt: string): Promise<unknown> {
+  async callAPI(
+    systemPrompt: string,
+    userPrompt: string,
+  ): Promise<GeminiCallResult> {
     try {
       const response = await this.ai.models.generateContent({
         model: this.model,
         contents: userPrompt,
         config: {
           systemInstruction: systemPrompt,
-          // 일관된 JSON 응답을 위한 생성 파라미터 설정
-          temperature: 0.2, // 낮은 값으로 일관성 확보
-          topK: 10, // 상위 10개 토큰만 고려
-          topP: 0.3, // 누적 확률 30%까지 고려
+          temperature: 0.2,
+          topK: 10,
+          topP: 0.3,
         },
       });
 
-      return response;
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+
+      const usage = response.usageMetadata
+        ? {
+            promptTokens: response.usageMetadata.promptTokenCount ?? 0,
+            outputTokens: response.usageMetadata.candidatesTokenCount ?? 0,
+            totalTokens: response.usageMetadata.totalTokenCount ?? 0,
+          }
+        : null;
+
+      return { text, usage };
     } catch (error: unknown) {
       if (error instanceof Error) {
-        // 타임아웃 에러 처리
         if (error.message.includes('timeout')) {
           throw new AIProviderTimeoutError('gemini', 30000);
         }
 
-        // API 에러 처리
         throw new AIProviderApiError('gemini', 500, error.message, error);
       }
 

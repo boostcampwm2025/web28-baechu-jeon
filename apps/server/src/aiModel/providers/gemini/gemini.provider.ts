@@ -38,10 +38,14 @@ export class GeminiProvider implements AIProvider {
         step2UserPrompt,
       );
       console.log(`[GeminiProvider] Step 2: API response received`);
+      console.log(
+        `[GeminiProvider] Step 2: token usage`,
+        step2ApiResponse.usage,
+      );
 
       // 2단계 결과에서 텍스트 추출 및 파싱
       console.log(`[GeminiProvider] Step 2: Extracting text from response...`);
-      const step2Result = this.extractTextFromResponse(step2ApiResponse);
+      const step2Result = step2ApiResponse.text;
       console.log(
         `[GeminiProvider] Step 2: Extracted text length: ${step2Result.length}`,
       );
@@ -84,10 +88,14 @@ export class GeminiProvider implements AIProvider {
         step3UserPrompt,
       );
       console.log(`[GeminiProvider] Step 3: API response received`);
+      console.log(
+        `[GeminiProvider] Step 3: token usage`,
+        step3ApiResponse.usage,
+      );
 
       // 3단계 결과에서 텍스트 추출 및 파싱
       console.log(`[GeminiProvider] Step 3: Extracting text from response...`);
-      const step3Result = this.extractTextFromResponse(step3ApiResponse);
+      const step3Result = step3ApiResponse.text;
       console.log(
         `[GeminiProvider] Step 3: Extracted text length: ${step3Result.length}`,
       );
@@ -134,10 +142,14 @@ export class GeminiProvider implements AIProvider {
         step4UserPrompt,
       );
       console.log(`[GeminiProvider] Step 4: API response received`);
+      console.log(
+        `[GeminiProvider] Step 4: token usage`,
+        step4ApiResponse.usage,
+      );
 
       // 4단계 결과에서 텍스트 추출 및 파싱
       console.log(`[GeminiProvider] Step 4: Extracting text from response...`);
-      const step4Result = this.extractTextFromResponse(step4ApiResponse);
+      const step4Result = step4ApiResponse.text;
       console.log(
         `[GeminiProvider] Step 4: Extracted text length: ${step4Result.length}`,
       );
