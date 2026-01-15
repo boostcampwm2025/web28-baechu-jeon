@@ -50,8 +50,13 @@ export class UploadService {
 
       console.log('프로젝트 저장 완료');
 
-      // AI 분석 시작
-      this.analysisService.startAiAnalysis(savedProject.id);
+      // AI 분석 시작 (비동기로 실행, 에러는 내부에서 처리)
+      this.analysisService.startAiAnalysis(savedProject.id).catch((error) => {
+        console.error(
+          `[UploadService] AI analysis failed for project ${savedProject.id}:`,
+          error,
+        );
+      });
 
       // 저장된 결과에서 ID를 가져옴
       return { projectId: savedProject.id };

@@ -48,6 +48,10 @@ export class GeminiService {
         contents: userPrompt,
         config: {
           systemInstruction: systemPrompt,
+          // 일관된 JSON 응답을 위한 생성 파라미터 설정
+          temperature: 0.2, // 낮은 값으로 일관성 확보
+          topK: 10, // 상위 10개 토큰만 고려
+          topP: 0.3, // 누적 확률 30%까지 고려
         },
       });
 
