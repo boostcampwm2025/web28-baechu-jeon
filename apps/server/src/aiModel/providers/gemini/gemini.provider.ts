@@ -28,6 +28,7 @@ export class GeminiProvider implements AIProvider {
 
       // 1단계: 2단계 분석 실행
       console.log(`[GeminiProvider] Step 2: Building prompts...`);
+      console.time('Step 2'); // Step 2 시작
       const { systemPrompt: step2SystemPrompt, userPrompt: step2UserPrompt } =
         await this.buildPromptsStep2(request);
 
@@ -62,6 +63,7 @@ export class GeminiProvider implements AIProvider {
         );
         step2ParsedResult = step2Result;
       }
+      console.timeEnd('Step 2'); // Step 2 종료, 시간 출력
 
       // 2단계: 3단계 분석 실행 (2단계 결과 + 파일 목록 + 파일 내용 포함)
       // Rate limit 방지를 위해 잠시 대기
@@ -69,6 +71,7 @@ export class GeminiProvider implements AIProvider {
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       console.log(`[GeminiProvider] Step 3: Building prompts...`);
+      console.time('Step 3'); // Step 3 시작
       const { systemPrompt: step3SystemPrompt, userPrompt: step3UserPrompt } =
         await this.buildPromptsStep3(request, step2ParsedResult);
 
@@ -106,6 +109,7 @@ export class GeminiProvider implements AIProvider {
         );
         step3ParsedResult = step3Result;
       }
+      console.timeEnd('Step 3'); // Step 3 종료, 시간 출력
 
       // 4단계 분석 실행 (3단계 결과 + 파일 목록 + 파일 내용 포함)
       // Rate limit 방지를 위해 잠시 대기
@@ -113,6 +117,7 @@ export class GeminiProvider implements AIProvider {
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       console.log(`[GeminiProvider] Step 4: Building prompts...`);
+      console.time('Step 4'); // Step 4, 5 시작
       const { systemPrompt: step4SystemPrompt, userPrompt: step4UserPrompt } =
         await this.buildPromptsStep4(
           request,
@@ -154,6 +159,7 @@ export class GeminiProvider implements AIProvider {
         );
         step4ParsedResult = step4Result;
       }
+      console.timeEnd('Step 4'); // Step 4, 5 종료, 시간 출력
 
       // 4단계 결과 반환
       console.log(
