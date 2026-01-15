@@ -443,10 +443,7 @@ ${JSON.stringify(project.files, null, 2)}`;
   }
 }
 `;
-    const userPrompt = `## 2단계 분석 결과 (구조적 그룹)
-${JSON.stringify(step2Result, null, 2)}
-    
-## 3단계 분석 결과 (폴더 역할 가설)
+    const userPrompt = `## 3단계 분석 결과 (폴더 역할 가설)
 ${JSON.stringify(step3Result, null, 2)}
 
 ## 프로젝트 파일 목록
