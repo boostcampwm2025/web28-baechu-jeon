@@ -1,12 +1,13 @@
 "use client";
 
 import NodeCard from "./NodeCard";
-import { DetailsPanelProps } from "./NodeDetails";
+
 import { useState, useRef } from "react";
+import { NodeDetailsProps } from "./NodeDetails";
 
 interface VisualizationViewProps {
   projectId: string;
-  onNodeClick: (node: DetailsPanelProps["node"]) => void;
+  onNodeClick: (node: NodeDetailsProps["node"]) => void;
 }
 
 export default function VisualizationView({
