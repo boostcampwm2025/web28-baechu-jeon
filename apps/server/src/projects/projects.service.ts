@@ -22,22 +22,21 @@ export class ProjectsService {
   async parseZipFile(file: Express.Multer.File): Promise<ZipParseResult> {
     try {
       // 1. zip 파일에서 원시 데이터 추출
-      const { entries, gitignoreContent, fileContents } =
-        await this.zipParser.parseZip(file.path);
+      // const { entries, gitignoreContent, fileContents } =
+      //   await this.zipParser.parseZip(file.path);
 
       // 2. gitignore 패턴 파싱
-      const ignorePatterns =
-        this.gitignoreMatcher.parseGitignore(gitignoreContent);
+      // const ignorePatterns =
+      //   this.gitignoreMatcher.parseGitignore(gitignoreContent);
 
       // 3. 프로젝트 구조 생성
-      const { structure, filesWithContent } =
-        this.projectStructure.buildStructure(
-          entries,
-          ignorePatterns,
-          fileContents,
-        );
+      // const { structure, filesWithContent } =
+      //   this.projectStructure.buildStructure(
+      //     entries,
+      //     ignorePatterns,
+      //     fileContents,
+      //   );
 
-      // 프로젝트 저장 (수정 요망1)
       // const savedProject = await this.projectRepository.create({
       //   title: file.originalname,
       //   structure,
