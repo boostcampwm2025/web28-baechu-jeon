@@ -1,7 +1,7 @@
 "use client";
 
 import NodeCard from "./NodeCard";
-import { DetailsPanelProps } from "./DetailsPanel";
+import { DetailsPanelProps } from "./NodeDetails";
 import { useState, useRef } from "react";
 
 interface VisualizationViewProps {

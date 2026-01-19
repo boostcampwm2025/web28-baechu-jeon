@@ -7,11 +7,11 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UploadService } from './upload.service';
+import { ProjectsService } from './projects.service';
 
-@Controller('upload')
-export class UploadController {
-  constructor(private readonly uploadService: UploadService) {}
+@Controller('projects')
+export class ProjectsController {
+  constructor(private readonly projectsService: ProjectsService) {}
 
   @Post('zip')
   @UseInterceptors(
@@ -36,7 +36,7 @@ export class UploadController {
     }
 
     try {
-      const { projectId } = await this.uploadService.parseZipFile(file);
+      const { projectId } = await this.projectsService.parseZipFile(file);
       return {
         success: true,
         projectId,

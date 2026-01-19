@@ -1,6 +1,6 @@
 "use client";
 
-export interface DetailsPanelProps {
+export interface NodeDetailsProps {
   isOpen: boolean;
   onClose: () => void;
   node?: {
@@ -19,11 +19,11 @@ export interface DetailsPanelProps {
   };
 }
 
-export default function DetailsPanel({
+export default function NodeDetails({
   isOpen,
   onClose,
   node,
-}: DetailsPanelProps) {
+}: NodeDetailsProps) {
   if (!isOpen || !node) {
     return null;
   }

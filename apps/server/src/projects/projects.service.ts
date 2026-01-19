@@ -4,7 +4,6 @@ import * as fs from 'fs';
 import { ZipParserService } from './services/zip-parser.service';
 import { ProjectStructureService } from './services/project-structure.service';
 import { GitignoreMatcherService } from './services/gitignore-matcher.service';
-import { ProjectRepository } from './repositories/project.repository';
 
 const unlink = promisify(fs.unlink);
 
@@ -13,12 +12,11 @@ export interface ZipParseResult {
 }
 
 @Injectable()
-export class UploadService {
+export class ProjectsService {
   constructor(
     private readonly zipParser: ZipParserService,
     private readonly projectStructure: ProjectStructureService,
     private readonly gitignoreMatcher: GitignoreMatcherService,
-    private readonly projectRepository: ProjectRepository,
   ) {}
 
   async parseZipFile(file: Express.Multer.File): Promise<ZipParseResult> {
@@ -39,17 +37,18 @@ export class UploadService {
           fileContents,
         );
 
-      // 프로젝트 저장
-      const savedProject = await this.projectRepository.create({
-        title: file.originalname,
-        structure,
-        files: filesWithContent,
-      });
+      // 프로젝트 저장 (수정 요망1)
+      // const savedProject = await this.projectRepository.create({
+      //   title: file.originalname,
+      //   structure,
+      //   files: filesWithContent,
+      // });
 
       console.log('프로젝트 저장 완료');
 
       // 저장된 결과에서 ID를 가져옴
-      return { projectId: savedProject.id };
+      // return { projectId: savedProject.id }; (수정 요망2)
+      return { projectId: '' };
     } finally {
       await this.cleanupFile(file.path);
     }
