@@ -1,7 +1,9 @@
+import { AnalysisResult } from '@prisma/client/edge';
+
 export interface AnalysisRequest {
-  userPrompt: string;
-  systemPrompt: string;
   projectId: string;
+  step: number;
+  analysisResult?: AnalysisResult;
 }
 
 export interface AnalysisResponse {
