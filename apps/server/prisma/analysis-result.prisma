@@ -9,7 +9,8 @@ model AnalysisResult {
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamp
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  visualizations Visualization[]
 
   @@map("analysis_results")
 }
