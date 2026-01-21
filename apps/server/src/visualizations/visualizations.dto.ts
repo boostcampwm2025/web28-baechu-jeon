@@ -1,25 +1,74 @@
-// React Flow 친화적인 시각화 응답 DTO
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsUUID,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
-export interface NodeDto {
+// 시각화 노드 DTO (도메인 중심)
+export class NodeDto {
+  @IsString()
   id: string;
-  type: string;
-  position: { x: number; y: number };
-  data: Record<string, unknown>;
-}
 
-export interface EdgeDto {
-  id: string;
-  source: string;
-  target: string;
+  @IsString()
+  label: string;
+
+  @IsString()
+  group: string;
+
+  x: number | 'default';
+
+  y: number | 'default';
+
+  @IsOptional()
+  @IsString()
+  path?: string;
+
+  @IsOptional()
+  @IsString()
+  contents?: string;
+
+  @IsOptional()
+  @IsString()
   type?: string;
-  animated?: boolean;
-  data?: Record<string, unknown>;
+
+  @IsOptional()
+  metadata?: Record<string, unknown>;
 }
 
-export interface VisualizationResponseDto {
-  visualizationId: string;
-  analysisId: string;
-  nodes: NodeDto[];
-  edges: EdgeDto[];
+// 시각화 엣지 DTO
+export class EdgeDto {
+  @IsString()
+  id: string;
+
+  @IsString()
+  source: string;
+
+  @IsString()
+  target: string;
+
+  @IsOptional()
+  @IsString()
+  type?: string;
+
+  @IsOptional()
   metadata?: Record<string, unknown>;
+}
+
+export class VisualizationResponseDto {
+  @IsUUID()
+  visualizationId: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => NodeDto)
+  nodes: NodeDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EdgeDto)
+  edges?: EdgeDto[];
 }
