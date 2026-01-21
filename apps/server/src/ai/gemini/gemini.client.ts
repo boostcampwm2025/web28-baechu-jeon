@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { GoogleGenAI } from '@google/genai';
+import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
 import { ConfigService } from '@nestjs/config';
+import { AiClientRequest } from '../types/ai.types';
 
 // TODO: input 타입 처리하기
 // TODO: 발생할 수 있는 에러 예외처리하기
 // TODO: 단계 분석 구현 후 config 수정하기
-// TODO: usageMetadata 정보 추가하기 (candidates?)
+// TODO: usageMetadata 정보 추가하기 (GenerateContentResponse 확인)
 
 @Injectable()
 export class GeminiClient {
@@ -22,7 +23,9 @@ export class GeminiClient {
     this.ai = new GoogleGenAI({ apiKey });
   }
 
-  async generateResponse(input: { userPrompt: string; systemPrompt: string }) {
+  async generateResponse(
+    input: AiClientRequest,
+  ): Promise<GenerateContentResponse> {
     const { userPrompt, systemPrompt } = input;
     const response = await this.ai.models.generateContent({
       model: this.modelName,
