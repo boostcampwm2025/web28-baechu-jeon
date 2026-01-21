@@ -35,6 +35,8 @@
     "@types/multer": "^2.0.0",
     "@types/yauzl": "^2.10.3",
     "axios": "^1.13.2",
+    "bullmq": "^5.66.5",
+    "ioredis": "^5.9.2",
     "multer": "^2.0.2",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
