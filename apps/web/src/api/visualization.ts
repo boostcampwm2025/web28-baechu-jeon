@@ -105,3 +105,33 @@ export async function updateVisualization(
     );
   }
 }
+
+export async function resetVisualization(
+  visualizationId: string,
+): Promise<VisualizationResponse> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/visualizations/${visualizationId}/reset`,
+      { method: "GET" },
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: "Unknown error" }));
+      throw new VisualizationError(
+        error.message || "Failed to reset visualization",
+        response.status,
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    if (error instanceof VisualizationError) {
+      throw error;
+    }
+
+    throw new VisualizationError(
+      "Network error. Please check your connection and try again.",
+      0,
+    );
+  }
+}

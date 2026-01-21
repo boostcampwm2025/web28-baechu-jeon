@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   ReactFlow,
   Background,
@@ -17,8 +18,10 @@ import { transformApiToReactFlow } from "./transformNodes";
 import {
   getVisualization,
   updateVisualization,
+  resetVisualization,
   VisualizationError,
 } from "@/api/visualization";
+import resetIcon from "@/assets/reset.svg";
 
 interface VisualizationViewProps {
   analysisId: string;
@@ -79,6 +82,7 @@ export default function VisualizationView({
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visualizationId, setVisualizationId] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -88,8 +92,10 @@ export default function VisualizationView({
         setLoading(true);
         setError(null);
         const data = await getVisualization(analysisId, controller.signal);
-        const { reactFlowNodes, updatedApiNodes } = transformApiToReactFlow(data);
+        const { reactFlowNodes, updatedApiNodes } =
+          transformApiToReactFlow(data);
         setNodes(reactFlowNodes);
+        setVisualizationId(data.visualizationId);
 
         // dagre로 계산된 위치를 서버에 저장
         await updateVisualization(data.visualizationId, updatedApiNodes);
@@ -141,8 +147,26 @@ export default function VisualizationView({
     });
   };
 
+  const handleReset = async () => {
+    if (!visualizationId) return;
+
+    try {
+      setLoading(true);
+      const data = await resetVisualization(visualizationId);
+      const { reactFlowNodes, updatedApiNodes } = transformApiToReactFlow(data);
+      setNodes(reactFlowNodes);
+
+      // 초기화 후 다시 계산된 위치를 서버에 저장
+      await updateVisualization(visualizationId, updatedApiNodes);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Reset failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="h-full w-full">
+    <div className="relative h-full w-full">
       <ReactFlow
         nodes={nodes}
         nodeTypes={nodeTypes}
@@ -159,6 +183,14 @@ export default function VisualizationView({
           maskColor="rgba(15, 23, 42, 0.8)"
         />
       </ReactFlow>
+      <button
+        onClick={handleReset}
+        disabled={!visualizationId || loading}
+        title="초기화"
+        className="absolute top-4 right-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Image src={resetIcon} alt="초기화" width={32} height={32} />
+      </button>
     </div>
   );
 }
