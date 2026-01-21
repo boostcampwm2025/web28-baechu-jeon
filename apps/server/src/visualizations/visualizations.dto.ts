@@ -4,10 +4,11 @@ import {
   IsArray,
   ValidateNested,
   IsUUID,
+  IsNumber,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-// 시각화 노드 DTO (도메인 중심)
 export class NodeDto {
   @IsString()
   id: string;
@@ -18,8 +19,14 @@ export class NodeDto {
   @IsString()
   group: string;
 
+  @ValidateIf((o: NodeDto) => o.x !== 'default')
+  @IsNumber()
+  @IsOptional()
   x: number | 'default';
 
+  @ValidateIf((o: NodeDto) => o.x !== 'default')
+  @IsNumber()
+  @IsOptional()
   y: number | 'default';
 
   @IsOptional()
@@ -71,4 +78,18 @@ export class VisualizationResponseDto {
   @ValidateNested({ each: true })
   @Type(() => EdgeDto)
   edges?: EdgeDto[];
+}
+
+export class UpdateVisualizationDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => NodeDto)
+  formattedData: NodeDto[];
+}
+
+export class UpdateVisualizationResponseDto {
+  @IsUUID()
+  visualizationId: string;
+
+  success: boolean;
 }

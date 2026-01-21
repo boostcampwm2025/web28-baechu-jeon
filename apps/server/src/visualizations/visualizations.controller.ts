@@ -1,6 +1,10 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Put, Param, Body } from '@nestjs/common';
 import { VisualizationsService } from './visualizations.service';
-import { VisualizationResponseDto } from './visualizations.dto';
+import {
+  VisualizationResponseDto,
+  UpdateVisualizationDto,
+  UpdateVisualizationResponseDto,
+} from './visualizations.dto';
 
 @Controller('visualizations')
 export class VisualizationsController {
@@ -28,5 +32,22 @@ export class VisualizationsController {
     @Param('visualizationId') visualizationId: string,
   ): Promise<VisualizationResponseDto> {
     return await this.visualizationsService.resetVisualization(visualizationId);
+  }
+
+  /**
+   * 유저가 노드 위치를 업데이트할 때 호출하는 api
+   * @param visualizationId
+   * @param updateDto - 업데이트할 노드 데이터 배열
+   * @returns - 성공 여부
+   */
+  @Put(':visualizationId')
+  async updateVisualization(
+    @Param('visualizationId') visualizationId: string,
+    @Body() updateDto: UpdateVisualizationDto,
+  ): Promise<UpdateVisualizationResponseDto> {
+    return await this.visualizationsService.updateVisualization(
+      visualizationId,
+      updateDto,
+    );
   }
 }

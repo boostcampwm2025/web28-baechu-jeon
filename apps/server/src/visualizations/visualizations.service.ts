@@ -1,8 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { VisualizationResponseDto, NodeDto } from './visualizations.dto';
+import {
+  VisualizationResponseDto,
+  NodeDto,
+  UpdateVisualizationDto,
+  UpdateVisualizationResponseDto,
+} from './visualizations.dto';
 
-// 분석 결과에서 받는 structural_groups 타입
+// 1. 내부 인터페이스 정의
 interface StructuralGroup {
   group_name: string;
   group_type: 'layer' | 'feature' | 'package' | 'naming_convention' | 'domain';
@@ -10,7 +16,15 @@ interface StructuralGroup {
   description: string;
 }
 
-// 더미 데이터
+interface Step2Data {
+  structural_groups?: StructuralGroup[];
+}
+
+interface AnalysisQueryResult {
+  step2: Step2Data | null;
+}
+
+// 2. 더미 데이터
 const DEMO_STRUCTURAL_GROUPS: StructuralGroup[] = [
   {
     group_name: 'backend_api_modules',
@@ -57,11 +71,11 @@ export class VisualizationsService {
     // 2. structural_groups를 파싱해서 노드 데이터 생성
     const nodesToCreate = this.parseStructuralGroupsForInsert(structuralGroups);
 
-    // 3. Visualization 생성 (formattedData에 원본 노드 데이터 저장)
+    // 3. Visualization 생성
     const visualization = await this.prisma.visualization.create({
       data: {
         analysisResultId: analysisId,
-        formattedData: nodesToCreate,
+        formattedData: nodesToCreate as unknown as Prisma.InputJsonValue,
       },
     });
 
@@ -82,7 +96,7 @@ export class VisualizationsService {
       where: { visualizationId: visualization.id },
     });
 
-    // 6. 클라이언트 응답 형식으로 변환 (x, y가 0이면 'default')
+    // 6. 클라이언트 응답 형식으로 변환
     const nodesDtos: NodeDto[] = nodes.map((node) => ({
       id: node.id.toString(),
       label: node.label,
@@ -102,19 +116,64 @@ export class VisualizationsService {
   async resetVisualization(
     visualizationId: string,
   ): Promise<VisualizationResponseDto> {
-    // visualization에서 formattedData(원본 데이터) 조회
     const visualization = await this.prisma.visualization.findUnique({
       where: { id: visualizationId },
     });
 
     if (!visualization) {
-      throw new Error('Visualization not found');
+      throw new NotFoundException('Visualization not found');
     }
+
+    // JSON 데이터를 NodeDto 배열로 안전하게 캐스팅
+    const nodes = Array.isArray(visualization.formattedData)
+      ? (visualization.formattedData as unknown as NodeDto[])
+      : [];
 
     return {
       visualizationId,
-      nodes: visualization.formattedData as unknown as NodeDto[],
+      nodes,
       edges: [],
+    };
+  }
+
+  async updateVisualization(
+    visualizationId: string,
+    updateDto: UpdateVisualizationDto,
+  ): Promise<UpdateVisualizationResponseDto> {
+    const visualization = await this.prisma.visualization.findUnique({
+      where: { id: visualizationId },
+    });
+
+    if (!visualization) {
+      throw new NotFoundException('Visualization not found');
+    }
+
+    const { formattedData } = updateDto;
+
+    // 2. 각 노드의 x, y 값 업데이트 (성능을 위해 Promise.all 사용)
+    await Promise.all(
+      formattedData.map((nodeData) =>
+        this.prisma.node.update({
+          where: { id: parseInt(nodeData.id, 10) },
+          data: {
+            x: nodeData.x === 'default' ? 0 : Number(nodeData.x),
+            y: nodeData.y === 'default' ? 0 : Number(nodeData.y),
+          },
+        }),
+      ),
+    );
+
+    // 3. visualization의 formattedData 업데이트
+    await this.prisma.visualization.update({
+      where: { id: visualizationId },
+      data: {
+        formattedData: formattedData as unknown as Prisma.InputJsonValue,
+      },
+    });
+
+    return {
+      visualizationId,
+      success: true,
     };
   }
 
@@ -122,23 +181,16 @@ export class VisualizationsService {
     analysisId: string,
   ): Promise<StructuralGroup[]> {
     try {
-      const results = await this.prisma.$queryRaw<{ step2: unknown }[]>`
+      // 쿼리 결과 타입을 정의하여 unsafe access 방지
+      const results = await this.prisma.$queryRaw<AnalysisQueryResult[]>`
         SELECT step2 FROM analysis_results WHERE id = ${analysisId}::uuid
       `;
 
-      if (results.length > 0 && results[0].step2) {
-        const step2Data = results[0].step2 as {
-          structural_groups?: StructuralGroup[];
-        };
-        if (step2Data.structural_groups) {
-          return step2Data.structural_groups;
-        }
+      if (results.length > 0 && results[0].step2?.structural_groups) {
+        return results[0].step2.structural_groups;
       }
-    } catch {
-      // DB 조회 실패 시 더미 데이터 사용
-      console.log(
-        `${analysisId}로 조회 실패- STRUCTURAL_GROUPS 더미 데이터 사용`,
-      );
+    } catch (error) {
+      console.error(`${analysisId}로 조회 실패 - 더미 데이터 사용`, error);
     }
 
     return DEMO_STRUCTURAL_GROUPS;
