@@ -1,39 +1,40 @@
 import { Injectable } from '@nestjs/common';
-import { GoogleGenAI } from '@google/genai';
-import { ConfigService } from '@nestjs/config';
+import { GeminiClient } from './gemini.client';
+import { ProjectRepository } from 'src/projects/repository/project.repository';
+
+// TODO: 단계별로 systemPrompt, userPrompt 넣기
 
 @Injectable()
 export class GeminiService {
-  private readonly ai: GoogleGenAI;
-  private readonly modelName: string;
+  constructor(
+    private readonly geminiClient: GeminiClient,
+    private readonly projectRepository: ProjectRepository,
+  ) {}
 
-  constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-    if (!apiKey)
-      throw new Error('환경변수에 GEMINI_API_KEY가 정의되지 않았습니다.');
+  async buildPrompt(
+    projectId: string,
+  ): Promise<{ systemPrompt: string; userPrompt: string }> {
+    const project = await this.projectRepository.findById(projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
 
-    this.modelName =
-      this.configService.get<string>('GEMINI_MODEL_NAME') || 'gemini-2.5-flash';
-    this.ai = new GoogleGenAI({ apiKey });
+    const systemPrompt = '';
+    const userPrompt = '';
+
+    return { systemPrompt, userPrompt };
   }
 
-  async callGeminiAPI(userPrompt: string, systemPrompt: string) {
-    const response = await this.ai.models.generateContent({
-      model: this.modelName,
-      contents: userPrompt,
-      config: {
-        // thinkingConfig: {
-        //   thinkingBudget: 0, // Turn thinking OFF
-        //   // thinkingBudget: 1024 // Turn thinking ON with specific token budget
-        // },
-        systemInstruction: systemPrompt,
-        // temperature: 0.2,
-        // maxOutputTokens: 512,
-        // topK: 40,
-        // topP: 0.8,
-      },
+  async getResult(input: {
+    userPrompt: string;
+    systemPrompt: string;
+    projectId: string;
+  }) {
+    const { systemPrompt, userPrompt } = await this.buildPrompt(
+      input.projectId,
+    );
+    const analysisResult = await this.geminiClient.generateResponse({
+      userPrompt: input.userPrompt || userPrompt,
+      systemPrompt: input.systemPrompt || systemPrompt,
     });
-    console.log(response);
-    return response;
+    return analysisResult;
   }
 }
