@@ -26,6 +26,16 @@ export class VisualizationError extends Error {
   }
 }
 
+// PUT 요청 타입
+export interface UpdateVisualizationRequest {
+  formattedData: ApiNode[];
+}
+
+export interface UpdateVisualizationResponse {
+  visualizationId: string;
+  success: boolean;
+}
+
 export async function getVisualization(
   analysisId: string,
   signal?: AbortSignal,
@@ -53,6 +63,40 @@ export async function getVisualization(
 
     if (error instanceof Error && error.name === "AbortError") {
       throw new VisualizationError("Request cancelled", 0);
+    }
+
+    throw new VisualizationError(
+      "Network error. Please check your connection and try again.",
+      0,
+    );
+  }
+}
+
+export async function updateVisualization(
+  visualizationId: string,
+  formattedData: ApiNode[],
+): Promise<UpdateVisualizationResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/visualizations/${visualizationId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ formattedData }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: "Unknown error" }));
+      throw new VisualizationError(
+        error.message || "Failed to update visualization",
+        response.status,
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    if (error instanceof VisualizationError) {
+      throw error;
     }
 
     throw new VisualizationError(

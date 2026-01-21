@@ -68,6 +68,12 @@ interface LayoutInfo {
   nodes: { id: string; x: number; y: number }[];
 }
 
+// 변환 결과 타입
+export interface TransformResult {
+  reactFlowNodes: Node[];
+  updatedApiNodes: ApiNode[];
+}
+
 /**
  * 그룹 내 노드들의 상대적 위치와 그룹의 전체 크기를 계산
  */
@@ -103,7 +109,7 @@ function calculateInnerLayout(nodesInGroup: ApiNode[]): LayoutInfo {
 
 export function transformApiToReactFlow(
   apiResponse: VisualizationResponse,
-): Node[] {
+): TransformResult {
   // 1. 그룹핑 및 내부 레이아웃 미리 계산
   const groupMap: Record<string, { apiNodes: ApiNode[]; layout?: LayoutInfo }> =
     {};
@@ -133,6 +139,7 @@ export function transformApiToReactFlow(
 
   // 3. 최종노드 생성
   const reactFlowNodes: Node[] = [];
+  const updatedApiNodes: ApiNode[] = [];
 
   Object.keys(groupMap).forEach((groupName, idx) => {
     const groupData = groupMap[groupName];
@@ -164,6 +171,14 @@ export function transformApiToReactFlow(
     layout.nodes.forEach((posInfo) => {
       const apiNode = groupData.apiNodes.find((n) => n.id === posInfo.id)!;
 
+      // React Flow 노드용 상대 좌표
+      const relativeX =
+        posInfo.x - NODE_CONFIG.folderWidth / 2 + NODE_CONFIG.groupPadding;
+      const relativeY =
+        posInfo.y -
+        NODE_CONFIG.folderHeight / 2 +
+        NODE_CONFIG.groupHeaderHeight;
+
       reactFlowNodes.push({
         id: `folder-${apiNode.id}`,
         type: "folder",
@@ -177,14 +192,7 @@ export function transformApiToReactFlow(
             text: colors.text,
           },
         },
-        // 보정된 상대 좌표
-        position: {
-          x: posInfo.x - NODE_CONFIG.folderWidth / 2 + NODE_CONFIG.groupPadding,
-          y:
-            posInfo.y -
-            NODE_CONFIG.folderHeight / 2 +
-            NODE_CONFIG.groupHeaderHeight,
-        },
+        position: { x: relativeX, y: relativeY },
         parentId: groupNodeId,
         extent: "parent",
         style: {
@@ -192,10 +200,17 @@ export function transformApiToReactFlow(
           height: NODE_CONFIG.folderHeight,
         },
       });
+
+      // 서버에 보낼 절대 좌표 (그룹 위치 + 상대 위치)
+      updatedApiNodes.push({
+        ...apiNode,
+        x: Math.round(groupX + relativeX),
+        y: Math.round(groupY + relativeY),
+      });
     });
   });
 
-  return reactFlowNodes;
+  return { reactFlowNodes, updatedApiNodes };
 }
 
 function formatGroupName(name: string): string {

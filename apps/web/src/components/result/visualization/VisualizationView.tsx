@@ -12,10 +12,13 @@ import {
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-
 import { NodeDetailsProps } from "./NodeDetails";
 import { transformApiToReactFlow } from "./transformNodes";
-import { getVisualization, VisualizationError } from "@/api/visualization";
+import {
+  getVisualization,
+  updateVisualization,
+  VisualizationError,
+} from "@/api/visualization";
 
 interface VisualizationViewProps {
   analysisId: string;
@@ -50,7 +53,9 @@ function FolderNode({ data }: NodeProps) {
       className={`flex items-start gap-3 rounded-xl border-2 bg-slate-900 px-4 py-3 shadow-lg ${colors?.border || "border-purple-500"} ${colors?.bg || ""}`}
     >
       <div className="flex flex-col">
-        <span className={`text-sm font-semibold ${colors?.text || "text-white"}`}>
+        <span
+          className={`text-sm font-semibold ${colors?.text || "text-white"}`}
+        >
           {data.label as string}
         </span>
         <span className="text-xs text-slate-400">
@@ -83,8 +88,11 @@ export default function VisualizationView({
         setLoading(true);
         setError(null);
         const data = await getVisualization(analysisId, controller.signal);
-        const transformedNodes = transformApiToReactFlow(data);
-        setNodes(transformedNodes);
+        const { reactFlowNodes, updatedApiNodes } = transformApiToReactFlow(data);
+        setNodes(reactFlowNodes);
+
+        // dagre로 계산된 위치를 서버에 저장
+        await updateVisualization(data.visualizationId, updatedApiNodes);
       } catch (err) {
         if (err instanceof VisualizationError && err.statusCode === 0) {
           return;
