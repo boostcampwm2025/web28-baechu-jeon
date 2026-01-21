@@ -1,14 +1,9 @@
 import { AnalysisResult, Project } from '@prisma/client';
+import { Step3Input } from '../types/ai.types';
 
 // TODO: systemPrompt 다듬기 (4단계 여부에 따른 결과 비교)
 
-export const buildStep3Prompts = ({
-  analysisResult,
-  project,
-}: {
-  analysisResult: AnalysisResult;
-  project: Project;
-}) => {
+export const buildStep3Prompts = ({ analysisResult, project }: Step3Input) => {
   const systemPrompt = `당신은 전문 소프트웨어 아키텍트입니다. 1단계와 2단계에서 분석된 정보를 바탕으로 프로젝트의 구조적 특성, 아키텍처적 성향, 그리고 프로젝트 의도를 신중하게 추론합니다.
 
 분석의 목적은 "확정적인 단정"이 아니라, 관측 가능한 구조적 신호에 근거한 "가설적 해석"을 제공하는 것입니다.

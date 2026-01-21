@@ -1,8 +1,10 @@
 import { Project } from '@prisma/client';
+import { Step1Input } from '../types/ai.types';
 
 // TODO: systemPrompt 다듬기
+// TODO: return 타입 추가하기
 
-export const buildStep1Prompts = (project: Project) => {
+export const buildStep1Prompts = (project: Step1Input) => {
   const systemPrompt = `당신은 전문 소프트웨어 아키텍트입니다. 프로젝트의 폴더 구조와 파일 구조를 분석하여 구조적 패턴을 파악합니다.
 
 # 분석 지침

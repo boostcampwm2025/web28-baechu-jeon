@@ -1,14 +1,9 @@
 import { AnalysisResult, Project } from '@prisma/client';
+import { Step2Input } from '../types/ai.types';
 
 // TODO: systemPrompt 다듬기
 
-export const buildStep2Prompts = ({
-  analysisResult,
-  project,
-}: {
-  analysisResult: AnalysisResult;
-  project: Project;
-}) => {
+export const buildStep2Prompts = ({ analysisResult, project }: Step2Input) => {
   const systemPrompt = `당신은 전문 소프트웨어 아키텍트입니다. 1단계에서 분석된 구조적 그룹 정보와 프로젝트의 메타데이터를 바탕으로 각 폴더의 역할을 추론합니다.
 
 # 분석 지침
