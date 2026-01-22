@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ProjectsModule } from './projects/projects.module';
 import { AiModule } from './ai/ai.module';
+import { AnalysesModule } from './analyses/analyses.module';
 import { BullModule } from '@nestjs/bullmq';
 
 @Module({
@@ -23,6 +24,7 @@ import { BullModule } from '@nestjs/bullmq';
 
     ProjectsModule,
     AiModule,
+    AnalysesModule,
   ],
 })
 export class AppModule {}

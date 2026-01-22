@@ -5,12 +5,17 @@ import { redisProvider } from './redis.provider.js';
 import { BullModule } from '@nestjs/bullmq';
 import { AnalysesProcessor } from './analyses.processor.js';
 import { PipelineRunner } from './pipeline/pipeline.runner.js';
+import { AiModule } from '../ai/ai.module.js';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { AnalysisEmitter } from './analysis.emitter.js';
 
 @Module({
   imports: [
     BullModule.registerQueue({
       name: 'analyses',
     }),
+    AiModule,
+    EventEmitterModule.forRoot(),
   ],
   controllers: [AnalysesController],
   providers: [
@@ -18,6 +23,7 @@ import { PipelineRunner } from './pipeline/pipeline.runner.js';
     redisProvider,
     AnalysesProcessor,
     PipelineRunner,
+    AnalysisEmitter,
   ],
 })
 export class AnalysesModule {}
