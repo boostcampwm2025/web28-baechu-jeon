@@ -3,7 +3,7 @@ import { AnalysesService } from './analyses.service';
 import { Job } from 'bullmq';
 
 @Processor('analyses')
-export class AnalysesProcess extends WorkerHost {
+export class AnalysesProcessor extends WorkerHost {
   constructor(private readonly analysesService: AnalysesService) {
     super();
   }
