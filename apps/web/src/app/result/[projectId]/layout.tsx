@@ -1,60 +1,25 @@
-"use client";
+import { getProjectStructure } from "@/api/project";
+import { buildProjectTree, FileNode } from "@/utils/pathTree";
+import LayoutClient from "@/components/result/LayoutClient";
 
-import { useState } from "react";
-import FolderExplorer from "@/components/layout/FolderExplorer";
-
-export default function ResultLayout({
-  children,
-}: {
+interface LayoutProps {
   children: React.ReactNode;
-}) {
-  const [isExplorerOpen, setIsExplorerOpen] = useState(true);
+  params: Promise<{ projectId: string }>;
+}
 
-  return (
-    <div className="relative flex h-full w-full overflow-hidden">
-      <aside
-        className={`relative border-r bg-gray-50 transition-all duration-300 ease-in-out ${
-          isExplorerOpen
-            ? "w-72 translate-x-0"
-            : "w-0 -translate-x-full opacity-0"
-        } `}
-      >
-        <div className="custom-scrollbar h-full overflow-y-auto">
-          <FolderExplorer onClose={() => setIsExplorerOpen(false)} />
-        </div>
-      </aside>
+export default async function ResultLayout({ children, params }: LayoutProps) {
+  const { projectId } = await params;
+  let treeData: FileNode[] = [];
 
-      <section className="relative flex min-w-0 flex-1 flex-col bg-white">
-        {/* 폴더 탐색기 닫힌 후 다시 여는 버튼*/}
-        <div
-          className={`absolute top-4 left-4 z-20 transition-opacity duration-300 ${
-            !isExplorerOpen
-              ? "pointer-events-auto opacity-100"
-              : "pointer-events-none opacity-0"
-          }`}
-        >
-          <button
-            onClick={() => setIsExplorerOpen(true)}
-            className="cursor-pointer rounded-md border border-slate-200 bg-white p-2 text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-700"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-        </div>
+  try {
+    const data = await getProjectStructure(projectId);
+    treeData = buildProjectTree({
+      files: data.projectStructure.files,
+      folders: data.projectStructure.folders,
+    });
+  } catch (error) {
+    console.error("Failed to load project structure:", error);
+  }
 
-        <div className="flex-1 overflow-y-auto">{children}</div>
-      </section>
-    </div>
-  );
+  return <LayoutClient treeData={treeData}>{children}</LayoutClient>;
 }
