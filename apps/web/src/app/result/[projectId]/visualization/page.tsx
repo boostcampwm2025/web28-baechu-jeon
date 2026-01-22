@@ -38,5 +38,4 @@ export default function VisualizationPage() {
       />
     </div>
   );
->>>>>>> origin/dev
 }
