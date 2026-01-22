@@ -2,7 +2,7 @@ import Uploader from "@/components/upload/Uploader";
 
 export default function Home() {
   return (
-    <main className="overflow-y-auto bg-sky-50">
+    <main className="bg-sky-50">
       <section className="mx-auto max-w-5xl px-6 pt-24 pb-20 text-center">
         <h2 className="mb-6 text-5xl leading-tight font-black text-slate-900 md:text-6xl">
           프로젝트 구조를
