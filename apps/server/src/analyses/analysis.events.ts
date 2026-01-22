@@ -44,7 +44,7 @@ export interface AnalysisStepEventPayload {
 
 export interface AnalysisCompletedPayload {
   analysisId: string;
-  step: AnalysisStep;
+  completedAt: Date;
   message?: string;
 }
 
