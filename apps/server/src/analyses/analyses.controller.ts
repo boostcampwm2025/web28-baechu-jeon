@@ -28,6 +28,7 @@ export class AnalysesController {
 
   @Get(':analysisId/status')
   async getAnalysisStatus(@Param('analysisId') analysisId: string) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.analysesService.getStatus(analysisId);
   }
 

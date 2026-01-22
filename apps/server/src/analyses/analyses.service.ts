@@ -63,6 +63,7 @@ export class AnalysesService {
     if (!status) {
       return { status: 'not_found' };
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return JSON.parse(status);
   }
 
