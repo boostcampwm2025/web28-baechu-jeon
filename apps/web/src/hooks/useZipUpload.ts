@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { uploadZipFile, UploadError } from "@/api/upload";
+import { uploadZipFile, ProjectError } from "@/api/project";
 import { ZIP_UPLOAD } from "@/constants/upload";
 
 export function useZipUpload() {
@@ -42,14 +42,14 @@ export function useZipUpload() {
     } catch (error) {
       // 취소된 경우 에러 메시지 표시하지 않음
       if (
-        error instanceof UploadError &&
+        error instanceof ProjectError &&
         error.message === "Upload cancelled"
       ) {
         return;
       }
 
       const errorMessage =
-        error instanceof UploadError || error instanceof Error
+        error instanceof ProjectError || error instanceof Error
           ? error.message
           : "파일 업로드 중 오류가 발생했습니다.";
 
