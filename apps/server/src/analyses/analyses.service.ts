@@ -3,6 +3,7 @@ import Redis from 'ioredis';
 import { PipelineRunner } from './pipeline/pipeline.runner';
 import { PipelineContext } from './pipeline/pipeline.context';
 import { analysisResultsKey, analysisStatusKey } from './analysis.redis';
+import { PrismaService } from '../prisma/prisma.service';
 
 // TODO: 최종 결과를 DB(Prisma)에 저장하기
 // TODO: retry 로직 검토 및 추가
@@ -15,6 +16,7 @@ export class AnalysesService {
     @Inject('REDIS_CLIENT')
     private readonly redis: Redis,
     private readonly pipelineRunner: PipelineRunner,
+    private readonly prisma: PrismaService,
   ) {}
 
   async processJob(jobData: { analysisId: string; projectId: string }) {
@@ -45,6 +47,9 @@ export class AnalysesService {
 
       // 파이프라인
       await this.pipelineRunner.run(context);
+
+      // 최종 결과를 DB에 저장
+      await this.saveResultToDatabase(analysisId, projectId, context);
 
       this.logger.log(`[${analysisId}] 모든 분석 완료 및 DB 저장`);
 
@@ -80,5 +85,31 @@ export class AnalysesService {
     }
 
     return parsedResults;
+  }
+
+  private async saveResultToDatabase(
+    analysisId: string,
+    projectId: string,
+    context: PipelineContext,
+  ): Promise<void> {
+    try {
+      await this.prisma.analysisResult.create({
+        data: {
+          id: analysisId,
+          projectId,
+          step1: context.step1 || {},
+          step2: context.step2 || {},
+          step3: context.step3 || {},
+          step4: {},
+        },
+      });
+      this.logger.log(`[${analysisId}] DB 저장 완료`);
+    } catch (error: any) {
+      this.logger.error(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        `[${analysisId}] DB 저장 실패: ${error.message}`,
+      );
+      throw error;
+    }
   }
 }
