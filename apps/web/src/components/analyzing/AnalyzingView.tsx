@@ -55,7 +55,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
 
         // 2. SSE 연결 (analysisId 사용)
         eventSource = new EventSource(
-          `${API_BASE_URL}/api/analyses/${analysisId}/events`,
+          `${API_BASE_URL}/analyses/${result.analysisId}/events`,
         );
 
         eventSource.onmessage = (event) => {
@@ -71,13 +71,13 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
             } else if (data.type === "step_completed") {
               setCompletedSteps((prev) => {
                 const newCompleted = prev + 1;
-                
+
                 // 남은 시간 계산
                 const remainingTime = Object.values(STEP_DURATIONS)
                   .slice(newCompleted)
                   .reduce((sum, duration) => sum + duration, 0);
                 setEstimatedTime(remainingTime);
-                
+
                 return newCompleted;
               });
             } else if (data.type === "completed") {
@@ -138,9 +138,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
           <h1 className="mb-2 text-3xl font-bold text-gray-900">
             AI 분석 중...
           </h1>
-          <p className="text-gray-600">
-            프로젝트 구조를 분석하고 있습니다.
-          </p>
+          <p className="text-gray-600">프로젝트 구조를 분석하고 있습니다.</p>
         </div>
 
         {/* 프로그레스 바 영역 */}
