@@ -9,6 +9,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
+import { ProjectRepository } from './repository/project.repository';
 
 const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -32,6 +33,7 @@ if (!fs.existsSync(uploadDir)) {
   controllers: [ProjectsController],
   providers: [
     ProjectsService,
+    ProjectRepository,
     ZipParserService,
     ProjectStructureService,
     GitignoreMatcherService,
