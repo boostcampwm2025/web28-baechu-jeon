@@ -2,10 +2,10 @@
 
 model Purpose {
   id                 BigInt @id @default(autoincrement())
-  analysis_result_id String @db.Uuid
+  analysisResultId String @map("analysis_result_id") @db.Uuid
   contents           String @db.Text
 
-  analysis_result AnalysisResult @relation(fields: [analysis_result_id], references: [id], onDelete: Cascade)
+  analysisResult AnalysisResult @relation(fields: [analysisResultId], references: [id], onDelete: Cascade)
 
   @@map("purposes")
 }

@@ -2,14 +2,14 @@
 
 model Node {
   id               BigInt @id @default(autoincrement())
-  visualization_id String @db.Uuid
+  visualizationId String @map("visualization_id") @db.Uuid
   x                Float
   y                Float
   label            String @db.VarChar
   contents         String @db.Text
   groups           String @db.Text
 
-  visualization Visualization @relation(fields: [visualization_id], references: [id], onDelete: Cascade)
+  visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)
 
   @@map("nodes")
 }

@@ -2,12 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
 interface PurposeContents {
-  project_intent: {
+  projectIntent: {
     overview: string;
     purpose: string;
-    key_features: string[];
-    technology_stack: Record<string, string[]>;
-    architectural_tendencies: string;
+    keyFeatures: string[];
+    technologyStack: Record<string, string[]>;
+    architecturalTendencies: string;
   };
 }
 
@@ -47,7 +47,7 @@ export class IntentionsService {
       // 해당 프로젝트에 속한 모든 analysisResult와 연결된 purposes를 삭제
       this.prisma.purpose.deleteMany({
         where: {
-          analysis_result: {
+          analysisResult: {
             projectId: projectId, // 프로젝트 ID로 필터링하여 일괄 삭제
           },
         },
@@ -56,7 +56,7 @@ export class IntentionsService {
       this.prisma.purpose.create({
         data: {
           contents: formattedData.contents.purpose, //TODO: step4에서 가공할 데이터에 따라 달라짐(개요, 목적 등)
-          analysis_result_id: firstAnalysis.id,
+          analysisResultId: firstAnalysis.id,
         },
       }),
     ]);
@@ -65,16 +65,16 @@ export class IntentionsService {
   }
 
   private formatResponse(id: string, step3: PurposeContents) {
-    const intent = step3.project_intent; //TODO: 추후 step4 데이터 사용
+    const intent = step3.projectIntent; //TODO: 추후 step4 데이터 사용
     return {
       analysisId: id,
       status: 'completed',
       contents: {
         overview: intent.overview,
         purpose: intent.purpose,
-        key_features: intent.key_features,
-        technology_stack: intent.technology_stack,
-        architectural_tendencies: intent.architectural_tendencies,
+        keyFeatures: intent.keyFeatures,
+        technologyStack: intent.technologyStack,
+        architecturalTendencies: intent.architecturalTendencies,
       },
     };
   }

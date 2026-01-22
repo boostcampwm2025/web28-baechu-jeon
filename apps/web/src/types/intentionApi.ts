@@ -6,9 +6,9 @@ export interface ApiError {
 export interface IntentionContents {
   overview: string;
   purpose: string;
-  key_features: string[];
-  technology_stack: Record<string, string[]>;
-  architectural_tendencies: string;
+  keyFeatures: string[];
+  technologyStack: Record<string, string[]>;
+  architecturalTendencies: string;
 }
 
 export interface GetIntentionsResponse {

@@ -2,10 +2,10 @@
 
 model Visualization {
   id                 String @id @default(uuid()) @db.Uuid
-  analysis_result_id String @db.Uuid
-  formatted_data     Json   @db.JsonB
+  analysisResultId String @map("analysis_result_id") @db.Uuid
+  formattedData     Json   @map("formatted_data") @db.JsonB
 
-  analysis_result AnalysisResult @relation(fields: [analysis_result_id], references: [id], onDelete: Cascade)
+  analysisResult AnalysisResult @relation(fields: [analysisResultId], references: [id], onDelete: Cascade)
   nodes           Node[]
 
   @@map("visualizations")
