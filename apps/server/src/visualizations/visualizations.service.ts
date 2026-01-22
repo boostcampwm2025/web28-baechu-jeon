@@ -6,7 +6,7 @@ import {
   NodeDto,
   UpdateVisualizationDto,
   UpdateVisualizationResponseDto,
-} from './visualizations.dto';
+} from './dto/visualizations.dto';
 
 // 1. 내부 인터페이스 정의
 interface StructuralGroup {
@@ -58,6 +58,16 @@ const DEMO_STRUCTURAL_GROUPS: StructuralGroup[] = [
   },
 ];
 
+// Node 엔티티 타입 (Prisma에서 생성된 타입 대신 사용)
+interface NodeEntity {
+  id: bigint;
+  label: string;
+  groups: string;
+  x: number;
+  y: number;
+  contents: string;
+}
+
 @Injectable()
 export class VisualizationsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -65,50 +75,62 @@ export class VisualizationsService {
   async getVisualization(
     analysisId: string,
   ): Promise<VisualizationResponseDto> {
-    // 1. analysis_results에서 step2 가져오기
-    const structuralGroups = await this.getStructuralGroups(analysisId);
-
-    // 2. structural_groups를 파싱해서 노드 데이터 생성
-    const nodesToCreate = this.parseStructuralGroupsForInsert(structuralGroups);
-
-    // 3. Visualization 생성
-    const visualization = await this.prisma.visualization.create({
-      data: {
-        analysisResultId: analysisId,
-        formattedData: nodesToCreate as unknown as Prisma.InputJsonValue,
-      },
+    // 1. 이미 존재하는 시각화 정보가 있는지 확인 (중복 생성 방지)
+    const existingVis = await this.prisma.visualization.findFirst({
+      where: { analysisResultId: analysisId },
+      include: { nodes: true },
     });
 
-    // 4. nodes 테이블에 insert
-    await this.prisma.node.createMany({
-      data: nodesToCreate.map((node) => ({
-        visualizationId: visualization.id,
-        x: 0,
-        y: 0,
-        label: node.label,
-        contents: node.contents,
-        groups: node.group,
-      })),
+    if (existingVis) {
+      return this.mapToResponseDto(existingVis.id, existingVis.nodes);
+    }
+
+    // 2. 존재하지 않을 경우에만 신규 생성 (트랜잭션 사용)
+    return await this.prisma.$transaction(async (tx) => {
+      const structuralGroups = await this.getStructuralGroups(analysisId);
+      const nodesToCreate =
+        this.parseStructuralGroupsForInsert(structuralGroups);
+
+      const visualization = await tx.visualization.create({
+        data: {
+          analysisResultId: analysisId,
+          formattedData: nodesToCreate as unknown as Prisma.InputJsonValue,
+        },
+      });
+
+      await tx.node.createMany({
+        data: nodesToCreate.map((node) => ({
+          visualizationId: visualization.id,
+          x: 0,
+          y: 0,
+          label: node.label,
+          contents: node.contents,
+          groups: node.group,
+        })),
+      });
+
+      const nodes = await tx.node.findMany({
+        where: { visualizationId: visualization.id },
+      });
+
+      return this.mapToResponseDto(visualization.id, nodes);
     });
+  }
 
-    // 5. DB에서 insert된 노드들 조회
-    const nodes = await this.prisma.node.findMany({
-      where: { visualizationId: visualization.id },
-    });
-
-    // 6. 클라이언트 응답 형식으로 변환
-    const nodesDtos: NodeDto[] = nodes.map((node) => ({
-      id: node.id.toString(),
-      label: node.label,
-      group: node.groups,
-      x: node.x === 0 ? 'default' : node.x,
-      y: node.y === 0 ? 'default' : node.y,
-      contents: node.contents,
-    }));
-
+  private mapToResponseDto(
+    visualizationId: string,
+    nodes: NodeEntity[],
+  ): VisualizationResponseDto {
     return {
-      visualizationId: visualization.id,
-      nodes: nodesDtos,
+      visualizationId,
+      nodes: nodes.map((node) => ({
+        id: node.id.toString(),
+        label: node.label,
+        group: node.groups,
+        x: node.x === 0 ? 'default' : node.x,
+        y: node.y === 0 ? 'default' : node.y,
+        contents: node.contents,
+      })),
       edges: [],
     };
   }
@@ -150,25 +172,28 @@ export class VisualizationsService {
 
     const { formattedData } = updateDto;
 
-    // 2. 각 노드의 x, y 값 업데이트 (성능을 위해 Promise.all 사용)
-    await Promise.all(
-      formattedData.map((nodeData) =>
-        this.prisma.node.update({
-          where: { id: parseInt(nodeData.id, 10) },
-          data: {
-            x: nodeData.x === 'default' ? 0 : Number(nodeData.x),
-            y: nodeData.y === 'default' ? 0 : Number(nodeData.y),
-          },
-        }),
-      ),
-    );
+    // 트랜잭션으로 노드들과 visualization을 함께 업데이트
+    await this.prisma.$transaction(async (tx) => {
+      // 각 노드의 x, y 값 업데이트
+      await Promise.all(
+        formattedData.map((nodeData) =>
+          tx.node.update({
+            where: { id: parseInt(nodeData.id, 10) },
+            data: {
+              x: nodeData.x === 'default' ? 0 : Number(nodeData.x),
+              y: nodeData.y === 'default' ? 0 : Number(nodeData.y),
+            },
+          }),
+        ),
+      );
 
-    // 3. visualization의 formattedData 업데이트
-    await this.prisma.visualization.update({
-      where: { id: visualizationId },
-      data: {
-        formattedData: formattedData as unknown as Prisma.InputJsonValue,
-      },
+      // visualization의 formattedData 업데이트 (첫 PUT에서 원본 저장)
+      await tx.visualization.update({
+        where: { id: visualizationId },
+        data: {
+          formattedData: formattedData as unknown as Prisma.InputJsonValue,
+        },
+      });
     });
 
     return {
@@ -181,9 +206,9 @@ export class VisualizationsService {
     analysisId: string,
   ): Promise<StructuralGroup[]> {
     try {
-      // 쿼리 결과 타입을 정의하여 unsafe access 방지
+      // Parameterized Query 사용 (CAST로 UUID 타입 변환)
       const results = await this.prisma.$queryRaw<AnalysisQueryResult[]>`
-        SELECT step2 FROM analysis_results WHERE id = ${analysisId}::uuid
+        SELECT step2 FROM analysis_results WHERE id = CAST(${analysisId} AS uuid)
       `;
 
       if (results.length > 0 && results[0].step2?.structural_groups) {
