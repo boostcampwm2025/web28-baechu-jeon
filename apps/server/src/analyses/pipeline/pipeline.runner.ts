@@ -20,7 +20,7 @@ export class PipelineRunner {
     type: 'STARTED' | 'COMPLETED',
     progress: number,
     result?: any,
-  ) {
+  ): Promise<void> {
     const message = type === 'STARTED' ? `${step} 시작...` : `${step} 완료!`;
 
     await this.emitter.emitStepStatus(
@@ -49,6 +49,7 @@ export class PipelineRunner {
           projectId,
           step: 1,
         });
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         context.step1 = step1.result;
 
         await this.emitStep(
@@ -77,8 +78,10 @@ export class PipelineRunner {
         const step2 = await this.geminiService.getResult({
           projectId,
           step: 2,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           analysisResult: { step1: context.step1 } as any,
         });
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         context.step2 = step2.result;
         await this.emitStep(
           analysisId,
@@ -98,8 +101,10 @@ export class PipelineRunner {
       const step3 = await this.geminiService.getResult({
         projectId,
         step: 3,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         analysisResult: { step1: context.step1, step2: context.step2 } as any,
       });
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       context.step3 = step3.result;
 
       await this.emitStep(
@@ -115,10 +120,12 @@ export class PipelineRunner {
         analysisId,
         completedAt: new Date(),
       });
-    } catch (err) {
+    } catch (err: any) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       this.logger.error(`Pipeline failed at ${analysisId}: ${err.message}`);
       await this.emitter.emitFailed({
         analysisId,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         reason: err.message,
       });
       throw err;

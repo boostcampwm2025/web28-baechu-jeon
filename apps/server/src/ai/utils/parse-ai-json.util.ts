@@ -12,7 +12,8 @@ export function parseAiJson<T = any>(content: string): T {
 
   try {
     return JSON.parse(cleaned.trim()) as T;
-  } catch (e) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_e) {
     throw new Error(`AI JSON 파싱 실패:\n${cleaned.substring(0, 300)}`);
   }
 }

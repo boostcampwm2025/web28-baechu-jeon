@@ -10,7 +10,9 @@ export class AnalysesProcessor extends WorkerHost {
 
   async process(job: Job) {
     if (job.name === 'run-analysis') {
-      return this.analysesService.processJob(job.data);
+      return this.analysesService.processJob(
+        job.data as { analysisId: string; projectId: string },
+      );
     }
   }
 }

@@ -32,10 +32,12 @@ export class AnalysesService {
       if (cachedResults) {
         // 저장된 결과가 있다면 Context에 넣음
         if (cachedResults['STEP1_GROUPING']) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           context.step1 = JSON.parse(cachedResults['STEP1_GROUPING']);
           this.logger.log(`[${analysisId}] Step 1 결과 복구 완료`);
         }
         if (cachedResults['STEP2_HYPOTHESIS']) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           context.step2 = JSON.parse(cachedResults['STEP2_HYPOTHESIS']);
           this.logger.log(`[${analysisId}] Step 2 결과 복구 완료`);
         }
@@ -48,15 +50,16 @@ export class AnalysesService {
 
       // Redis 청소
       // await this.redis.del(analysisResultsKey(analysisId));
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         `[${analysisId}] 처리 중 치명적 오류: ${error.message}`,
       );
       throw error;
     }
   }
 
-  async getResult(analysisId: string) {
+  async getResult(analysisId: string): Promise<any> {
     const results = await this.redis.hgetall(analysisResultsKey(analysisId));
     if (!results || Object.keys(results).length === 0) {
       return { error: '분석 결과를 찾을 수 없습니다.' };
@@ -64,6 +67,7 @@ export class AnalysesService {
 
     const parsedResults: any = {};
     for (const [key, value] of Object.entries(results)) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       parsedResults[key] = JSON.parse(value);
     }
 
