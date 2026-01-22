@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import NodeDetails from "./NodeDetails";
 import ProjectDetails from "./ProjectDetails";
