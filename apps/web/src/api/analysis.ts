@@ -24,7 +24,7 @@ export async function startAnalysis(
   projectId: string,
 ): Promise<StartAnalysisResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/analyses/${projectId}`, {
+    const response = await fetch(`${API_BASE_URL}/analyses/${projectId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

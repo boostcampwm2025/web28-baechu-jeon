@@ -16,12 +16,12 @@ interface StructuralGroup {
   description: string;
 }
 
-interface Step2Data {
+interface Step1Data {
   structural_groups?: StructuralGroup[];
 }
 
 interface AnalysisQueryResult {
-  step2: Step2Data | null;
+  step1: Step1Data | null;
 }
 
 // 2. 더미 데이터
@@ -208,11 +208,11 @@ export class VisualizationsService {
     try {
       // Parameterized Query 사용 (CAST로 UUID 타입 변환)
       const results = await this.prisma.$queryRaw<AnalysisQueryResult[]>`
-        SELECT step2 FROM analysis_results WHERE id = CAST(${analysisId} AS uuid)
+        SELECT step1 FROM analysis_results WHERE id = CAST(${analysisId} AS uuid)
       `;
 
-      if (results.length > 0 && results[0].step2?.structural_groups) {
-        return results[0].step2.structural_groups;
+      if (results.length > 0 && results[0].step1?.structural_groups) {
+        return results[0].step1.structural_groups;
       }
     } catch (error) {
       console.error(`${analysisId}로 조회 실패 - 더미 데이터 사용`, error);

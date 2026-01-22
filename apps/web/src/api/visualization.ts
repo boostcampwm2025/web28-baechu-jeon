@@ -41,13 +41,18 @@ export async function getVisualization(
   signal?: AbortSignal,
 ): Promise<VisualizationResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/visualizations/${analysisId}`, {
-      method: "GET",
-      signal,
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/visualizations/${analysisId}`,
+      {
+        method: "GET",
+        signal,
+      },
+    );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Unknown error" }));
+      const error = await response
+        .json()
+        .catch(() => ({ message: "Unknown error" }));
       throw new VisualizationError(
         error.message || "Failed to fetch visualization",
         response.status,
@@ -77,16 +82,21 @@ export async function updateVisualization(
   formattedData: ApiNode[],
 ): Promise<UpdateVisualizationResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/visualizations/${visualizationId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${API_BASE_URL}/visualizations/${visualizationId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ formattedData }),
       },
-      body: JSON.stringify({ formattedData }),
-    });
+    );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Unknown error" }));
+      const error = await response
+        .json()
+        .catch(() => ({ message: "Unknown error" }));
       throw new VisualizationError(
         error.message || "Failed to update visualization",
         response.status,
@@ -116,7 +126,9 @@ export async function resetVisualization(
     );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Unknown error" }));
+      const error = await response
+        .json()
+        .catch(() => ({ message: "Unknown error" }));
       throw new VisualizationError(
         error.message || "Failed to reset visualization",
         response.status,

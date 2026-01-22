@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { Subject } from 'rxjs';
-import { analysisEventBus } from '../analyses/analysis.emitter';
-import {
-  AnalysisEvent,
+import { AnalysisEvent } from '../analyses/analysis.events';
+import type {
   AnalysisStepEventPayload,
   AnalysisCompletedPayload,
   AnalysisFailedPayload,
@@ -13,66 +13,55 @@ export class ProgressPublisher {
   // 각 analysisId별로 Subject를 관리하는 Map
   private readonly streams = new Map<string, Subject<any>>();
 
-  constructor() {
-    // analysisEventBus 이벤트 구독
-    this.subscribeToEvents();
+  /**
+   * STEP_STARTED 이벤트를 수신하여 해당 스트림으로 전송
+   */
+  @OnEvent(AnalysisEvent.STEP_STARTED)
+  handleStepStarted(payload: AnalysisStepEventPayload): void {
+    this.publishEvent(payload.analysisId, {
+      type: 'step_started',
+      step: payload.step,
+      message: payload.message,
+    });
   }
 
   /**
-   * analysisEventBus의 모든 이벤트를 구독
+   * STEP_COMPLETED 이벤트를 수신하여 해당 스트림으로 전송
    */
-  private subscribeToEvents(): void {
-    // STEP_STARTED 이벤트 구독
-    analysisEventBus.on(
-      AnalysisEvent.STEP_STARTED,
-      (payload: AnalysisStepEventPayload) => {
-        this.publishEvent(payload.analysisId, {
-          type: 'step_started',
-          step: payload.step,
-          message: payload.message,
-        });
-      },
-    );
+  @OnEvent(AnalysisEvent.STEP_COMPLETED)
+  handleStepCompleted(payload: AnalysisStepEventPayload): void {
+    this.publishEvent(payload.analysisId, {
+      type: 'step_completed',
+      step: payload.step,
+      message: payload.message,
+    });
+  }
 
-    // STEP_COMPLETED 이벤트 구독
-    analysisEventBus.on(
-      AnalysisEvent.STEP_COMPLETED,
-      (payload: AnalysisStepEventPayload) => {
-        this.publishEvent(payload.analysisId, {
-          type: 'step_completed',
-          step: payload.step,
-          message: payload.message,
-        });
-      },
-    );
+  /**
+   * COMPLETED 이벤트를 수신하여 해당 스트림으로 전송 및 정리
+   */
+  @OnEvent(AnalysisEvent.COMPLETED)
+  handleCompleted(payload: AnalysisCompletedPayload): void {
+    this.publishEvent(payload.analysisId, {
+      type: 'completed',
+      message: payload.message,
+    });
+    // 완료 후 스트림 정리
+    this.completeStream(payload.analysisId);
+  }
 
-    // COMPLETED 이벤트 구독
-    analysisEventBus.on(
-      AnalysisEvent.COMPLETED,
-      (payload: AnalysisCompletedPayload) => {
-        this.publishEvent(payload.analysisId, {
-          type: 'completed',
-          step: payload.step,
-          message: payload.message,
-        });
-        // 완료 후 스트림 정리
-        this.completeStream(payload.analysisId);
-      },
-    );
-
-    // FAILED 이벤트 구독
-    analysisEventBus.on(
-      AnalysisEvent.FAILED,
-      (payload: AnalysisFailedPayload) => {
-        this.publishEvent(payload.analysisId, {
-          type: 'failed',
-          step: payload.step,
-          reason: payload.reason,
-        });
-        // 실패 후 스트림 정리
-        this.completeStream(payload.analysisId);
-      },
-    );
+  /**
+   * FAILED 이벤트를 수신하여 해당 스트림으로 전송 및 정리
+   */
+  @OnEvent(AnalysisEvent.FAILED)
+  handleFailed(payload: AnalysisFailedPayload): void {
+    this.publishEvent(payload.analysisId, {
+      type: 'failed',
+      step: payload.step,
+      reason: payload.reason,
+    });
+    // 실패 후 스트림 정리
+    this.completeStream(payload.analysisId);
   }
 
   /**
