@@ -38,6 +38,7 @@ export type AnalysisStep =
 export interface AnalysisStepEventPayload {
   analysisId: string;
   step: AnalysisStep;
+  progress: number;
   message?: string;
 }
 
