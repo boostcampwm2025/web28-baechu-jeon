@@ -9,4 +9,9 @@ export class IntentionsController {
   async getIntentions(@Param('projectId') projectId: string) {
     return await this.intentionsService.getProjectIntentions(projectId);
   }
+
+  @Get(':projectId/reset')
+  async resetIntentions(@Param('projectId') projectId: string) {
+    return await this.intentionsService.resetProjectIntentions(projectId);
+  }
 }
