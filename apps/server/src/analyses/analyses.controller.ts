@@ -4,6 +4,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
 import { AnalysesService } from './analyses.service';
+import { Observable } from 'rxjs';
+import { SseService } from '../sse/sse.service';
 
 @Controller('analyses')
 export class AnalysesController {
@@ -39,7 +41,16 @@ export class AnalysesController {
     return this.analysesService.getResult(analysisId);
   }
 
-  @Sse(':projectId/events')
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  streamEvents(@Param('projectId') _projectId: string) {}
+   /**
+   * 분석 진행 상태 SSE 스트림
+   * @param analysisId 분석 ID
+   * @returns Server-Sent Events 스트림
+   */
+  @Get(':analysisId/events')
+  @Sse()
+  streamAnalysisEvents(
+    @Param('analysisId') analysisId: string,
+  ): Observable<{ data: any }> {
+    return this.sseService.getAnalysisStream(analysisId);
+  }
 }

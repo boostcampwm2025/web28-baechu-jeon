@@ -7,11 +7,10 @@ import NodeDetails, {
   NodeDetailsProps,
 } from "@/components/result/visualization/NodeDetails";
 
-export default function VisualizationPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+// TODO: 분석 완료 후 analysisId를 받아서 사용하도록 변경
+const TEMP_ANALYSIS_ID = "e3c9a899-ffd3-41cd-9dc3-cedd00406e58";
+
+export default function VisualizationPage() {
   const [selectedNode, setSelectedNode] = useState<
     NodeDetailsProps["node"] | null
   >(null);
@@ -30,7 +29,7 @@ export default function VisualizationPage({
     <div className="relative h-full">
       <main className="h-full bg-slate-900">
         <VisualizationView
-          projectId={params.id}
+          analysisId={TEMP_ANALYSIS_ID}
           onNodeClick={handleNodeClick}
         />
       </main>

@@ -2,8 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ProjectsModule } from './projects/projects.module';
 import { AiModule } from './ai/ai.module';
-import { AnalysesModule } from './analyses/analyses.module';
 import { BullModule } from '@nestjs/bullmq';
+import { SseModule } from './sse/sse.module';
+import { AnalysesModule } from './analyses/analyses.module';
+import { VisualizationsModule } from './visualizations/visualizations.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -25,6 +28,9 @@ import { BullModule } from '@nestjs/bullmq';
     ProjectsModule,
     AiModule,
     AnalysesModule,
+    PrismaModule,
+    SseModule,
+    VisualizationsModule,
   ],
 })
 export class AppModule {}

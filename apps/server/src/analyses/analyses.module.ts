@@ -8,6 +8,7 @@ import { PipelineRunner } from './pipeline/pipeline.runner.js';
 import { AiModule } from '../ai/ai.module.js';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AnalysisEmitter } from './analysis.emitter.js';
+import { SseModule } from '../sse/sse.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AnalysisEmitter } from './analysis.emitter.js';
     }),
     AiModule,
     EventEmitterModule.forRoot(),
+    SseModule
   ],
   controllers: [AnalysesController],
   providers: [
