@@ -22,7 +22,7 @@ export function buildProjectTree(data: {
       currentPath = currentPath ? `${currentPath}/${part}` : part;
 
       // 현재 레벨에서 같은 이름을 가진 노드가 이미 있는지 확인
-      let existingNode = currentLevel.find((node) => node.name === part);
+      const existingNode = currentLevel.find((node) => node.name === part);
 
       if (existingNode) {
         if (existingNode.children) {
