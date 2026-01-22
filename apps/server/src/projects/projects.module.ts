@@ -5,7 +5,6 @@ import { diskStorage } from 'multer';
 import { ZipParserService } from './services/zip-parser.service';
 import { ProjectStructureService } from './services/project-structure.service';
 import { GitignoreMatcherService } from './services/gitignore-matcher.service';
-import { ProjectRepository } from './repositories/project.repository';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ProjectsController } from './projects.controller';
