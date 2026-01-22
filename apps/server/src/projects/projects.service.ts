@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { promisify } from 'util';
 import * as fs from 'fs';
 import { ZipParserService } from './services/zip-parser.service';
-import { ProjectStructureService } from './services/project-structure.service';
+import {
+  ProjectStructure,
+  ProjectStructureService,
+} from './services/project-structure.service';
 import { GitignoreMatcherService } from './services/gitignore-matcher.service';
 import { ProjectRepository } from './repositories/project.repository';
 
@@ -60,5 +63,24 @@ export class ProjectsService {
     } catch (error) {
       console.error('Failed to cleanup file:', filePath, error);
     }
+  }
+
+  async getProjectStructure(projectId: string) {
+    const project = await this.projectRepository.findStructureById(projectId);
+
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
+
+    const structureData = project.structure as unknown as ProjectStructure;
+
+    return {
+      projectId: project.id,
+      status: project.status,
+      projectStructure: {
+        files: structureData.files || [],
+        folders: structureData.folders || [],
+      },
+    };
   }
 }

@@ -1,6 +1,8 @@
 import {
   Controller,
   Post,
+  Get,
+  Param,
   UploadedFile,
   UseInterceptors,
   BadRequestException,
@@ -57,5 +59,10 @@ export class ProjectsController {
       // 그 외는 서버 에러
       throw new InternalServerErrorException('Failed to process ZIP file');
     }
+  }
+
+  @Get(':projectId')
+  async getProjectStructure(@Param('projectId') projectId: string) {
+    return await this.projectsService.getProjectStructure(projectId);
   }
 }

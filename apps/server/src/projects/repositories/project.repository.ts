@@ -27,4 +27,15 @@ export class ProjectRepository {
       where: { id },
     });
   }
+
+  async findStructureById(id: string) {
+    return this.prisma.project.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+        structure: true,
+      },
+    });
+  }
 }
