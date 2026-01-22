@@ -1,44 +1,26 @@
-"use client";
+import { mockNodes } from "@/mocks/detailData";
+import VisualizationClient from "@/components/result/visualization/VisualizationClient";
+import { getIntentions } from "@/api/intention";
 
-import { useState } from "react";
-import VisualizationView from "@/components/result/visualization/VisualizationView";
+interface PageProps {
+  params: Promise<{ projectId: string }>;
+}
 
-import NodeDetails, {
-  NodeDetailsProps,
-} from "@/components/result/visualization/NodeDetails";
+export default async function VisualizationPage({ params }: PageProps) {
+  const { projectId } = await params;
 
-export default function VisualizationPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const [selectedNode, setSelectedNode] = useState<
-    NodeDetailsProps["node"] | null
-  >(null);
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  try {
+    const intentionsData = await getIntentions(projectId);
 
-  const handleNodeClick = (node: NodeDetailsProps["node"]) => {
-    setSelectedNode(node);
-    setIsPanelOpen(true);
-  };
-
-  const handleClosePanel = () => {
-    setIsPanelOpen(false);
-  };
-
-  return (
-    <div className="relative h-full">
-      <main className="h-full bg-slate-900">
-        <VisualizationView
-          projectId={params.id}
-          onNodeClick={handleNodeClick}
-        />
-      </main>
-      <NodeDetails
-        isOpen={isPanelOpen}
-        onClose={handleClosePanel}
-        node={selectedNode ?? undefined}
+    return (
+      <VisualizationClient
+        projectId={projectId}
+        initialPurposes={intentionsData.contents}
+        initialNodes={mockNodes}
       />
-    </div>
-  );
+    );
+  } catch (error) {
+    console.error("Failed to load intentions:", error);
+    return <div>데이터를 불러오는 중 오류가 발생했습니다.</div>;
+  }
 }
