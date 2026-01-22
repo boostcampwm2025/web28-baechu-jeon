@@ -14,7 +14,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { NodeDetailsProps } from "./NodeDetails";
-import { transformApiToReactFlow } from "./transformNodes";
+import { transformApiToReactFlow } from "@/utils/transformNodes";
 import {
   getVisualization,
   updateVisualization,
