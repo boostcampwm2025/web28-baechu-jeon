@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import { PipelineRunner } from './pipeline/pipeline.runner';
 import { PipelineContext } from './pipeline/pipeline.context';
-import { analysisResultsKey } from './analysis.redis';
+import { analysisResultsKey, analysisStatusKey } from './analysis.redis';
 
 // TODO: 최종 결과를 DB(Prisma)에 저장하기
 // TODO: retry 로직 검토 및 추가
@@ -57,6 +57,13 @@ export class AnalysesService {
       );
       throw error;
     }
+  }
+  async getStatus(analysisId: string) {
+    const status = await this.redis.get(analysisStatusKey(analysisId));
+    if (!status) {
+      return { status: 'not_found' };
+    }
+    return JSON.parse(status);
   }
 
   async getResult(analysisId: string): Promise<any> {

@@ -26,11 +26,19 @@ export class AnalysesController {
     return { analysisId, status: 'pending' };
   }
 
+  @Get(':analysisId/status')
+  async getAnalysisStatus(@Param('analysisId') analysisId: string) {
+    return this.analysesService.getStatus(analysisId);
+  }
+
   @Get(':analysisId/result')
-  async getAnalysisResult(@Param('analysisId') analysisId: string) {
+  async getAnalysisResult(
+    @Param('analysisId') analysisId: string,
+  ): Promise<any> {
     return this.analysesService.getResult(analysisId);
   }
 
   @Sse(':projectId/events')
-  streamEvents(@Param('projectId') projectId: string) {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  streamEvents(@Param('projectId') _projectId: string) {}
 }
