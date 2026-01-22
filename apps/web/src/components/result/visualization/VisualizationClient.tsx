@@ -1,34 +1,55 @@
-"use client";
-
 import { useState } from "react";
 import NodeDetails from "./NodeDetails";
 import ProjectDetails from "./ProjectDetails";
 import SaveButtons from "./SaveButtons";
 import VisualizationView from "./VisualizationView";
 
+// NodeData 인터페이스 정의 및 export
+export interface NodeData {
+  id: string;
+  label: string;
+  groups: string | string[];
+  contents: string;
+  type: "group" | "folder";
+}
+
+export interface ProjectDetailsData {
+  overview: string;
+  purpose: string;
+  key_features: string[];
+  technology_stack: {
+    backend: string[];
+    frontend: string[];
+    infrastructure: string[];
+  };
+  architectural_tendencies: string;
+}
+
+interface VisualizationClientProps {
+  initialNodes: NodeData[];
+  initialPurposes: ProjectDetailsData;
+}
+
 export default function VisualizationClient({
   initialNodes,
   initialPurposes,
-}: any) {
-  // 서버에서 받은 노드 배열 중 첫 번째를 기본 선택 상태로 지정
-  const [selectedNode, setSelectedNode] = useState(initialNodes[0] || null);
+}: VisualizationClientProps) {
+  const [selectedNode, setSelectedNode] = useState<NodeData | null>(
+    initialNodes[0] || null,
+  );
   const [isProjectOpen, setIsProjectOpen] = useState(true);
   const [isNodeOpen, setIsNodeOpen] = useState(true);
 
-  // TODO: 노드 클릭 핸들러 (다이어그램에서 호출될 함수)
-  const handleNodeClick = (node: any) => {
+  const handleNodeClick = (node: NodeData) => {
     setSelectedNode(node);
     setIsNodeOpen(true);
   };
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-slate-900">
-      {/* 메인 시각화 영역 */}
       <VisualizationView projectId="1" onNodeClick={handleNodeClick} />
 
-      {/* 우측 사이드바 레이아웃 */}
       <aside className="pointer-events-none absolute top-6 right-6 bottom-6 z-50 flex w-96 flex-col gap-4">
-        {/* Node Details */}
         <div className="h-56">
           {selectedNode && isNodeOpen && (
             <div className="pointer-events-auto h-full">
@@ -40,7 +61,6 @@ export default function VisualizationClient({
           )}
         </div>
 
-        {/* Project Details */}
         <div
           className={`pointer-events-auto flex-1 overflow-hidden transition-all duration-300 ${
             isProjectOpen
@@ -54,7 +74,6 @@ export default function VisualizationClient({
           />
         </div>
 
-        {/* 버튼 그룹 */}
         <div className="pointer-events-auto">
           <SaveButtons
             isProjectOpen={isProjectOpen}

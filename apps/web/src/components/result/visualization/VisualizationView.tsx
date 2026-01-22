@@ -1,13 +1,13 @@
 "use client";
 
 import NodeCard from "./NodeCard";
-
 import { useState, useRef } from "react";
-import { NodeDetailsProps } from "./NodeDetails";
+import { NodeData } from "./VisualizationClient";
+import { mockNodes } from "@/mocks/detailData";
 
 interface VisualizationViewProps {
   projectId: string;
-  onNodeClick: (node: NodeDetailsProps["node"]) => void;
+  onNodeClick: (node: NodeData) => void; // NodeData 타입 사용
 }
 
 export default function VisualizationView({
@@ -21,52 +21,13 @@ export default function VisualizationView({
   const handleZoomOut = () => setZoom((prev) => Math.max(prev - 10, 50));
   const handleZoomReset = () => setZoom(100);
 
-  // 노드 mock 데이터
-  const nodes = [
-    {
-      title: "API Gateway",
-      path: "/api-gateway",
-      x: 400,
-      y: 150,
-      color: "purple" as const,
-      description: "Main API gateway handling all incoming requests",
-      dependencies: [
-        {
-          name: "User Service",
-          type: "dependency" as const,
-          color: "green" as const,
-        },
-      ],
-      metrics: { testCoverage: 75, complexity: "Medium" as const },
-    },
-    {
-      title: "User Service",
-      path: "/services/users",
-      x: 600,
-      y: 400,
-      color: "blue" as const,
-      description:
-        "Handles user authentication, profile management, and role-based access control.",
-      dependencies: [
-        {
-          name: "Users DB",
-          type: "dependency" as const,
-          color: "green" as const,
-        },
-        {
-          name: "Redis Cache",
-          type: "dependency" as const,
-          color: "orange" as const,
-        },
-        {
-          name: "API Gateway",
-          type: "dependent" as const,
-          color: "gray" as const,
-        },
-      ],
-      metrics: { testCoverage: 88, complexity: "High" as const },
-    },
-  ];
+  // 노드 mock 데이터 - 위치 정보 추가
+  const nodesWithPosition = mockNodes.map((node, index) => ({
+    ...node,
+    x: 200 + index * 300,
+    y: 200,
+    color: node.type === "group" ? "purple" : "blue",
+  }));
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -117,18 +78,29 @@ export default function VisualizationView({
           transform: `scale(${zoom / 100}) translate(${position.x}px, ${position.y}px)`,
         }}
       >
-        <div className="relative h-full w-full p-20">
-          {nodes.map((node, index) => (
-            <NodeCard
-              key={index}
-              title={node.title}
-              path={node.path}
-              x={node.x}
-              y={node.y}
-              color={node.color}
-              onClick={() => onNodeClick(node)}
-            />
-          ))}
+        <div className="h-full w-full bg-slate-900">
+          <div className="relative h-full w-full p-20">
+            {nodesWithPosition.map((node) => (
+              <NodeCard
+                key={node.id}
+                title={node.label}
+                x={node.x}
+                y={node.y}
+                color={node.color as "blue" | "purple"}
+                onClick={() => {
+                  // NodeData 형식에 맞게 필요한 속성만 전달
+                  const nodeData: NodeData = {
+                    id: node.id,
+                    label: node.label,
+                    groups: node.groups,
+                    contents: node.contents,
+                    type: node.type as "group" | "folder",
+                  };
+                  onNodeClick(nodeData);
+                }}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
