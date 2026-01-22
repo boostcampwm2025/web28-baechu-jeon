@@ -49,7 +49,7 @@ export class PipelineRunner {
           projectId,
           step: 1,
         });
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
         context.step1 = step1.result;
 
         await this.emitStep(
@@ -81,7 +81,7 @@ export class PipelineRunner {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           analysisResult: { step1: context.step1 } as any,
         });
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
         context.step2 = step2.result;
         await this.emitStep(
           analysisId,
@@ -104,7 +104,7 @@ export class PipelineRunner {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         analysisResult: { step1: context.step1, step2: context.step2 } as any,
       });
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       context.step3 = step3.result;
 
       await this.emitStep(

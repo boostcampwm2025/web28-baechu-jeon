@@ -4,7 +4,7 @@ export class PipelineContext {
     public readonly projectId: string,
   ) {}
 
-  step1?: any;
-  step2?: any;
-  step3?: any;
+  step1?: unknown;
+  step2?: unknown;
+  step3?: unknown;
 }

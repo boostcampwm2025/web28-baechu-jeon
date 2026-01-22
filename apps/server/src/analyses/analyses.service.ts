@@ -34,13 +34,15 @@ export class AnalysesService {
       if (cachedResults) {
         // 저장된 결과가 있다면 Context에 넣음
         if (cachedResults['STEP1_GROUPING']) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          context.step1 = JSON.parse(cachedResults['STEP1_GROUPING']);
+          context.step1 = JSON.parse(
+            cachedResults['STEP1_GROUPING'],
+          ) as unknown;
           this.logger.log(`[${analysisId}] Step 1 결과 복구 완료`);
         }
         if (cachedResults['STEP2_HYPOTHESIS']) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          context.step2 = JSON.parse(cachedResults['STEP2_HYPOTHESIS']);
+          context.step2 = JSON.parse(
+            cachedResults['STEP2_HYPOTHESIS'],
+          ) as unknown;
           this.logger.log(`[${analysisId}] Step 2 결과 복구 완료`);
         }
       }
@@ -55,11 +57,10 @@ export class AnalysesService {
 
       // Redis 청소
       // await this.redis.del(analysisResultsKey(analysisId));
-    } catch (error: any) {
-      this.logger.error(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        `[${analysisId}] 처리 중 치명적 오류: ${error.message}`,
-      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(`[${analysisId}] 처리 중 치명적 오류: ${errorMessage}`);
       throw error;
     }
   }
@@ -72,16 +73,15 @@ export class AnalysesService {
     return JSON.parse(status);
   }
 
-  async getResult(analysisId: string): Promise<any> {
+  async getResult(analysisId: string): Promise<Record<string, unknown>> {
     const results = await this.redis.hgetall(analysisResultsKey(analysisId));
     if (!results || Object.keys(results).length === 0) {
       return { error: '분석 결과를 찾을 수 없습니다.' };
     }
 
-    const parsedResults: any = {};
+    const parsedResults: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(results)) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      parsedResults[key] = JSON.parse(value);
+      parsedResults[key] = JSON.parse(value) as unknown;
     }
 
     return parsedResults;
@@ -104,11 +104,10 @@ export class AnalysesService {
         },
       });
       this.logger.log(`[${analysisId}] DB 저장 완료`);
-    } catch (error: any) {
-      this.logger.error(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        `[${analysisId}] DB 저장 실패: ${error.message}`,
-      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(`[${analysisId}] DB 저장 실패: ${errorMessage}`);
       throw error;
     }
   }
