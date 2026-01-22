@@ -17,7 +17,7 @@ import { SseModule } from '../sse/sse.module';
     }),
     AiModule,
     EventEmitterModule.forRoot(),
-    SseModule
+    SseModule,
   ],
   controllers: [AnalysesController],
   providers: [

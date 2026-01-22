@@ -13,6 +13,7 @@ export class AnalysesController {
     @InjectQueue('analyses') private readonly analysisQueue: Queue,
     private readonly eventEmitter: EventEmitter2,
     private readonly analysesService: AnalysesService,
+    private readonly sseService: SseService,
   ) {}
 
   @Post(':projectId')
@@ -41,7 +42,7 @@ export class AnalysesController {
     return this.analysesService.getResult(analysisId);
   }
 
-   /**
+  /**
    * 분석 진행 상태 SSE 스트림
    * @param analysisId 분석 ID
    * @returns Server-Sent Events 스트림
