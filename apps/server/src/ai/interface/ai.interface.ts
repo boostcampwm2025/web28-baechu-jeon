@@ -1,5 +1,7 @@
 import { AnalysisResult } from '@prisma/client/edge';
 
+// TODO: AnalysisResult 타입 검토하기
+
 export interface AnalysisRequest {
   projectId: string;
   step: number;
@@ -7,7 +9,7 @@ export interface AnalysisRequest {
 }
 
 export interface AnalysisResponse {
-  content: string;
+  result: any;
 }
 
 export interface AiProvider {
