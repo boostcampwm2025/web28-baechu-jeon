@@ -1,4 +1,4 @@
-import { ZipUploadResponse, ApiError } from "@/types/uploadApi";
+import { ZipUploadResponse, ApiError } from "@/types/projectApi";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
