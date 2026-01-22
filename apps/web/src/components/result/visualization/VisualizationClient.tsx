@@ -42,14 +42,14 @@ export default function VisualizationClient({
   const [isProjectOpen, setIsProjectOpen] = useState(true);
   const [isNodeOpen, setIsNodeOpen] = useState(true);
 
-  const handleNodeClick = (node: NodeData) => {
+  const handleNodeClick = (node: NodeData | null) => {
     setSelectedNode(node);
     setIsNodeOpen(true);
   };
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-slate-900">
-      <VisualizationView projectId="1" onNodeClick={handleNodeClick} />
+      <VisualizationView analysisId="1" onNodeClick={handleNodeClick} />
 
       <aside className="pointer-events-none absolute top-6 right-6 bottom-6 z-50 flex w-96 flex-col gap-4">
         <div className="h-56">
@@ -57,6 +57,7 @@ export default function VisualizationClient({
             <div className="pointer-events-auto h-full">
               <NodeDetails
                 node={selectedNode}
+                isOpen={isNodeOpen}
                 onClose={() => setIsNodeOpen(false)}
               />
             </div>

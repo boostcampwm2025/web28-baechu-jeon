@@ -1,16 +1,18 @@
 import { IoClose } from "react-icons/io5";
+import { NodeData } from "./VisualizationClient";
 
 export interface NodeDetailsProps {
-  node: {
-    label: string;
-    contents: string;
-    groups?: string | string[];
-    type?: string;
-  };
+  node: NodeData | null;
   onClose: () => void;
+  isOpen: boolean;
 }
 
-export default function NodeDetails({ node, onClose }: NodeDetailsProps) {
+export default function NodeDetails({
+  node,
+  onClose,
+  isOpen,
+}: NodeDetailsProps) {
+  if (!isOpen || !node) return null;
   const showBadge = node.groups && node.type !== "group";
 
   return (
