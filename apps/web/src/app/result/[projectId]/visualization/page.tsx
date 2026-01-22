@@ -33,11 +33,13 @@ export default function VisualizationPage() {
           onNodeClick={handleNodeClick}
         />
       </main>
-      <NodeDetails
-        isOpen={isPanelOpen}
-        onClose={handleClosePanel}
-        node={selectedNode ?? undefined}
-      />
+      {selectedNode && (
+        <NodeDetails
+          isOpen={isPanelOpen}
+          onClose={handleClosePanel}
+          node={selectedNode}
+        />
+      )}
     </div>
   );
 }

@@ -29,26 +29,24 @@ export default function Header() {
     <>
       <Toast message={toastMessage} show={showToast} />
 
-      <header className="relative border-b border-sky-100 bg-white/80 backdrop-blur-md">
-        <div className="flex items-center justify-between px-6 py-6">
-          <Link href="/" className="flex items-center gap-3">
-            <img src="/logo.svg" alt="로고" />
-            <h1 className="text-xl font-bold">쇼미더구조</h1>
-          </Link>
+      <header className="top-0 z-50 flex w-full shrink-0 items-center justify-between border-b border-sky-100 bg-white/80 px-6 py-6 backdrop-blur-md">
+        <Link href="/" className="flex items-center gap-3">
+          <img src="/logo.svg" alt="로고" />
+          <h1 className="text-xl font-bold">쇼미더구조</h1>
+        </Link>
 
-          <div className="absolute left-1/2 -translate-x-1/2">
-            {isResultPage && <ResultTabs />}
-          </div>
+        <div className="absolute left-1/2 -translate-x-1/2">
+          {isResultPage && <ResultTabs />}
+        </div>
 
-          <div className="flex items-center gap-4">
-            {isResultPage && (
-              <>
-                <ExportButton onClick={handleExport} />
-                <div className="mx-2 h-8 w-0.5 bg-slate-200" />
-              </>
-            )}
-            <LoginButton />
-          </div>
+        <div className="flex items-center gap-4">
+          {isResultPage && (
+            <>
+              <ExportButton onClick={handleExport} />
+              <div className="mx-2 h-8 w-0.5 bg-slate-200" />
+            </>
+          )}
+          <LoginButton />
         </div>
       </header>
     </>

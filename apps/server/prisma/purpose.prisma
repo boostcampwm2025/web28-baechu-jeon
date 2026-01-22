@@ -1,0 +1,11 @@
+// Purpose 테이블 스키마
+
+model Purpose {
+  id                 BigInt @id @default(autoincrement())
+  analysisResultId String @map("analysis_result_id") @db.Uuid
+  contents           String @db.Text
+
+  analysisResult AnalysisResult @relation(fields: [analysisResultId], references: [id], onDelete: Cascade)
+
+  @@map("purposes")
+}

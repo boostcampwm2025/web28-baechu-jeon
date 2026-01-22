@@ -37,6 +37,7 @@ if (!fs.existsSync(uploadDir)) {
     ZipParserService,
     ProjectStructureService,
     GitignoreMatcherService,
+    ProjectRepository,
   ],
 })
 export class ProjectsModule {}

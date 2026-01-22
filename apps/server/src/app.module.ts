@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { DatabaseModule } from './database/database.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ProjectsModule } from './projects/projects.module';
 import { AiModule } from './ai/ai.module';
@@ -7,6 +8,7 @@ import { SseModule } from './sse/sse.module';
 import { AnalysesModule } from './analyses/analyses.module';
 import { VisualizationsModule } from './visualizations/visualizations.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { IntentionsModule } from './intentions/intentions.module';
 
 @Module({
   imports: [
@@ -25,7 +27,9 @@ import { PrismaModule } from './prisma/prisma.module';
       }),
     }),
 
+    DatabaseModule,
     ProjectsModule,
+    IntentionsModule,
     AiModule,
     AnalysesModule,
     PrismaModule,

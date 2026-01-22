@@ -25,7 +25,7 @@ import resetIcon from "@/assets/reset.svg";
 
 interface VisualizationViewProps {
   analysisId: string;
-  onNodeClick: (node: NodeDetailsProps["node"]) => void;
+  onNodeClick: (node: NodeDetailsProps["node"] | null) => void;
 }
 
 // 커스텀 그룹 노드 컴포넌트
@@ -138,15 +138,15 @@ export default function VisualizationView({
   }
 
   const handleNodeClick = (_: React.MouseEvent, node: Node) => {
+    // TypeScript가 요구하는 NodeData 인터페이스 규격에 맞게 매핑
     onNodeClick({
-      title: String(node.data.label),
-      path: `/${node.id}`,
-      description: `Node ${node.data.label} description`,
-      dependencies: [],
-      metrics: { testCoverage: 80, complexity: "Medium" },
+      id: node.id, // 필수 id 추가
+      label: String(node.data.label), // title 대신 label 사용
+      contents: `상세 정보: ${node.data.label}`, // description 대신 contents 사용
+      groups: (node.data.groups as string | string[]) || "", // 필수 groups 추가
+      type: (node.type as "group" | "folder") || "folder", // 필수 type 추가
     });
   };
-
   const handleReset = async () => {
     if (!visualizationId) return;
 
