@@ -2,16 +2,22 @@ import { Module } from '@nestjs/common';
 import { AnalysesController } from './analyses.controller.js';
 import { AnalysesService } from './analyses.service.js';
 import { redisProvider } from './redis.provider.js';
-import { analysesQueueProvider } from './queue.provider.js';
 import { BullModule } from '@nestjs/bullmq';
+import { AnalysesProcessor } from './analyses.processor.js';
+import { PipelineRunner } from './pipeline/pipeline.runner.js';
 
 @Module({
   imports: [
     BullModule.registerQueue({
-      name: 'analysis',
+      name: 'analyses',
     }),
   ],
   controllers: [AnalysesController],
-  providers: [AnalysesService, redisProvider],
+  providers: [
+    AnalysesService,
+    redisProvider,
+    AnalysesProcessor,
+    PipelineRunner,
+  ],
 })
 export class AnalysesModule {}
