@@ -1,4 +1,4 @@
-import { AnalysisResult, Project } from '@prisma/client';
+import { AnalysisResult, Project } from '@prisma/client/edge';
 
 export type Step1Input = Project;
 export type Step2Input = { project: Project; analysisResult: AnalysisResult };
