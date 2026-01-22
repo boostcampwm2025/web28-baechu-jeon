@@ -55,7 +55,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
 
         // 2. SSE 연결 (analysisId 사용)
         eventSource = new EventSource(
-          `${API_BASE_URL}/api/analyses/${result.analysisId}/events`,
+          `${API_BASE_URL}/api/analyses/${analysisId}/events`,
         );
 
         eventSource.onmessage = (event) => {
