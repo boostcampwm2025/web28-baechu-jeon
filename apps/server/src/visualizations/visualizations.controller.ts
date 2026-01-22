@@ -4,7 +4,7 @@ import {
   VisualizationResponseDto,
   UpdateVisualizationDto,
   UpdateVisualizationResponseDto,
-} from './visualizations.dto';
+} from './dto/visualizations.dto';
 
 @Controller('visualizations')
 export class VisualizationsController {
