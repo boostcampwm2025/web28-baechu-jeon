@@ -7,7 +7,7 @@ import {
   ProjectStructureService,
 } from './services/project-structure.service';
 import { GitignoreMatcherService } from './services/gitignore-matcher.service';
-import { ProjectRepository } from './repositories/project.repository';
+import { ProjectRepository } from './repository/project.repository';
 
 const unlink = promisify(fs.unlink);
 

@@ -1,26 +1,42 @@
-import { mockNodes } from "@/mocks/detailData";
-import VisualizationClient from "@/components/result/visualization/VisualizationClient";
-import { getIntentions } from "@/api/intention";
+import { useState } from "react";
+import VisualizationView from "@/components/result/visualization/VisualizationView";
 
-interface PageProps {
-  params: Promise<{ projectId: string }>;
-}
+import NodeDetails, {
+  NodeDetailsProps,
+} from "@/components/result/visualization/NodeDetails";
 
-export default async function VisualizationPage({ params }: PageProps) {
-  const { projectId } = await params;
+// TODO: 분석 완료 후 analysisId를 받아서 사용하도록 변경
+const TEMP_ANALYSIS_ID = "e3c9a899-ffd3-41cd-9dc3-cedd00406e58";
 
-  try {
-    const intentionsData = await getIntentions(projectId);
+export default function VisualizationPage() {
+  const [selectedNode, setSelectedNode] = useState<
+    NodeDetailsProps["node"] | null
+  >(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
-    return (
-      <VisualizationClient
-        projectId={projectId}
-        initialPurposes={intentionsData.contents}
-        initialNodes={mockNodes}
+  const handleNodeClick = (node: NodeDetailsProps["node"]) => {
+    setSelectedNode(node);
+    setIsPanelOpen(true);
+  };
+
+  const handleClosePanel = () => {
+    setIsPanelOpen(false);
+  };
+
+  return (
+    <div className="relative h-full">
+      <main className="h-full bg-slate-900">
+        <VisualizationView
+          analysisId={TEMP_ANALYSIS_ID}
+          onNodeClick={handleNodeClick}
+        />
+      </main>
+      <NodeDetails
+        isOpen={isPanelOpen}
+        onClose={handleClosePanel}
+        node={selectedNode}
       />
-    );
-  } catch (error) {
-    console.error("Failed to load intentions:", error);
-    return <div>데이터를 불러오는 중 오류가 발생했습니다.</div>;
-  }
+    </div>
+  );
+>>>>>>> origin/dev
 }

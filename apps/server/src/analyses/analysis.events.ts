@@ -38,12 +38,13 @@ export type AnalysisStep =
 export interface AnalysisStepEventPayload {
   analysisId: string;
   step: AnalysisStep;
+  progress: number;
   message?: string;
 }
 
 export interface AnalysisCompletedPayload {
   analysisId: string;
-  step: AnalysisStep;
+  completedAt: Date;
   message?: string;
 }
 

@@ -15,7 +15,7 @@ import { ProjectsService } from './projects.service';
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
-  @Post('zip')
+  @Post('')
   @UseInterceptors(
     FileInterceptor('file', {
       limits: {

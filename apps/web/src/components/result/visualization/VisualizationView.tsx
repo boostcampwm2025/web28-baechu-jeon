@@ -1,108 +1,196 @@
 "use client";
 
-import NodeCard from "./NodeCard";
-import { useState, useRef } from "react";
-import { NodeData } from "./VisualizationClient";
-import { mockNodes } from "@/mocks/detailData";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  MiniMap,
+  useNodesState,
+  type Node,
+  type NodeTypes,
+  type NodeProps,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import { NodeDetailsProps } from "./NodeDetails";
+import { transformApiToReactFlow } from "@/utils/transformNodes";
+import {
+  getVisualization,
+  updateVisualization,
+  resetVisualization,
+  VisualizationError,
+} from "@/api/visualization";
+import resetIcon from "@/assets/reset.svg";
 
 interface VisualizationViewProps {
-  projectId: string;
-  onNodeClick: (node: NodeData) => void; // NodeData 타입 사용
+  analysisId: string;
+  onNodeClick: (node: NodeDetailsProps["node"]) => void;
 }
 
+// 커스텀 그룹 노드 컴포넌트
+function GroupNode({ data }: NodeProps) {
+  const colors = data.colors as
+    | { border: string; bg: string; text: string }
+    | undefined;
+  return (
+    <div
+      className={`h-full w-full rounded-xl border p-2 ${colors?.border || "border-blue-500/30"} ${colors?.bg || "bg-blue-500/10"}`}
+    >
+      <div
+        className={`text-xs font-semibold ${colors?.text || "text-blue-400"}`}
+      >
+        {data.label as string}
+      </div>
+    </div>
+  );
+}
+
+// 커스텀 폴더 노드 컴포넌트
+function FolderNode({ data }: NodeProps) {
+  const colors = data.colors as
+    | { border: string; bg: string; text: string }
+    | undefined;
+  return (
+    <div
+      className={`flex items-start gap-3 rounded-xl border-2 bg-slate-900 px-4 py-3 shadow-lg ${colors?.border || "border-purple-500"} ${colors?.bg || ""}`}
+    >
+      <div className="flex flex-col">
+        <span
+          className={`text-sm font-semibold ${colors?.text || "text-white"}`}
+        >
+          {data.label as string}
+        </span>
+        <span className="text-xs text-slate-400">
+          {(data.path as string) || `/${(data.label as string).toLowerCase()}`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// 커스텀 노드 타입 등록
+const nodeTypes: NodeTypes = {
+  group: GroupNode,
+  folder: FolderNode,
+};
+
 export default function VisualizationView({
+  analysisId,
   onNodeClick,
 }: VisualizationViewProps) {
-  const [zoom, setZoom] = useState(100);
-  const [position] = useState({ x: 0, y: 0 });
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [visualizationId, setVisualizationId] = useState<string | null>(null);
 
-  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 10, 200));
-  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 10, 50));
-  const handleZoomReset = () => setZoom(100);
+  useEffect(() => {
+    const controller = new AbortController();
 
-  // 노드 mock 데이터 - 위치 정보 추가
-  const nodesWithPosition = mockNodes.map((node, index) => ({
-    ...node,
-    x: 200 + index * 300,
-    y: 200,
-    color: node.type === "group" ? "purple" : "blue",
-  }));
+    async function fetchVisualization() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getVisualization(analysisId, controller.signal);
+        const { reactFlowNodes, updatedApiNodes } =
+          transformApiToReactFlow(data);
+        setNodes(reactFlowNodes);
+        setVisualizationId(data.visualizationId);
 
-  return (
-    <div className="relative h-full w-full overflow-hidden">
-      <div className="absolute top-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 p-1 shadow-lg">
-        <button
-          onClick={handleZoomReset}
-          className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
-          title="Fit Screen"
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-            />
-          </svg>
-        </button>
-        <div className="h-4 w-px bg-slate-700"></div>
-        <button
-          onClick={handleZoomOut}
-          className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
-        >
-          -
-        </button>
-        <span className="min-w-12 px-2 text-center font-mono text-xs text-slate-400 select-none">
-          {zoom}%
-        </span>
-        <button
-          onClick={handleZoomIn}
-          className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
-        >
-          +
-        </button>
-      </div>
+        // dagre로 계산된 위치를 서버에 저장
+        await updateVisualization(data.visualizationId, updatedApiNodes);
+      } catch (err) {
+        if (err instanceof VisualizationError && err.statusCode === 0) {
+          return;
+        }
+        setError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    }
 
-      <div
-        ref={canvasRef}
-        className="h-full w-full bg-slate-900"
-        style={{
-          backgroundImage: "radial-gradient(#334155 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
-          transform: `scale(${zoom / 100}) translate(${position.x}px, ${position.y}px)`,
-        }}
-      >
-        <div className="h-full w-full bg-slate-900">
-          <div className="relative h-full w-full p-20">
-            {nodesWithPosition.map((node) => (
-              <NodeCard
-                key={node.id}
-                title={node.label}
-                x={node.x}
-                y={node.y}
-                color={node.color as "blue" | "purple"}
-                onClick={() => {
-                  // NodeData 형식에 맞게 필요한 속성만 전달
-                  const nodeData: NodeData = {
-                    id: node.id,
-                    label: node.label,
-                    groups: node.groups,
-                    contents: node.contents,
-                    type: node.type as "group" | "folder",
-                  };
-                  onNodeClick(nodeData);
-                }}
-              />
-            ))}
-          </div>
+    if (analysisId) {
+      fetchVisualization();
+    }
+
+    return () => controller.abort();
+  }, [analysisId, setNodes]);
+
+  if (loading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-slate-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-blue-500" />
+          <span className="animate-pulse text-sm text-slate-400">
+            시각화 데이터를 불러오는 중...
+          </span>
         </div>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-slate-900">
+        <div className="text-red-400">Error: {error}</div>
+      </div>
+    );
+  }
+
+  const handleNodeClick = (_: React.MouseEvent, node: Node) => {
+    onNodeClick({
+      title: String(node.data.label),
+      path: `/${node.id}`,
+      description: `Node ${node.data.label} description`,
+      dependencies: [],
+      metrics: { testCoverage: 80, complexity: "Medium" },
+    });
+  };
+
+  const handleReset = async () => {
+    if (!visualizationId) return;
+
+    try {
+      setLoading(true);
+      const data = await resetVisualization(visualizationId);
+      const { reactFlowNodes, updatedApiNodes } = transformApiToReactFlow(data);
+      setNodes(reactFlowNodes);
+
+      // 초기화 후 다시 계산된 위치를 서버에 저장
+      await updateVisualization(visualizationId, updatedApiNodes);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Reset failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="relative h-full w-full">
+      <ReactFlow
+        nodes={nodes}
+        nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        onNodeClick={handleNodeClick}
+        fitView
+        className="bg-slate-900"
+      >
+        <Background color="#334155" gap={24} />
+        <Controls className="!rounded-lg !border-slate-700 !bg-slate-800 [&>button]:!border-slate-700 [&>button]:!bg-slate-800 [&>button]:!text-slate-400 [&>button:hover]:!bg-slate-700" />
+        <MiniMap
+          className="!rounded-lg !border-slate-700 !bg-slate-800"
+          nodeColor="#3b82f6"
+          maskColor="rgba(15, 23, 42, 0.8)"
+        />
+      </ReactFlow>
+      <button
+        onClick={handleReset}
+        disabled={!visualizationId || loading}
+        title="초기화"
+        className="absolute top-4 right-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Image src={resetIcon} alt="초기화" width={32} height={32} />
+      </button>
     </div>
   );
 }
