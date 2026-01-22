@@ -16,7 +16,6 @@ model Project {
   createdAt DateTime      @default(now()) @map("created_at") @db.Timestamp
 
   analysisResults AnalysisResult[]
-  visualizations  Visualization[]
 
   @@map("projects")
 }
