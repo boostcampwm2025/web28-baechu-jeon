@@ -8,7 +8,7 @@ export const redisProvider: Provider = {
   useFactory: (configService: ConfigService) => {
     return new Redis({
       host: configService.get<string>('REDIS_HOST'),
-      port: Number(configService.get<number>('REDIS_PORT')),
+      port: Number(configService.get<string>('REDIS_PORT')),
     });
   },
 };
