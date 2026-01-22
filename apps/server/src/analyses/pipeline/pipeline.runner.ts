@@ -4,9 +4,7 @@ import { PipelineContext } from './pipeline.context';
 import { AnalysisEmitter } from '../analysis.emitter';
 import { AnalysisStep } from '../analysis.events';
 
-// TODO: analysisResult 타입 수정하기
 // TODO: 에러 핸들링 추가: 한 단계에서 에러가 나면 context에 에러 상태를 기록하고 작업을 중단하거나 >>재시도하는 로직<<
-
 @Injectable()
 export class PipelineRunner {
   private readonly logger = new Logger(PipelineRunner.name);
@@ -21,14 +19,14 @@ export class PipelineRunner {
     step: AnalysisStep,
     type: 'STARTED' | 'COMPLETED',
     progress: number,
+    result?: any,
   ) {
-    const message = type === 'STARTED' ? `${step} 시작...` : `${step} 종료...`;
-    this.emitter.emitStepStatus({
-      analysisId,
-      step,
-      progress,
-      message,
-    });
+    const message = type === 'STARTED' ? `${step} 시작...` : `${step} 완료!`;
+
+    await this.emitter.emitStepStatus(
+      { analysisId, step, progress, message },
+      result,
+    );
   }
 
   async run(context: PipelineContext) {
@@ -36,41 +34,90 @@ export class PipelineRunner {
 
     try {
       // STEP 1
-      await this.emitStep(analysisId, 'STEP1_GROUPING', 'STARTED', 10);
-      const step1 = await this.geminiService.getResult({
-        projectId: context.projectId,
-        step: 1,
-      });
-      context.step1 = step1.result;
-      await this.emitStep(analysisId, 'STEP1_GROUPING', 'COMPLETED', 30);
+      if (context.step1) {
+        this.logger.log(`[${analysisId}] Step 1 이미 완료됨. 스킵.`);
+        await this.emitStep(
+          analysisId,
+          'STEP1_GROUPING',
+          'COMPLETED',
+          30,
+          context.step1,
+        );
+      } else {
+        await this.emitStep(analysisId, 'STEP1_GROUPING', 'STARTED', 10);
+        const step1 = await this.geminiService.getResult({
+          projectId,
+          step: 1,
+        });
+        context.step1 = step1.result;
+
+        await this.emitStep(
+          analysisId,
+          'STEP1_GROUPING',
+          'COMPLETED',
+          30,
+          context.step1,
+        );
+      }
 
       // STEP 2
-      await this.emitStep(analysisId, 'STEP2_HYPOTHESIS', 'STARTED', 40);
-      const step2 = await this.geminiService.getResult({
-        projectId: context.projectId,
-        step: 2,
-        analysisResult: { step1: context.step1 } as any,
-      });
-      context.step2 = step2.result;
-      await this.emitStep(analysisId, 'STEP2_HYPOTHESIS', 'COMPLETED', 60);
+      if (context.step2) {
+        this.logger.log(`[${analysisId}] Step 2 이미 완료됨. 스킵.`);
+        await this.emitStep(
+          analysisId,
+          'STEP2_HYPOTHESIS',
+          'COMPLETED',
+          60,
+          context.step2,
+        );
+      } else {
+        await this.emitStep(analysisId, 'STEP2_HYPOTHESIS', 'STARTED', 40);
+        if (!context.step1) throw new Error('Step 1 result missing');
+
+        const step2 = await this.geminiService.getResult({
+          projectId,
+          step: 2,
+          analysisResult: { step1: context.step1 } as any,
+        });
+        context.step2 = step2.result;
+        await this.emitStep(
+          analysisId,
+          'STEP2_HYPOTHESIS',
+          'COMPLETED',
+          60,
+          context.step2,
+        );
+      }
 
       // STEP 3
       await this.emitStep(analysisId, 'STEP3_INTENT', 'STARTED', 70);
+
+      if (!context.step1 || !context.step2)
+        throw new Error('Previous results missing');
+
       const step3 = await this.geminiService.getResult({
-        projectId: context.projectId,
+        projectId,
         step: 3,
-        analysisResult: { step1: context.step1 } as any,
+        analysisResult: { step1: context.step1, step2: context.step2 } as any,
       });
       context.step3 = step3.result;
-      await this.emitStep(analysisId, 'STEP3_INTENT', 'COMPLETED', 90);
 
-      this.emitter.emitCompleted({
+      await this.emitStep(
+        analysisId,
+        'STEP3_INTENT',
+        'COMPLETED',
+        90,
+        context.step3,
+      );
+
+      // 전체 완료
+      await this.emitter.emitCompleted({
         analysisId,
         completedAt: new Date(),
       });
     } catch (err) {
       this.logger.error(`Pipeline failed at ${analysisId}: ${err.message}`);
-      this.emitter.emitFailed({
+      await this.emitter.emitFailed({
         analysisId,
         reason: err.message,
       });
