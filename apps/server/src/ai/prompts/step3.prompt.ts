@@ -1,4 +1,3 @@
-import { AnalysisResult, Project } from '@prisma/client';
 import { Step3Input } from '../types/ai.types';
 
 // TODO: systemPrompt 다듬기 (4단계 여부에 따른 결과 비교)
@@ -96,7 +95,7 @@ export const buildStep3Prompts = ({ analysisResult, project }: Step3Input) => {
 
 
 --------------------------------------------------
-## **응답 형식 (반드시 정확히 따를 것)**
+**다음 JSON 형식으로 응답해주세요 (반드시 이 형식을 정확히 따르세요):**
 
 {
   "architectural_tendencies": {
@@ -133,9 +132,7 @@ export const buildStep3Prompts = ({ analysisResult, project }: Step3Input) => {
 }
 `;
 
-  const userPrompt = `## 1단계 분석 결과
-${JSON.stringify(analysisResult.step1, null, 2)}
-
+  const userPrompt = `
 ## 2단계 분석 결과
 ${JSON.stringify(analysisResult.step2, null, 2)}
 

@@ -1,4 +1,3 @@
-import { Project } from '@prisma/client';
 import { Step1Input } from '../types/ai.types';
 
 // TODO: systemPrompt 다듬기
