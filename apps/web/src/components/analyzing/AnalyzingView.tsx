@@ -40,6 +40,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
   const [completedSteps, setCompletedSteps] = useState<number>(0);
   const [estimatedTime, setEstimatedTime] = useState<number>(50); // 총 예상 시간 (초)
   const [error, setError] = useState<string | null>(null);
+  const [analysisId, setAnalysisId] = useState<string | null>(null);
   const totalSteps = 4;
 
   // 분석 시작 및 SSE 연결
@@ -50,6 +51,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
       try {
         // 1. 분석 시작 API 호출
         const result = await startAnalysis(projectId);
+        setAnalysisId(result.analysisId);
 
         // 2. SSE 연결 (analysisId 사용)
         eventSource = new EventSource(
@@ -83,7 +85,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
               setCompletedSteps(totalSteps);
               setEstimatedTime(0);
               eventSource?.close();
-              router.replace(`/result/${projectId}`);
+              router.replace(`/result/${projectId}/${result.analysisId}`);
             } else if (data.type === "failed") {
               setCurrentStep("분석 실패");
               setError(data.reason || "분석 중 오류가 발생했습니다.");

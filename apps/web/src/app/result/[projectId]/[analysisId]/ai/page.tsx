@@ -5,14 +5,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 export default async function AiAnalysisPage({
   params,
 }: {
-  params: Promise<{ projectId: string }>;
+  params: Promise<{ projectId: string; analysisId: string }>;
 }) {
-  const { projectId } = await params;
+  const { projectId, analysisId } = await params;
 
   // 백엔드 API 호출
   let data;
   try {
-    const response = await fetch(`${API_BASE_URL}/ai/${projectId}/result`, {
+    const response = await fetch(`${API_BASE_URL}/ai/${analysisId}/result`, {
       cache: "no-store", // 항상 최신 데이터 가져오기
     });
 
@@ -30,8 +30,8 @@ export default async function AiAnalysisPage({
             AI 분석 결과
           </h1>
           <p className="text-gray-600">
-            프로젝트 ID:{" "}
-            <span className="font-mono text-blue-500">{projectId}</span>
+            분석 ID:{" "}
+            <span className="font-mono text-blue-500">{analysisId}</span>
           </p>
         </div>
         <div className="rounded-lg border border-red-200 bg-red-50 p-6">
@@ -56,8 +56,8 @@ export default async function AiAnalysisPage({
       <div className="mb-6">
         <h1 className="mb-2 text-3xl font-bold text-gray-900">AI 분석 결과</h1>
         <p className="text-gray-600">
-          프로젝트 ID:{" "}
-          <span className="font-mono text-blue-500">{projectId}</span>
+          분석 ID:{" "}
+          <span className="font-mono text-blue-500">{analysisId}</span>
         </p>
       </div>
 

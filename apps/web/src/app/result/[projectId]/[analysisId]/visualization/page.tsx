@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import VisualizationView from "@/components/result/visualization/VisualizationView";
 
 import NodeDetails, {
   NodeDetailsProps,
 } from "@/components/result/visualization/NodeDetails";
 
-// TODO: 분석 완료 후 analysisId를 받아서 사용하도록 변경
-const TEMP_ANALYSIS_ID = "e3c9a899-ffd3-41cd-9dc3-cedd00406e58";
-
 export default function VisualizationPage() {
+  const params = useParams();
+  const analysisId = params?.analysisId as string;
   const [selectedNode, setSelectedNode] = useState<
     NodeDetailsProps["node"] | null
   >(null);
@@ -29,7 +29,7 @@ export default function VisualizationPage() {
     <div className="relative h-full">
       <main className="h-full bg-slate-900">
         <VisualizationView
-          analysisId={TEMP_ANALYSIS_ID}
+          analysisId={analysisId}
           onNodeClick={handleNodeClick}
         />
       </main>
