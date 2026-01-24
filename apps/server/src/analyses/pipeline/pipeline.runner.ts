@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GeminiService } from 'src/ai/gemini/gemini.service';
 import { PipelineContext } from './pipeline.context';
-import { AnalysisEmitter } from '../analysis.emitter';
+import { AnalysisEmitter } from '../events/analysis.emitter';
 import { AnalysisStep } from '../analysis.events';
 
 // TODO: 에러 핸들링 추가: 한 단계에서 에러가 나면 context에 에러 상태를 기록하고 작업을 중단하거나 >>재시도하는 로직<<

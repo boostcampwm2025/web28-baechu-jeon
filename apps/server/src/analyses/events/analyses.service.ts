@@ -1,9 +1,12 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
-import { PipelineRunner } from './pipeline/pipeline.runner';
-import { PipelineContext } from './pipeline/pipeline.context';
-import { analysisResultsKey, analysisStatusKey } from './analysis.redis';
-import { PrismaService } from '../prisma/prisma.service';
+import { PipelineRunner } from '../pipeline/pipeline.runner.js';
+import { PipelineContext } from '../pipeline/pipeline.context.js';
+import {
+  analysisResultsKey,
+  analysisStatusKey,
+} from '../infra/analysis.redis.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
 // TODO: 최종 결과를 DB(Prisma)에 저장하기
 // TODO: retry 로직 검토 및 추가

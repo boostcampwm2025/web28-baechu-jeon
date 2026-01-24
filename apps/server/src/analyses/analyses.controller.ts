@@ -3,7 +3,7 @@ import { Controller, Get, HttpCode, Param, Post, Sse } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
-import { AnalysesService } from './analyses.service';
+import { AnalysesService } from './events/analyses.service';
 import { Observable } from 'rxjs';
 import { SseService } from '../sse/sse.service';
 

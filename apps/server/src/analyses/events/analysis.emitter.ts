@@ -6,8 +6,11 @@ import {
   AnalysisEvent,
   AnalysisFailedPayload,
   AnalysisStepEventPayload,
-} from './analysis.events';
-import { analysisResultsKey, analysisStatusKey } from './analysis.redis';
+} from '../analysis.events';
+import {
+  analysisResultsKey,
+  analysisStatusKey,
+} from '../infra/analysis.redis.js';
 
 @Injectable()
 export class AnalysisEmitter {
