@@ -11,5 +11,8 @@ model Node {
 
   visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)
 
+  outgoingEdges Edge[] @relation("SourceNode")
+  incomingEdges Edge[] @relation("TargetNode")
+  
   @@map("nodes")
 }

@@ -7,6 +7,7 @@ model Visualization {
 
   analysisResult AnalysisResult @relation(fields: [analysisResultId], references: [id], onDelete: Cascade)
   nodes          Node[]
+  edges          Edge[]
 
   @@map("visualizations")
 }
