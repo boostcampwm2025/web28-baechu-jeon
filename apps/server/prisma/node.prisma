@@ -7,7 +7,7 @@ model Node {
   y               Float  @default(0) @db.Real
   label           String @db.VarChar
   contents        String @db.Text
-  groups          String @db.Text
+  groups          String? @db.Text
 
   visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)
 
