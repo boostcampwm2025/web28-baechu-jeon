@@ -22,15 +22,11 @@ export class VisualizationsService {
     if (exist) {
       const saved = await this.prismaService.visualization.findUnique({
         where: { id: exist.id },
-        include: {
-          nodes: true,
-          edges: true,
-        },
       });
 
       if (!saved) throw new Error('시각화 조회에 실패했습니다.');
 
-      return this.buildGraphResponse(saved);
+      return saved.formattedData;
     }
 
     // 그래프 없으면 새로 만들자.
@@ -151,7 +147,15 @@ export class VisualizationsService {
 
     if (!saved) throw new Error('시각화 생성에 실패했습니다.');
 
-    return this.buildGraphResponse(saved);
+    const formattedGraph = this.buildGraphResponse(saved);
+
+    // formattedData 필드에 저장
+    await this.prismaService.visualization.update({
+      where: { id: visualization.id },
+      data: { formattedData: formattedGraph },
+    });
+
+    return formattedGraph;
   }
 
   private buildGraphResponse(graph: {
