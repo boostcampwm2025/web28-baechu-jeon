@@ -5,7 +5,7 @@ import { VisualizationsService } from './visualizations.service';
 export class VisualizationsController {
   constructor(private readonly visualizationsService: VisualizationsService) {}
 
-  @Get(':visualizationId')
+  @Get(':analysisId')
   async getVisualization(@Param('analysisId') analysisId: string) {
     return await this.visualizationsService.getGraph(analysisId);
   }
