@@ -70,17 +70,13 @@ export class EdgeDto {
 }
 
 export class VisualizationResponseDto {
-  @IsUUID()
-  visualizationId: string;
-
-  @IsEnum(['INITIAL', 'LAYOUTED'])
-  layoutState: 'INITIAL' | 'LAYOUTED';
+  @IsUUID() visualizationId: string;
+  @IsEnum(['INITIAL', 'LAYOUTED']) layoutState: 'INITIAL' | 'LAYOUTED';
 
   @ValidateNested()
-  @Type((opts) => {
-    // 런타임에 layoutState에 따라 변환 클래스 결정
-    return opts?.object?.layoutState === 'INITIAL' ? InitialNodesDto : NodeDto;
-  })
+  @Type((opts) =>
+    opts?.object?.layoutState === 'INITIAL' ? InitialNodesDto : NodeDto,
+  )
   nodes: InitialNodesDto | NodeDto[] = [];
 
   @IsOptional()
@@ -94,7 +90,12 @@ export class UpdateVisualizationDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => NodeDto)
-  formattedData: NodeDto[];
+  nodes: NodeDto[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EdgeDto)
+  edges: EdgeDto[];
 }
 
 export class UpdateVisualizationResponseDto {
