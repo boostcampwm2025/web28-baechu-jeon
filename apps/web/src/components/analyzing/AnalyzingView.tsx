@@ -38,7 +38,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<string>("분석 시작 중...");
   const [completedSteps, setCompletedSteps] = useState<number>(0);
-  const [estimatedTime, setEstimatedTime] = useState<number>(50); // 총 예상 시간 (초)
+  const [estimatedTime, setEstimatedTime] = useState<number>(120); // 총 예상 시간 (초)
   const [error, setError] = useState<string | null>(null);
   const totalSteps = 4;
 

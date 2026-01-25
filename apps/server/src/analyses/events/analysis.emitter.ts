@@ -20,9 +20,14 @@ export class AnalysisEmitter {
   ) {}
 
   // Step 시작/종료 알림 + Redis 상태 저장
-  async emitStepStatus(payload: AnalysisStepEventPayload, result?: any) {
+  async emitStepStatus(
+    payload: AnalysisStepEventPayload,
+    type: 'STARTED' | 'COMPLETED',
+    result?: any,
+  ) {
     const { analysisId, step, progress } = payload;
 
+    // 상태 저장: 항상 PROCESSING (단계별 진행 상황은 step과 progress로 추적)
     await this.redis.set(
       analysisStatusKey(analysisId),
       JSON.stringify({ step, progress, status: 'PROCESSING' }),
@@ -30,7 +35,8 @@ export class AnalysisEmitter {
       3600 * 24,
     );
 
-    if (result) {
+    // 결과 저장: COMPLETED일 때만 저장 (명확성)
+    if (type === 'COMPLETED' && result) {
       await this.redis.hset(
         analysisResultsKey(analysisId),
         step,
@@ -38,7 +44,12 @@ export class AnalysisEmitter {
       );
     }
 
-    this.eventEmitter.emit(AnalysisEvent.STEP_STARTED, payload);
+    // 이벤트 발생: type에 따라 적절한 이벤트 발생
+    if (type === 'STARTED') {
+      this.eventEmitter.emit(AnalysisEvent.STEP_STARTED, payload);
+    } else {
+      this.eventEmitter.emit(AnalysisEvent.STEP_COMPLETED, payload);
+    }
   }
 
   // 최종 완료

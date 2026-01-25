@@ -21,8 +21,8 @@ import { IntentionsModule } from './intentions/intentions.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         connection: {
-          host: configService.get<string>('REDIS_HOST'),
-          port: Number(configService.get<string>('REDIS_PORT')),
+          host: configService.get<string>('REDIS_HOST') || 'localhost',
+          port: Number(configService.get<string>('REDIS_PORT')) || 6379,
         },
       }),
     }),

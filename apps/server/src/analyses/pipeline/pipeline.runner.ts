@@ -25,6 +25,7 @@ export class PipelineRunner {
 
     await this.emitter.emitStepStatus(
       { analysisId, step, progress, message },
+      type,
       result,
     );
   }
