@@ -1,4 +1,3 @@
-import { AnalysisResult } from '@prisma/client';
 import { EdgeInput, NodeInput, Step1Json } from '../types/graph-builder.type';
 
 export const buildStep1 = (step1Json: Step1Json) => {
@@ -18,15 +17,13 @@ export const buildStep1 = (step1Json: Step1Json) => {
     nodes.push({
       label: feature.feature_description,
       contents: `Feature_Detailed_Description: ${feature.feature_detailed_description}\nRelated Folders: ${feature.related_folders.join(', ')}`,
-      x: 0,
-      y: 0,
     });
   });
 
   for (let i = 0; i < nodes.length - 1; i++) {
     edges.push({
-      sourceNodeId: BigInt(i),
-      targetNodeId: BigInt(i + 1),
+      sourcePath: i,
+      targetPath: i + 1,
     });
   }
 
