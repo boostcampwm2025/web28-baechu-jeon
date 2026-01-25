@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/database/prisma.service';
 import { AnalysisResult } from '@prisma/client';
+import { GraphBuilderService } from './graph-builder/graph-builder.service';
+import { GraphBuildResult } from './graph-builder/types/graph-builder.type';
 
 @Injectable()
 export class VisualizationsService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly graphBuilderService: GraphBuilderService,
+  ) {}
 
   async getGraph(analysisId: string) {
     // 그래프가 이미 있는지 중복 조회를 해야하나? ㅇㅇ 새로고침할 때 필요
@@ -38,8 +43,57 @@ export class VisualizationsService {
 
   private async createGraphFromAnalysis(analysisResult: AnalysisResult) {
     // visualization row 만들고
-    // build 호출하고
+    const visualization = await this.prismaService.visualization.create({
+      data: {
+        analysisResultId: analysisResult.id,
+        formattedData: {}, // 나중에 채우기
+      },
+    });
+
+    // node랑 edge 저장해야 하니까 build 호출하고
+    // TODO: 언제 await 쓸지 헷갈림
+    const result: GraphBuildResult =
+      this.graphBuilderService.build(analysisResult);
+
+    const { step1, step2 } = result;
+
+    const step1NodeIdMap = new Map<string | number, bigint>();
+
     // node, edge row 만들고
-    // graph 반환하기.
+
+    // step1
+    for (const node of step1.nodes) {
+      const created = await this.prismaService.node.create({
+        data: {
+          visualizationId: visualization.id,
+          x: 0,
+          y: 0,
+          label: node.label,
+          contents: node.contents,
+        },
+      });
+
+      step1NodeIdMap.set(node.label, created.id);
+    }
+
+    const edgesData = step1.edges.map((edge) => {
+      const sourceNodeId = step1NodeIdMap.get(edge.sourcePath);
+      const targetNodeId = step1NodeIdMap.get(edge.targetPath);
+
+      if (!sourceNodeId || !targetNodeId)
+        throw new Error(
+          `Edge 생성 실패: 노드를 찾을 수 없습니다. (${edge.sourcePath} -> ${edge.targetPath})`,
+        );
+
+      return {
+        visualizationId: visualization.id,
+        sourceNodeId,
+        targetNodeId,
+      };
+    });
+
+    await this.prismaService.edge.createMany({
+      data: edgesData,
+    });
   }
 }
