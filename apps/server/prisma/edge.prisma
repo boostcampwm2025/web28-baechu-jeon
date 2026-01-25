@@ -1,12 +1,11 @@
 model Edge {
   id              BigInt @id @default(autoincrement())
   visualizationId String @map("visualization_id") @db.Uuid
-
-  sourceNodeId BigInt @map("source_node")
-  targetNodeId BigInt @map("target_node")
-
-  label String? @db.VarChar
-  type  String? @db.VarChar
+  diagramType     String // "STEP1" | "STEP2"
+  sourceNodeId    BigInt @map("source_node")
+  targetNodeId    BigInt @map("target_node")
+  label           String? @db.VarChar
+  type            String? @db.VarChar
 
   visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)
   sourceNode Node @relation("SourceNode", fields: [sourceNodeId], references: [id], onDelete: Cascade)

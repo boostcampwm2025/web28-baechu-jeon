@@ -3,6 +3,7 @@
 model Node {
   id              BigInt @id @default(autoincrement())
   visualizationId String @map("visualization_id") @db.Uuid
+  diagramType     String // "STEP1" | "STEP2"
   x               Float  @default(0) @db.Real
   y               Float  @default(0) @db.Real
   label           String @db.VarChar
