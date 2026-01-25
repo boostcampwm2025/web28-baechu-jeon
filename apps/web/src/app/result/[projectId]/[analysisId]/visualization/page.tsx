@@ -1,45 +1,54 @@
-"use client";
+import type { Node } from "@xyflow/react";
+import VisualizationClient from "@/components/result/visualization/VisualizationClient";
+import { getIntentions } from "@/api/intention";
+import { getVisualization, updateVisualization } from "@/api/visualization";
+import { transformApiToReactFlow } from "@/utils/transformNodes";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
-import VisualizationView from "@/components/result/visualization/VisualizationView";
+interface PageProps {
+  params: Promise<{ projectId: string; analysisId: string }>;
+}
 
-import NodeDetails, {
-  NodeDetailsProps,
-} from "@/components/result/visualization/NodeDetails";
+export default async function VisualizationPage({ params }: PageProps) {
+  const { analysisId } = await params;
 
-export default function VisualizationPage() {
-  const params = useParams();
-  const analysisId = params?.analysisId as string;
-  const [selectedNode, setSelectedNode] = useState<
-    NodeDetailsProps["node"] | null
-  >(null);
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [intentionsResult, visualizationResult] = await Promise.allSettled([
+    getIntentions(analysisId),
+    getVisualization(analysisId),
+  ]);
 
-  const handleNodeClick = (node: NodeDetailsProps["node"]) => {
-    setSelectedNode(node);
-    setIsPanelOpen(true);
-  };
+  const intentions =
+    intentionsResult.status === "fulfilled"
+      ? intentionsResult.value.contents
+      : undefined;
+  const visualization =
+    visualizationResult.status === "fulfilled"
+      ? visualizationResult.value
+      : undefined;
 
-  const handleClosePanel = () => {
-    setIsPanelOpen(false);
-  };
+  let initialNodes: Node[] = [];
+  let visualizationId = visualization?.visualizationId;
+
+  if (visualization) {
+    const { reactFlowNodes, updatedApiNodes } =
+      transformApiToReactFlow(visualization);
+    initialNodes = reactFlowNodes;
+
+    // 모든 노드가 "default"(초기 상태)인지 확인
+    const isInitialState = visualization.nodes.every(
+      (node) => node.x === "default" && node.y === "default",
+    );
+
+    // 기존 데이터가 초기 상태인 경우만 서버에 처음 계산한 좌표 업데이트
+    if (isInitialState) {
+      await updateVisualization(visualization.visualizationId, updatedApiNodes);
+    }
+  }
 
   return (
-    <div className="relative h-full">
-      <main className="h-full bg-slate-900">
-        <VisualizationView
-          analysisId={analysisId}
-          onNodeClick={handleNodeClick}
-        />
-      </main>
-      {selectedNode && (
-        <NodeDetails
-          isOpen={isPanelOpen}
-          onClose={handleClosePanel}
-          node={selectedNode}
-        />
-      )}
-    </div>
+    <VisualizationClient
+      initialPurposes={intentions}
+      initialNodes={initialNodes}
+      visualizationId={visualizationId}
+    />
   );
 }
