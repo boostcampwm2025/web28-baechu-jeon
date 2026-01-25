@@ -39,7 +39,12 @@ export type EdgeInput = {
 };
 
 export type NodeInput = {
-  path?: string; // temp_node_id
+  label: string;
+  contents: string;
+};
+
+export type NodeTemp = {
+  path: string; // 임시 node id
   label: string;
   contents: string;
 };
