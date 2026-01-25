@@ -5,7 +5,7 @@ import {
   ValidateNested,
   IsUUID,
   IsNumber,
-  ValidateIf,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -16,36 +16,40 @@ export class NodeDto {
   @IsString()
   label: string;
 
-  @IsString()
-  group: string;
-
-  @ValidateIf((o: NodeDto) => o.x !== 'default')
-  @IsNumber()
-  @IsOptional()
-  x: number | 'default';
-
-  @ValidateIf((o: NodeDto) => o.x !== 'default')
-  @IsNumber()
-  @IsOptional()
-  y: number | 'default';
-
   @IsOptional()
   @IsString()
-  path?: string;
+  group?: string;
+
+  @IsOptional()
+  @IsNumber()
+  x?: number;
+
+  @IsOptional()
+  @IsNumber()
+  y?: number;
 
   @IsOptional()
   @IsString()
   contents?: string;
-
-  @IsOptional()
-  @IsString()
-  type?: string;
-
-  @IsOptional()
-  metadata?: Record<string, unknown>;
 }
 
-// 시각화 엣지 DTO
+export class InitialNodesDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => NodeDto)
+  diagram1: NodeDto[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => NodeDto)
+  diagram2: NodeDto[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => NodeDto)
+  diagram3: NodeDto[];
+}
+
 export class EdgeDto {
   @IsString()
   id: string;
@@ -61,23 +65,29 @@ export class EdgeDto {
   type?: string;
 
   @IsOptional()
-  metadata?: Record<string, unknown>;
+  @IsString()
+  label?: string;
 }
 
 export class VisualizationResponseDto {
   @IsUUID()
   visualizationId: string;
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => NodeDto)
-  nodes: NodeDto[];
+  @IsEnum(['INITIAL', 'LAYOUTED'])
+  layoutState: 'INITIAL' | 'LAYOUTED';
+
+  @ValidateNested()
+  @Type((opts) => {
+    // 런타임에 layoutState에 따라 변환 클래스 결정
+    return opts?.object?.layoutState === 'INITIAL' ? InitialNodesDto : NodeDto;
+  })
+  nodes: InitialNodesDto | NodeDto[] = [];
 
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => EdgeDto)
-  edges?: EdgeDto[];
+  edges: EdgeDto[] = [];
 }
 
 export class UpdateVisualizationDto {
