@@ -26,7 +26,7 @@ export default async function VisualizationPage({ params }: PageProps) {
       : undefined;
 
   let initialNodes: Node[] = [];
-  let visualizationId = visualization?.visualizationId;
+  const visualizationId = visualization?.visualizationId;
 
   if (visualization) {
     const { reactFlowNodes, updatedApiNodes } =
