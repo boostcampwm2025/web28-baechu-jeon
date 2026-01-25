@@ -20,6 +20,26 @@ export interface Step1Json {
   };
 }
 
+export interface Step2Json {
+  responsibility_hypotheses: Array<{
+    folder_path: string;
+    hypothesis: string;
+    evidence: string;
+    confidence: 'low' | 'medium' | 'high';
+  }>;
+}
+
 // types/graph-builder.type.ts
-export type NodeInput = Omit<Node, 'id' | 'visualizationId' | 'groups'>;
-export type EdgeInput = Omit<Edge, 'id' | 'visualizationId' | 'label' | 'type'>;
+// export type NodeInput = Omit<Node, 'id' | 'visualizationId' | 'groups'>;
+// export type EdgeInput = Omit<Edge, 'id' | 'visualizationId' | 'label' | 'type'>;
+
+export type EdgeInput = {
+  sourcePath: string | number;
+  targetPath: string | number;
+};
+
+export type NodeInput = {
+  path?: string; // temp_node_id
+  label: string;
+  contents: string;
+};
