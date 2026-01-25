@@ -20,13 +20,17 @@ export class VisualizationsService {
     });
 
     if (exist) {
-      return await this.prismaService.visualization.findUnique({
+      const saved = await this.prismaService.visualization.findUnique({
         where: { id: exist.id },
         include: {
           nodes: true,
           edges: true,
         },
       });
+
+      if (!saved) throw new Error('시각화 조회에 실패했습니다.');
+
+      return this.buildGraphResponse(saved);
     }
 
     // 그래프 없으면 새로 만들자.
@@ -66,6 +70,7 @@ export class VisualizationsService {
       const created = await this.prismaService.node.create({
         data: {
           visualizationId: visualization.id,
+          diagramType: 'STEP1',
           x: 0,
           y: 0,
           label: node.label,
@@ -87,6 +92,7 @@ export class VisualizationsService {
 
       return {
         visualizationId: visualization.id,
+        diagramType: 'STEP1',
         sourceNodeId,
         targetNodeId,
       };
@@ -103,6 +109,7 @@ export class VisualizationsService {
       const created = await this.prismaService.node.create({
         data: {
           visualizationId: visualization.id,
+          diagramType: 'STEP2',
           x: 0,
           y: 0,
           label: node.label,
@@ -123,6 +130,7 @@ export class VisualizationsService {
 
       return {
         visualizationId: visualization.id,
+        diagramType: 'STEP2',
         sourceNodeId,
         targetNodeId,
       };
@@ -131,5 +139,54 @@ export class VisualizationsService {
     await this.prismaService.edge.createMany({
       data: step2EdgesData,
     });
+
+    // graph 반환하기.
+    const saved = await this.prismaService.visualization.findUnique({
+      where: { id: visualization.id },
+      include: {
+        nodes: true,
+        edges: true,
+      },
+    });
+
+    if (!saved) throw new Error('시각화 생성에 실패했습니다.');
+
+    return this.buildGraphResponse(saved);
+  }
+
+  private buildGraphResponse(graph: {
+    nodes: Array<{ diagramType: string } & any>;
+    edges: Array<{ diagramType: string } & any>;
+  }) {
+    // BigInt를 string으로 변환
+    const serializeItem = (item: any) => ({
+      ...item,
+      id: item.id?.toString(),
+      visualizationId: item.visualizationId,
+      sourceNodeId: item.sourceNodeId?.toString(),
+      targetNodeId: item.targetNodeId?.toString(),
+    });
+
+    const groupByDiagram = <T extends { diagramType: string }>(items: T[]) => {
+      return items.reduce<Record<string, any[]>>((acc, item) => {
+        acc[item.diagramType] ??= [];
+        acc[item.diagramType].push(serializeItem(item));
+        return acc;
+      }, {});
+    };
+
+    return {
+      layoutState: 'INITIAL',
+      nodes: groupByDiagram(graph.nodes),
+      edges: groupByDiagram(graph.edges),
+    };
   }
 }
+
+// {
+//   "layoutState": "INITIAL", // or "FIXED"
+//   "nodes": {
+//     "diagram1": [...],
+//     "diagram2": [...],
+//   }
+// }
