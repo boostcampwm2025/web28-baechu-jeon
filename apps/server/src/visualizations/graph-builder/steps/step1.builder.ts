@@ -22,8 +22,8 @@ export const buildStep1 = (step1Json: Step1Json) => {
 
   for (let i = 0; i < nodes.length - 1; i++) {
     edges.push({
-      sourcePath: i,
-      targetPath: i + 1,
+      sourcePath: nodes[i].label,
+      targetPath: nodes[i + 1].label,
     });
   }
 
