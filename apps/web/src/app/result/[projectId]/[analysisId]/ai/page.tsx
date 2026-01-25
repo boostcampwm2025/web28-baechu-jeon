@@ -7,7 +7,7 @@ export default async function AiAnalysisPage({
 }: {
   params: Promise<{ projectId: string; analysisId: string }>;
 }) {
-  const { projectId, analysisId } = await params;
+  const { analysisId } = await params;
 
   // 백엔드 API 호출
   let data;
@@ -56,8 +56,7 @@ export default async function AiAnalysisPage({
       <div className="mb-6">
         <h1 className="mb-2 text-3xl font-bold text-gray-900">AI 분석 결과</h1>
         <p className="text-gray-600">
-          분석 ID:{" "}
-          <span className="font-mono text-blue-500">{analysisId}</span>
+          분석 ID: <span className="font-mono text-blue-500">{analysisId}</span>
         </p>
       </div>
 
