@@ -95,5 +95,41 @@ export class VisualizationsService {
     await this.prismaService.edge.createMany({
       data: edgesData,
     });
+
+    const step2NodeIdMap = new Map<string | number, bigint>();
+
+    // step2
+    for (const node of step2.nodes) {
+      const created = await this.prismaService.node.create({
+        data: {
+          visualizationId: visualization.id,
+          x: 0,
+          y: 0,
+          label: node.label,
+          contents: node.contents,
+        },
+      });
+      step2NodeIdMap.set(node.path, created.id);
+    }
+
+    const step2EdgesData = step2.edges.map((edge) => {
+      const sourceNodeId = step2NodeIdMap.get(edge.sourcePath);
+      const targetNodeId = step2NodeIdMap.get(edge.targetPath);
+
+      if (!sourceNodeId || !targetNodeId)
+        throw new Error(
+          `Edge 생성 실패: 노드를 찾을 수 없습니다. (${edge.sourcePath} -> ${edge.targetPath})`,
+        );
+
+      return {
+        visualizationId: visualization.id,
+        sourceNodeId,
+        targetNodeId,
+      };
+    });
+
+    await this.prismaService.edge.createMany({
+      data: step2EdgesData,
+    });
   }
 }
