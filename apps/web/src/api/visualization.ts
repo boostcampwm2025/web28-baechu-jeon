@@ -5,30 +5,36 @@ export interface ApiNode {
   id: string;
   label: string;
   group: string;
-  x: number | "default";
-  y: number | "default";
   contents: string;
+  x?: number; // INITIAL일 땐 없을 수 있음
+  y?: number;
 }
 
+export interface ApiEdge {
+  id: string;
+  source: string;
+  target: string;
+  type?: string;
+  label?: string;
+}
+
+export interface InitialNodes {
+  diagram1: ApiNode[];
+  diagram2: ApiNode[];
+  diagram3: ApiNode[];
+}
+
+// 전체 응답 타입
 export interface VisualizationResponse {
   visualizationId: string;
-  nodes: ApiNode[];
-  edges: unknown[];
+  layoutState: "INITIAL" | "LAYOUTED";
+  nodes: InitialNodes | ApiNode[]; // 상태에 따라 객체 또는 배열
+  edges: ApiEdge[];
 }
 
-export class VisualizationError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number,
-  ) {
-    super(message);
-    this.name = "VisualizationError";
-  }
-}
-
-// PUT 요청 타입
 export interface UpdateVisualizationRequest {
-  formattedData: ApiNode[];
+  nodes: ApiNode[];
+  edges: ApiEdge[];
 }
 
 export interface UpdateVisualizationResponse {
@@ -36,114 +42,59 @@ export interface UpdateVisualizationResponse {
   success: boolean;
 }
 
+export class VisualizationError extends Error {
+  constructor(
+    public message: string,
+    public statusCode: number,
+  ) {
+    super(message);
+    this.name = "VisualizationError";
+  }
+}
+
 export async function getVisualization(
   analysisId: string,
   signal?: AbortSignal,
 ): Promise<VisualizationResponse> {
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/visualizations/${analysisId}`,
-      {
-        method: "GET",
-        signal,
-      },
-    );
-
-    if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ message: "Unknown error" }));
-      throw new VisualizationError(
-        error.message || "Failed to fetch visualization",
-        response.status,
-      );
-    }
-
-    const data: VisualizationResponse = await response.json();
-    return data;
-  } catch (error) {
-    if (error instanceof VisualizationError) {
-      throw error;
-    }
-
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new VisualizationError("Request cancelled", 0);
-    }
-
-    throw new VisualizationError(
-      "Network error. Please check your connection and try again.",
-      0,
-    );
-  }
+  const response = await fetch(`${API_BASE_URL}/visualizations/${analysisId}`, {
+    method: "GET",
+    signal,
+  });
+  if (!response.ok)
+    throw new VisualizationError("Fetch failed", response.status);
+  return response.json();
 }
 
+/**
+ * PUT: nodes와 edges를 모두 포함해서 보냄
+ */
 export async function updateVisualization(
   visualizationId: string,
-  formattedData: ApiNode[],
+  data: UpdateVisualizationRequest, // nodes와 edges가 포함된 객체
 ): Promise<UpdateVisualizationResponse> {
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/visualizations/${visualizationId}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ formattedData }),
-      },
-    );
-
-    if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ message: "Unknown error" }));
-      throw new VisualizationError(
-        error.message || "Failed to update visualization",
-        response.status,
-      );
-    }
-
-    return await response.json();
-  } catch (error) {
-    if (error instanceof VisualizationError) {
-      throw error;
-    }
-
-    throw new VisualizationError(
-      "Network error. Please check your connection and try again.",
-      0,
-    );
-  }
+  const response = await fetch(
+    `${API_BASE_URL}/visualizations/${visualizationId}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    },
+  );
+  if (!response.ok)
+    throw new VisualizationError("Update failed", response.status);
+  return response.json();
 }
 
 export async function resetVisualization(
   visualizationId: string,
 ): Promise<VisualizationResponse> {
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/visualizations/${visualizationId}/reset`,
-      { method: "GET" },
-    );
-
-    if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ message: "Unknown error" }));
-      throw new VisualizationError(
-        error.message || "Failed to reset visualization",
-        response.status,
-      );
-    }
-
-    return await response.json();
-  } catch (error) {
-    if (error instanceof VisualizationError) {
-      throw error;
-    }
-
-    throw new VisualizationError(
-      "Network error. Please check your connection and try again.",
-      0,
-    );
-  }
+  const response = await fetch(
+    `${API_BASE_URL}/visualizations/${visualizationId}/reset`,
+    {
+      method: "GET",
+    },
+  );
+  if (!response.ok)
+    throw new VisualizationError("Reset failed", response.status);
+  return response.json();
 }
