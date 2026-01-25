@@ -48,3 +48,14 @@ export type NodeTemp = {
   label: string;
   contents: string;
 };
+
+export type GraphBuildResult = {
+  step1: {
+    nodes: NodeInput[];
+    edges: EdgeInput[];
+  };
+  step2: {
+    nodes: NodeTemp[];
+    edges: EdgeInput[];
+  };
+};
