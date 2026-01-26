@@ -1,5 +1,3 @@
-import { Node, Edge } from "@xyflow/react";
-import { BaseNodeData } from "@/utils/transformNodes";
 import VisualizationClient from "@/components/result/visualization/VisualizationClient";
 import { getIntentions } from "@/api/intention";
 import { getVisualization, updateVisualization } from "@/api/visualization";
