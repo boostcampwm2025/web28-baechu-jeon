@@ -3,7 +3,7 @@ import { Step2Input } from '../types/ai.types';
 // TODO: systemPrompt 다듬기
 
 export const buildStep2Prompts = ({ analysisResult, project }: Step2Input) => {
-  const systemPrompt = `당신은 전문 소프트웨어 아키텍트입니다. 
+  const systemPrompt = `당신은 전문 소프트웨어 아키텍트입니다.
 1단계(기능 분석) 결과와 프로젝트 구조 정보를 바탕으로, 각 **폴더**가 프로젝트 내에서 어떤 역할을 담당하는지 추론해야 합니다.
 
 # 분석 목표
@@ -17,7 +17,7 @@ export const buildStep2Prompts = ({ analysisResult, project }: Step2Input) => {
 
 2. **1단계 분석 결과 활용:**
    - 1단계 결과의 \`related_folders\`에 명시된 폴더들은 중요한 폴더일 확률이 높습니다. 이를 우선적으로 분석하세요.
-   
+
 3. **신뢰도(Confidence) 평가:**
    - 근거가 명확하면 "high", 추측이 섞여 있으면 "medium", 정보가 부족하면 "low"로 평가하세요.
 
@@ -38,7 +38,7 @@ export const buildStep2Prompts = ({ analysisResult, project }: Step2Input) => {
 
   const userPrompt = `## 1단계 분석 결과
 ${JSON.stringify(analysisResult.step1, null, 2)}
-  
+
 ## 프로젝트 파일 목록
 ${JSON.stringify(project.structure, null, 2)}
 
