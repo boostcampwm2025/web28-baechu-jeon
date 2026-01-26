@@ -1,10 +1,11 @@
+/* eslint-disable */
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { VisualizationsService } from './visualizations.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateVisualizationDto } from './dto/visualizations.dto';
 
-describe.skip('VisualizationsService', () => {
+describe('VisualizationsService', () => {
   let service: VisualizationsService;
 
   // Mock 데이터
@@ -112,7 +113,7 @@ describe.skip('VisualizationsService', () => {
     expect(service).toBeDefined();
   });
 
-  describe.skip('getVisualization', () => {
+  describe('getVisualization', () => {
     it('기존 시각화 데이터가 있으면 해당 데이터를 반환해야 함', async () => {
       mockFindFirst.mockResolvedValue(mockVisualization);
 
@@ -160,7 +161,7 @@ describe.skip('VisualizationsService', () => {
     });
   });
 
-  describe.skip('resetVisualization', () => {
+  describe('resetVisualization', () => {
     it('시각화 데이터를 초기화하고 원본 데이터를 반환해야 함', async () => {
       mockFindUnique.mockResolvedValue(mockVisualization);
 
@@ -194,7 +195,7 @@ describe.skip('VisualizationsService', () => {
     });
   });
 
-  describe.skip('updateVisualization', () => {
+  describe('updateVisualization', () => {
     const updateDto: UpdateVisualizationDto = {
       formattedData: [
         {

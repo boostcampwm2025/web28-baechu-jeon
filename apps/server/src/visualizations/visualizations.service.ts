@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Node, Edge } from '@prisma/client';
+import { Node, Edge, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   VisualizationResponseDto,
@@ -74,14 +74,18 @@ export class VisualizationsService {
         select: { formattedData: true },
       });
 
-      const currentData = current?.formattedData as SnapshotData | null;
+      const currentData =
+        current?.formattedData as unknown as SnapshotData | null;
 
       if (
         !currentData ||
         !currentData.nodes ||
         currentData.nodes.length === 0
       ) {
-        const snapshot = JSON.parse(JSON.stringify({ nodes, edges }));
+        const snapshot = {
+          nodes,
+          edges,
+        } as unknown as Prisma.InputJsonValue;
 
         await tx.visualization.update({
           where: { id: visualizationId },
