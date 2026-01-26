@@ -5,13 +5,13 @@ import { IntentionsService } from './intentions.service';
 export class IntentionsController {
   constructor(private readonly intentionsService: IntentionsService) {}
 
-  @Get(':projectId')
-  async getIntentions(@Param('projectId') projectId: string) {
-    return await this.intentionsService.getProjectIntentions(projectId);
+  @Get(':analysisId')
+  async getIntentions(@Param('analysisId') analysisId: string) {
+    return await this.intentionsService.getIntentions(analysisId);
   }
 
-  @Get(':projectId/reset')
-  async resetIntentions(@Param('projectId') projectId: string) {
-    return await this.intentionsService.resetProjectIntentions(projectId);
+  @Get(':analysisId/reset')
+  async resetIntentions(@Param('analysisId') analysisId: string) {
+    return await this.intentionsService.resetIntentions(analysisId);
   }
 }

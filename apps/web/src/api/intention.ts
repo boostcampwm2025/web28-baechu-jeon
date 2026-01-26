@@ -13,11 +13,11 @@ export class IntentionError extends Error {
 }
 
 export async function getIntentions(
-  projectId: string,
+  analysisId: string,
   signal?: AbortSignal,
 ): Promise<GetIntentionsResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/intentions/${projectId}`, {
+    const response = await fetch(`${API_BASE_URL}/intentions/${analysisId}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       signal,
