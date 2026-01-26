@@ -21,27 +21,25 @@ export const buildStep3Prompts = ({ analysisResult, project }: Step3Input) => {
 반드시 다음 JSON 형식을 정확히 따르세요. (마크다운 없이 JSON만 반환)
 
 {
-  "step3": {
-    "project_intent": {
-      "overview": "프로젝트 개요 (한글)",
-      "purpose": "프로젝트의 핵심 목적 (한글)",
-      "architectural_tendencies": "아키텍처 성향 및 구조적 특징 요약",
-      "key_features": ["핵심 기능 1", "핵심 기능 2"],
-      "technology_stack": {
-        "frontend": ["기술 스택"],
-        "backend": ["기술 스택"],
-        "infrastructure": ["기술 스택"]
-      },
-      "evidence": ["근거 1 (README)", "근거 2 (구조적 특징)"],
-      "confidence": "low" | "medium" | "high"
+  "project_intent": {
+    "overview": "프로젝트 개요 (한글)",
+    "purpose": "프로젝트의 핵심 목적 (한글)",
+    "architectural_tendencies": "아키텍처 성향 및 구조적 특징 요약",
+    "key_features": ["핵심 기능 1", "핵심 기능 2"],
+    "technology_stack": {
+      "frontend": ["기술 스택"],
+      "backend": ["기술 스택"],
+      "infrastructure": ["기술 스택"]
     },
-    "user_stories": [
-      {
-        "story": "사용자 스토리 문장 (예: 로그인 후 자신의 프로필을 수정할 수 있다)",
-        "rationale": "도출 근거 (예: UserController의 updateProfile 메서드 존재)"
-      }
-    ]
-  }
+    "evidence": ["근거 1 (README)", "근거 2 (구조적 특징)"],
+    "confidence": "low" | "medium" | "high"
+  },
+  "user_stories": [
+    {
+      "story": "사용자 스토리 문장 (예: 로그인 후 자신의 프로필을 수정할 수 있다)",
+      "rationale": "도출 근거 (예: UserController의 updateProfile 메서드 존재)"
+    }
+  ]
 }
 `;
 

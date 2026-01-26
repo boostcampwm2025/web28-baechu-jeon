@@ -27,31 +27,29 @@ export const buildStep1Prompts = (project: Step1Input) => {
 반드시 아래 JSON 스키마를 엄격하게 따르세요. 마크다운 태그(\`\`\`json) 없이 순수 JSON 문자열만 반환하세요.
 
 {
-  "step1": {
-    "project_overview": {
-      "description": "프로젝트에 대한 전반적인 요약 설명",
-      "purpose": "이 프로젝트가 해결하려는 핵심 문제나 궁극적인 목적"
-    },
-    "project_features": [
-      {
-        "feature_name": "기능의 명확한 이름 (예: 사용자 인증)",
-        "feature_description": "기능에 대한 한 줄 요약",
-        "feature_detailed_description": "기능의 작동 방식, 역할에 대한 상세 설명",
-        "related_folders": [
-          "src/auth",
-          "src/components/login" 
-          // 중요: 파일명이 아닌 '폴더 경로'만 포함할 것 (예: src/utils/helper.ts (X) -> src/utils (O))
-        ],
-        "depends_on_features": [
-          "이 기능이 작동하기 위해 먼저 필요한 기능의 feature_name (없으면 빈 배열)"
-        ]
-      }
-    ],
-    "technology_stack": {
-      "frontend": ["React", "TailwindCSS" 등],
-      "backend": ["Node.js", "Express", "MongoDB" 등],
-      "infrastructure": ["Docker", "AWS", "Vercel" 등]
+  "project_overview": {
+    "description": "프로젝트에 대한 전반적인 요약 설명",
+    "purpose": "이 프로젝트가 해결하려는 핵심 문제나 궁극적인 목적"
+  },
+  "project_features": [
+    {
+      "feature_name": "기능의 명확한 이름 (예: 사용자 인증)",
+      "feature_description": "기능에 대한 한 줄 요약",
+      "feature_detailed_description": "기능의 작동 방식, 역할에 대한 상세 설명",
+      "related_folders": [
+        "src/auth",
+        "src/components/login" 
+        // 중요: 파일명이 아닌 '폴더 경로'만 포함할 것 (예: src/utils/helper.ts (X) -> src/utils (O))
+      ],
+      "depends_on_features": [
+        "이 기능이 작동하기 위해 먼저 필요한 기능의 feature_name (없으면 빈 배열)"
+      ]
     }
+  ],
+  "technology_stack": {
+    "frontend": ["React", "TailwindCSS" 등],
+    "backend": ["Node.js", "Express", "MongoDB" 등],
+    "infrastructure": ["Docker", "AWS", "Vercel" 등]
   }
 }
 `;
