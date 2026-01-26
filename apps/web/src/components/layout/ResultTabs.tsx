@@ -6,16 +6,19 @@ import { useParams, usePathname } from "next/navigation";
 export default function ResultTabs() {
   const params = useParams();
   const pathname = usePathname();
-  const projectId = params?.id;
+  const projectId = params?.projectId;
+  const analysisId = params?.analysisId;
+
+  const basePath = `/result/${projectId}/${analysisId}`;
 
   const tabs = [
     {
       id: "visualization",
       label: "Visual Graph",
-      href: `/result/${projectId}/visualization`,
+      href: `${basePath}/visualization`,
     },
-    { id: "json", label: "JSON Mode", href: `/result/${projectId}/json` },
-    { id: "ai", label: "AI Analysis", href: `/result/${projectId}/ai` },
+    { id: "json", label: "JSON Mode", href: `${basePath}/json` },
+    { id: "ai", label: "AI Analysis", href: `${basePath}/ai` },
   ];
 
   return (

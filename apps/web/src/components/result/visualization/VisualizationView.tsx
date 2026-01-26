@@ -1,31 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   useNodesState,
+  useEdgesState,
   type Node,
+  type Edge,
   type NodeTypes,
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { NodeDetailsProps } from "./NodeDetails";
 import { transformApiToReactFlow } from "@/utils/transformNodes";
-import {
-  getVisualization,
-  updateVisualization,
-  resetVisualization,
-  VisualizationError,
-} from "@/api/visualization";
+import { resetVisualization, updateVisualization } from "@/api/visualization";
 import resetIcon from "@/assets/reset.svg";
 
 interface VisualizationViewProps {
-  analysisId: string;
   onNodeClick: (node: NodeDetailsProps["node"] | null) => void;
+  initialNodes?: Node[];
+  initialEdges?: Edge[];
+  visualizationId?: string;
 }
 
 // 커스텀 그룹 노드 컴포넌트
@@ -76,58 +74,15 @@ const nodeTypes: NodeTypes = {
 };
 
 export default function VisualizationView({
-  analysisId,
   onNodeClick,
+  initialNodes = [],
+  initialEdges = [],
+  visualizationId,
 }: VisualizationViewProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [loading, setLoading] = useState(true);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [visualizationId, setVisualizationId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    async function fetchVisualization() {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getVisualization(analysisId, controller.signal);
-        const { reactFlowNodes, updatedApiNodes } =
-          transformApiToReactFlow(data);
-        setNodes(reactFlowNodes);
-        setVisualizationId(data.visualizationId);
-
-        // dagre로 계산된 위치를 서버에 저장
-        await updateVisualization(data.visualizationId, updatedApiNodes);
-      } catch (err) {
-        if (err instanceof VisualizationError && err.statusCode === 0) {
-          return;
-        }
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (analysisId) {
-      fetchVisualization();
-    }
-
-    return () => controller.abort();
-  }, [analysisId, setNodes]);
-
-  if (loading) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-slate-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-blue-500" />
-          <span className="animate-pulse text-sm text-slate-400">
-            시각화 데이터를 불러오는 중...
-          </span>
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -138,23 +93,25 @@ export default function VisualizationView({
   }
 
   const handleNodeClick = (_: React.MouseEvent, node: Node) => {
-    // TypeScript가 요구하는 NodeData 인터페이스 규격에 맞게 매핑
     onNodeClick({
-      id: node.id, // 필수 id 추가
-      label: String(node.data.label), // title 대신 label 사용
-      contents: `상세 정보: ${node.data.label}`, // description 대신 contents 사용
-      groups: (node.data.groups as string | string[]) || "", // 필수 groups 추가
-      type: (node.type as "group" | "folder") || "folder", // 필수 type 추가
+      id: node.id,
+      label: String(node.data.label),
+      contents: String(node.data.path || ""),
+      groups: (node.data.groups as string | string[]) || "",
+      type: (node.type as "group" | "folder") || "folder",
     });
   };
+
   const handleReset = async () => {
     if (!visualizationId) return;
 
     try {
       setLoading(true);
       const data = await resetVisualization(visualizationId);
-      const { reactFlowNodes, updatedApiNodes } = transformApiToReactFlow(data);
+      const { reactFlowNodes, reactFlowEdges, updatedApiNodes } =
+        transformApiToReactFlow(data);
       setNodes(reactFlowNodes);
+      setEdges(reactFlowEdges);
 
       // 초기화 후 다시 계산된 위치를 서버에 저장
       await updateVisualization(visualizationId, updatedApiNodes);
@@ -169,19 +126,16 @@ export default function VisualizationView({
     <div className="relative h-full w-full">
       <ReactFlow
         nodes={nodes}
+        edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         fitView
         className="bg-slate-900"
       >
         <Background color="#334155" gap={24} />
         <Controls className="!rounded-lg !border-slate-700 !bg-slate-800 [&>button]:!border-slate-700 [&>button]:!bg-slate-800 [&>button]:!text-slate-400 [&>button:hover]:!bg-slate-700" />
-        <MiniMap
-          className="!rounded-lg !border-slate-700 !bg-slate-800"
-          nodeColor="#3b82f6"
-          maskColor="rgba(15, 23, 42, 0.8)"
-        />
       </ReactFlow>
       <button
         onClick={handleReset}

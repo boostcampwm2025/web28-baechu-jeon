@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Node, Edge } from "@xyflow/react";
 import NodeDetails from "./NodeDetails";
 import ProjectDetails from "./ProjectDetails";
 import SaveButtons from "./SaveButtons";
@@ -18,27 +19,25 @@ export interface NodeData {
 export interface ProjectDetailsData {
   overview: string;
   purpose: string;
-  key_features: string[];
-  technology_stack: {
-    backend: string[];
-    frontend: string[];
-    infrastructure: string[];
-  };
-  architectural_tendencies: string;
+  keyFeatures: string[];
+  technologyStack: Record<string, string[]>;
+  architecturalTendencies: string;
 }
 
 interface VisualizationClientProps {
-  initialNodes: NodeData[];
-  initialPurposes: ProjectDetailsData;
+  initialNodes?: Node[];
+  initialEdges?: Edge[];
+  initialPurposes?: ProjectDetailsData;
+  visualizationId?: string;
 }
 
 export default function VisualizationClient({
-  initialNodes,
+  initialNodes = [],
+  initialEdges = [],
   initialPurposes,
+  visualizationId,
 }: VisualizationClientProps) {
-  const [selectedNode, setSelectedNode] = useState<NodeData | null>(
-    initialNodes[0] || null,
-  );
+  const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
   const [isProjectOpen, setIsProjectOpen] = useState(true);
   const [isNodeOpen, setIsNodeOpen] = useState(true);
 
@@ -49,7 +48,12 @@ export default function VisualizationClient({
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-slate-900">
-      <VisualizationView analysisId="1" onNodeClick={handleNodeClick} />
+      <VisualizationView
+        onNodeClick={handleNodeClick}
+        initialNodes={initialNodes}
+        initialEdges={initialEdges}
+        visualizationId={visualizationId}
+      />
 
       <aside className="pointer-events-none absolute top-6 right-6 bottom-6 z-50 flex w-96 flex-col gap-4">
         <div className="h-56">
@@ -64,20 +68,22 @@ export default function VisualizationClient({
           )}
         </div>
 
-        <div
-          className={`pointer-events-auto flex-1 overflow-hidden transition-all duration-300 ${
-            isProjectOpen
-              ? "translate-x-0 opacity-100"
-              : "invisible translate-x-10 opacity-0"
-          }`}
-        >
-          <ProjectDetails
-            data={initialPurposes}
-            onClose={() => setIsProjectOpen(false)}
-          />
-        </div>
+        {initialPurposes && (
+          <div
+            className={`pointer-events-auto flex-1 overflow-hidden transition-all duration-300 ${
+              isProjectOpen
+                ? "translate-x-0 opacity-100"
+                : "invisible translate-x-10 opacity-0"
+            }`}
+          >
+            <ProjectDetails
+              data={initialPurposes}
+              onClose={() => setIsProjectOpen(false)}
+            />
+          </div>
+        )}
 
-        <div className="pointer-events-auto">
+        <div className="pointer-events-auto mt-auto">
           <SaveButtons
             isProjectOpen={isProjectOpen}
             onReopen={() => setIsProjectOpen(true)}

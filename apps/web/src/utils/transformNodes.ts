@@ -1,4 +1,4 @@
-import type { Node } from "@xyflow/react";
+import type { Node, Edge } from "@xyflow/react";
 import type { VisualizationResponse, ApiNode } from "@/api/visualization";
 import dagre from "dagre";
 
@@ -71,6 +71,7 @@ interface LayoutInfo {
 // 변환 결과 타입
 export interface TransformResult {
   reactFlowNodes: Node[];
+  reactFlowEdges: Edge[];
   updatedApiNodes: ApiNode[];
 }
 
@@ -110,12 +111,17 @@ function calculateInnerLayout(nodesInGroup: ApiNode[]): LayoutInfo {
 export function transformApiToReactFlow(
   apiResponse: VisualizationResponse,
 ): TransformResult {
+  // STEP1 노드 사용 (TODO: STEP2 지원 필요시 추가)
+  const nodes = apiResponse.nodes.STEP1;
+  const edges = apiResponse.edges.STEP1;
+
   // 1. 그룹핑 및 내부 레이아웃 미리 계산
   const groupMap: Record<string, { apiNodes: ApiNode[]; layout?: LayoutInfo }> =
     {};
-  apiResponse.nodes.forEach((node) => {
-    if (!groupMap[node.group]) groupMap[node.group] = { apiNodes: [] };
-    groupMap[node.group].apiNodes.push(node);
+  nodes.forEach((node) => {
+    const groupKey = node.groups || "ungrouped";
+    if (!groupMap[groupKey]) groupMap[groupKey] = { apiNodes: [] };
+    groupMap[groupKey].apiNodes.push(node);
   });
 
   Object.keys(groupMap).forEach((groupName) => {
@@ -210,7 +216,14 @@ export function transformApiToReactFlow(
     });
   });
 
-  return { reactFlowNodes, updatedApiNodes };
+  // 4. 엣지 변환
+  const reactFlowEdges: Edge[] = edges.map((edge) => ({
+    id: edge.id,
+    source: `folder-${edge.sourceNodeId}`,
+    target: `folder-${edge.targetNodeId}`,
+  }));
+
+  return { reactFlowNodes, reactFlowEdges, updatedApiNodes };
 }
 
 function formatGroupName(name: string): string {

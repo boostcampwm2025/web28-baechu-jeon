@@ -1,10 +1,10 @@
 "use client";
 
 import { IoClose } from "react-icons/io5";
-import { mockProjectDetails } from "@/mocks/detailData";
+import { ProjectDetailsData } from "./VisualizationClient";
 
 interface ProjectDetailsProps {
-  data: typeof mockProjectDetails;
+  data: ProjectDetailsData;
   onClose: () => void;
 }
 
@@ -45,7 +45,7 @@ export default function ProjectDetails({ data, onClose }: ProjectDetailsProps) {
             주요 기능 (KEY FEATURES)
           </h3>
           <ul className="space-y-2">
-            {data.key_features.map((feature, idx) => (
+            {data.keyFeatures.map((feature, idx) => (
               <li
                 key={idx}
                 className="rounded-md border border-slate-700/30 bg-slate-800/50 p-3 text-sm text-slate-300"
@@ -61,7 +61,7 @@ export default function ProjectDetails({ data, onClose }: ProjectDetailsProps) {
             기술 스택 (TECHNOLOGY STACK)
           </h3>
           <div className="space-y-3">
-            {Object.entries(data.technology_stack).map(([key, stacks]) => (
+            {Object.entries(data.technologyStack).map(([key, stacks]) => (
               <div key={key}>
                 <span className="text-[11px] text-slate-500 capitalize">
                   {key}
@@ -86,7 +86,7 @@ export default function ProjectDetails({ data, onClose }: ProjectDetailsProps) {
             아키텍처 성향 (ARCHITECTURAL TENDENCIES)
           </h3>
           <div className="rounded-lg border border-slate-700/50 bg-slate-900/50 p-4 text-sm leading-relaxed text-slate-300">
-            {data.architectural_tendencies}
+            {data.architecturalTendencies}
           </div>
         </section>
       </div>
