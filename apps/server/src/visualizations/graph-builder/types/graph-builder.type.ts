@@ -1,5 +1,3 @@
-import { Edge, Node } from '@prisma/client';
-
 export interface Step1Json {
   project_overview: {
     description: string;

@@ -2,9 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AnalysisResult } from '@prisma/client';
 import { buildStep1 } from './steps/step1.builder';
 import {
-  EdgeInput,
   GraphBuildResult,
-  NodeInput,
   Step1Json,
   Step2Json,
 } from './types/graph-builder.type';

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/database/prisma.service';
-import { AnalysisResult } from '@prisma/client';
+import { AnalysisResult, Node, Edge, Prisma } from '@prisma/client';
 import { GraphBuilderService } from './graph-builder/graph-builder.service';
 import { GraphBuildResult } from './graph-builder/types/graph-builder.type';
 
@@ -158,32 +158,39 @@ export class VisualizationsService {
     return formattedGraph;
   }
 
-  private buildGraphResponse(graph: {
-    nodes: Array<{ diagramType: string } & any>;
-    edges: Array<{ diagramType: string } & any>;
-  }) {
+  private buildGraphResponse(graph: { nodes: Node[]; edges: Edge[] }) {
     // BigInt를 string으로 변환
-    const serializeItem = (item: any) => ({
-      ...item,
-      id: item.id?.toString(),
-      visualizationId: item.visualizationId,
-      sourceNodeId: item.sourceNodeId?.toString(),
-      targetNodeId: item.targetNodeId?.toString(),
+    const serializeNode = (node: Node) => ({
+      ...node,
+      id: node.id.toString(),
+      visualizationId: node.visualizationId.toString(),
     });
 
-    const groupByDiagram = <T extends { diagramType: string }>(items: T[]) => {
-      return items.reduce<Record<string, any[]>>((acc, item) => {
+    const serializeEdge = (edge: Edge) => ({
+      ...edge,
+      id: edge.id.toString(),
+      visualizationId: edge.visualizationId.toString(),
+      sourceNodeId: edge.sourceNodeId.toString(),
+      targetNodeId: edge.targetNodeId.toString(),
+    });
+
+    const groupByDiagram = <T extends { diagramType: string }>(
+      items: T[],
+      serializer: (item: T) => Prisma.JsonValue,
+    ) => {
+      return items.reduce<Record<string, Prisma.JsonValue[]>>((acc, item) => {
         acc[item.diagramType] ??= [];
-        acc[item.diagramType].push(serializeItem(item));
+        acc[item.diagramType].push(serializer(item));
         return acc;
       }, {});
     };
 
+    // TODO: layoutState 관리해야 함. 지금은 무조건 INITIAL로 줌
     return {
       layoutState: 'INITIAL',
-      nodes: groupByDiagram(graph.nodes),
-      edges: groupByDiagram(graph.edges),
-    };
+      nodes: groupByDiagram(graph.nodes, serializeNode),
+      edges: groupByDiagram(graph.edges, serializeEdge),
+    } as Prisma.JsonObject;
   }
 }
 
