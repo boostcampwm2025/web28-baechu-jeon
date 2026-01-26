@@ -4,6 +4,6 @@ import { IntentionsController } from './intentions.controller';
 
 @Module({
   providers: [IntentionsService],
-  controllers: [IntentionsController]
+  controllers: [IntentionsController],
 })
 export class IntentionsModule {}
