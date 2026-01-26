@@ -1,45 +1,58 @@
-"use client";
+import { Node, Edge } from "@xyflow/react";
+import { BaseNodeData } from "@/utils/transformNodes";
+import VisualizationClient from "@/components/result/visualization/VisualizationClient";
+import { getIntentions } from "@/api/intention";
+import { getVisualization, updateVisualization } from "@/api/visualization";
+import { transformApiToReactFlow } from "@/utils/transformNodes";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
-import VisualizationView from "@/components/result/visualization/VisualizationView";
+interface PageProps {
+  params: Promise<{ projectId: string; analysisId: string }>;
+}
 
-import NodeDetails, {
-  NodeDetailsProps,
-} from "@/components/result/visualization/NodeDetails";
+export default async function VisualizationPage({ params }: PageProps) {
+  const { analysisId } = await params;
 
-export default function VisualizationPage() {
-  const params = useParams();
-  const analysisId = params?.analysisId as string;
-  const [selectedNode, setSelectedNode] = useState<
-    NodeDetailsProps["node"] | null
-  >(null);
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [intentionsResult, visualizationResult] = await Promise.allSettled([
+    getIntentions(analysisId),
+    getVisualization(analysisId),
+  ]);
 
-  const handleNodeClick = (node: NodeDetailsProps["node"]) => {
-    setSelectedNode(node);
-    setIsPanelOpen(true);
-  };
+  const intentions =
+    intentionsResult.status === "fulfilled"
+      ? intentionsResult.value.contents
+      : undefined;
 
-  const handleClosePanel = () => {
-    setIsPanelOpen(false);
-  };
+  const visualization =
+    visualizationResult.status === "fulfilled"
+      ? visualizationResult.value
+      : undefined;
+
+  let initialNodes: Node<BaseNodeData>[] = [];
+  let initialEdges: Edge[] = [];
+  const visualizationId = visualization?.visualizationId;
+
+  if (visualization) {
+    const { reactFlowNodes, reactFlowEdges, updatedApiNodes } =
+      transformApiToReactFlow(visualization);
+
+    initialNodes = reactFlowNodes;
+    initialEdges = reactFlowEdges;
+
+    if (visualization.layoutState === "INITIAL" && visualizationId) {
+      try {
+        await updateVisualization(visualizationId, updatedApiNodes);
+      } catch (error) {
+        console.error(`[Layout Update Fail] ID: ${visualizationId}`, error);
+      }
+    }
+  }
 
   return (
-    <div className="relative h-full">
-      <main className="h-full bg-slate-900">
-        <VisualizationView
-          analysisId={analysisId}
-          onNodeClick={handleNodeClick}
-        />
-      </main>
-      {selectedNode && (
-        <NodeDetails
-          isOpen={isPanelOpen}
-          onClose={handleClosePanel}
-          node={selectedNode}
-        />
-      )}
-    </div>
+    <VisualizationClient
+      initialPurposes={intentions}
+      initialNodes={initialNodes}
+      initialEdges={initialEdges}
+      visualizationId={visualizationId}
+    />
   );
 }
