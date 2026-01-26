@@ -41,6 +41,20 @@ export interface VisualizationResponse {
   };
 }
 
+export interface UpdateVisualizationRequest {
+  nodes: {
+    STEP1: ApiNode[];
+    STEP2: ApiNode[];
+  };
+  edges: {
+    STEP1: ApiEdge[];
+    STEP2: ApiEdge[];
+  };
+  layoutState?: "INITIAL" | "FIXED";
+}
+
+export type UpdateVisualizationResponse = VisualizationResponse;
+
 export class VisualizationError extends Error {
   constructor(
     public message: string,
@@ -69,7 +83,7 @@ export async function getVisualization(
  */
 export async function updateVisualization(
   visualizationId: string,
-  data: UpdateVisualizationRequest, // nodes와 edges가 포함된 객체
+  data: UpdateVisualizationRequest,
 ): Promise<UpdateVisualizationResponse> {
   const response = await fetch(
     `${API_BASE_URL}/visualizations/${visualizationId}`,

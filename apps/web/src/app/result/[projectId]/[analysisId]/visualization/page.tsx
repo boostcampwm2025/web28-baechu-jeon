@@ -18,9 +18,17 @@ export default async function VisualizationPage({ params }: PageProps) {
   const { reactFlowNodes, reactFlowEdges, updatedApiNodes } =
     transformApiToReactFlow(visualization);
 
-  // layoutState가 INITIAL인 경우만 좌표 업데이트
   if (visualization.layoutState === "INITIAL") {
-    await updateVisualization(visualization.visualizationId, updatedApiNodes);
+    const groupedNodes = {
+      STEP1: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP1"),
+      STEP2: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP2"),
+    };
+
+    await updateVisualization(visualization.visualizationId, {
+      nodes: groupedNodes,
+      edges: updatedApiNodes.edges,
+      layoutState: "FIXED",
+    });
   }
 
   return (

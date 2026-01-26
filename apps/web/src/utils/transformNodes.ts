@@ -1,7 +1,10 @@
 import type { Node, Edge } from "@xyflow/react";
-import type { VisualizationResponse, ApiNode } from "@/api/visualization";
+import type {
+  VisualizationResponse,
+  ApiNode,
+  ApiEdge,
+} from "@/api/visualization";
 import dagre from "dagre";
-import { VisualizationResponse, ApiNode, ApiEdge } from "@/api/visualization";
 
 export interface BaseNodeData extends Record<string, unknown> {
   label: string;
@@ -63,13 +66,13 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
 
   if (apiResponse.layoutState === "INITIAL") {
     const nodeGroups = apiResponse.nodes;
-    const groupKeys = Object.keys(nodeGroups);
+    // key를 string이 아닌 정확한 타입으로 제한 (STEP1 | STEP2)
+    const groupKeys = Object.keys(nodeGroups) as (keyof typeof nodeGroups)[];
 
     groupKeys.forEach((key, index) => {
       const nodesInGroup = nodeGroups[key] || [];
       if (nodesInGroup.length === 0) return;
 
-      // STEP1, STEP2 순서대로 가로로 1200px씩 띄워서 배치
       const xOffset = index * 1200;
 
       const settings =
@@ -83,14 +86,15 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
       });
       g.setDefaultEdgeLabel(() => ({}));
 
-      nodesInGroup.forEach((n) => {
+      // n에 ApiNode 타입 명시
+      nodesInGroup.forEach((n: ApiNode) => {
         g.setNode(n.id, { width: settings.w, height: settings.h });
       });
 
       reactFlowEdges.forEach((e) => {
         if (
-          nodesInGroup.some((n) => n.id === e.source) &&
-          nodesInGroup.some((n) => n.id === e.target)
+          nodesInGroup.some((n: ApiNode) => n.id === e.source) &&
+          nodesInGroup.some((n: ApiNode) => n.id === e.target)
         ) {
           g.setEdge(e.source, e.target);
         }
@@ -98,7 +102,7 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
 
       dagre.layout(g);
 
-      nodesInGroup.forEach((n) => {
+      nodesInGroup.forEach((n: ApiNode) => {
         const pos = g.node(n.id);
         const finalX = pos.x - settings.w / 2 + xOffset;
         const finalY = pos.y - settings.h / 2;
@@ -127,7 +131,7 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
   } else {
     Object.values(apiResponse.nodes)
       .flat()
-      .forEach((n) => {
+      .forEach((n: ApiNode) => {
         const settings =
           n.diagramType === "STEP1"
             ? LAYOUT_SETTINGS.diagram1
