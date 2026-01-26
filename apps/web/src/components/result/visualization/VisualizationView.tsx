@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import Image from "next/image";
 import {
   ReactFlow,
@@ -8,169 +8,129 @@ import {
   Controls,
   MiniMap,
   useNodesState,
+  useEdgesState,
+  Handle,
+  Position,
   type Node,
+  type Edge,
   type NodeTypes,
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { NodeDetailsProps } from "./NodeDetails";
-import { transformApiToReactFlow } from "@/utils/transformNodes";
 import {
-  getVisualization,
-  updateVisualization,
-  resetVisualization,
-  VisualizationError,
-} from "@/api/visualization";
+  type BaseNodeData,
+  transformApiToReactFlow,
+} from "@/utils/transformNodes";
+import { resetVisualization } from "@/api/visualization";
 import resetIcon from "@/assets/reset.svg";
+import { NodeData } from "./VisualizationClient";
+// 커스텀 노드 컴포넌트
+function BaseNode({ data }: NodeProps<Node<BaseNodeData>>) {
+  const { width, height, theme, label } = data;
+  const isFirstNode = width >= 500;
 
-interface VisualizationViewProps {
-  analysisId: string;
-  onNodeClick: (node: NodeDetailsProps["node"] | null) => void;
-}
-
-// 커스텀 그룹 노드 컴포넌트
-function GroupNode({ data }: NodeProps) {
-  const colors = data.colors as
-    | { border: string; bg: string; text: string }
-    | undefined;
   return (
     <div
-      className={`h-full w-full rounded-xl border p-2 ${colors?.border || "border-blue-500/30"} ${colors?.bg || "bg-blue-500/10"}`}
+      style={{
+        width: `${width}px`,
+        height: `${height}px`,
+        borderColor: theme.borderColor,
+        backgroundColor: theme.bgColor,
+        color: theme.textColor,
+      }}
+      className="flex flex-col items-center justify-center rounded-xl border-2 px-6 py-4 shadow-lg transition-all"
     >
-      <div
-        className={`text-xs font-semibold ${colors?.text || "text-blue-400"}`}
-      >
-        {data.label as string}
-      </div>
-    </div>
-  );
-}
-
-// 커스텀 폴더 노드 컴포넌트
-function FolderNode({ data }: NodeProps) {
-  const colors = data.colors as
-    | { border: string; bg: string; text: string }
-    | undefined;
-  return (
-    <div
-      className={`flex items-start gap-3 rounded-xl border-2 bg-slate-900 px-4 py-3 shadow-lg ${colors?.border || "border-purple-500"} ${colors?.bg || ""}`}
-    >
-      <div className="flex flex-col">
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: theme.borderColor }}
+        className={`!border-none ${isFirstNode ? "!h-4 !w-4" : "!h-3 !w-3"}`}
+      />
+      <div className="flex h-full w-full items-center justify-center overflow-hidden text-center">
         <span
-          className={`text-sm font-semibold ${colors?.text || "text-white"}`}
+          style={{
+            color: theme.textColor,
+            wordBreak: "keep-all",
+            lineHeight: 1.3,
+            fontSize: isFirstNode ? "2rem" : "0.95rem",
+            fontWeight: isFirstNode ? 800 : 600,
+          }}
         >
-          {data.label as string}
-        </span>
-        <span className="text-xs text-slate-400">
-          {(data.path as string) || `/${(data.label as string).toLowerCase()}`}
+          {label}
         </span>
       </div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: theme.borderColor }}
+        className={`!border-none ${isFirstNode ? "!h-4 !w-4" : "!h-3 !w-3"}`}
+      />
     </div>
   );
 }
 
-// 커스텀 노드 타입 등록
 const nodeTypes: NodeTypes = {
-  group: GroupNode,
-  folder: FolderNode,
+  baseNode: BaseNode,
+  folder: BaseNode,
+  group: BaseNode,
 };
 
+interface VisualizationViewProps {
+  visualizationId: string;
+  initialNodes: Node<BaseNodeData>[];
+  initialEdges: Edge[];
+  onNodeClick: (node: NodeData) => void;
+}
+
 export default function VisualizationView({
-  analysisId,
+  visualizationId,
+  initialNodes,
+  initialEdges,
   onNodeClick,
 }: VisualizationViewProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [loading, setLoading] = useState(true);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [isReseting, setIsReseting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [visualizationId, setVisualizationId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const controller = new AbortController();
+  const handleNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node<BaseNodeData>) => {
+      onNodeClick({
+        id: node.id,
+        label: node.data.label,
+        contents: node.data.contents,
+        groups: node.data.group,
+      });
+    },
+    [onNodeClick],
+  );
 
-    async function fetchVisualization() {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getVisualization(analysisId, controller.signal);
-        const { reactFlowNodes, updatedApiNodes } =
-          transformApiToReactFlow(data);
-        setNodes(reactFlowNodes);
-        setVisualizationId(data.visualizationId);
-
-        // dagre로 계산된 위치를 서버에 저장
-        await updateVisualization(data.visualizationId, updatedApiNodes);
-      } catch (err) {
-        if (err instanceof VisualizationError && err.statusCode === 0) {
-          return;
-        }
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (analysisId) {
-      fetchVisualization();
-    }
-
-    return () => controller.abort();
-  }, [analysisId, setNodes]);
-
-  if (loading) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-slate-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-blue-500" />
-          <span className="animate-pulse text-sm text-slate-400">
-            시각화 데이터를 불러오는 중...
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-slate-900">
-        <div className="text-red-400">Error: {error}</div>
-      </div>
-    );
-  }
-
-  const handleNodeClick = (_: React.MouseEvent, node: Node) => {
-    // TypeScript가 요구하는 NodeData 인터페이스 규격에 맞게 매핑
-    onNodeClick({
-      id: node.id, // 필수 id 추가
-      label: String(node.data.label), // title 대신 label 사용
-      contents: `상세 정보: ${node.data.label}`, // description 대신 contents 사용
-      groups: (node.data.groups as string | string[]) || "", // 필수 groups 추가
-      type: (node.type as "group" | "folder") || "folder", // 필수 type 추가
-    });
-  };
-  const handleReset = async () => {
-    if (!visualizationId) return;
+  // 서버에서 초기화된 데이터를 GET 해옴
+  const handleReset = useCallback(async () => {
+    if (!visualizationId || isReseting) return;
 
     try {
-      setLoading(true);
+      setIsReseting(true);
       const data = await resetVisualization(visualizationId);
-      const { reactFlowNodes, updatedApiNodes } = transformApiToReactFlow(data);
-      setNodes(reactFlowNodes);
+      const { reactFlowNodes, reactFlowEdges } = transformApiToReactFlow(data);
 
-      // 초기화 후 다시 계산된 위치를 서버에 저장
-      await updateVisualization(visualizationId, updatedApiNodes);
+      setNodes(reactFlowNodes);
+      setEdges(reactFlowEdges);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Reset failed");
     } finally {
-      setLoading(false);
+      setIsReseting(false);
     }
-  };
+  }, [visualizationId, isReseting, setNodes, setEdges]);
 
   return (
     <div className="relative h-full w-full">
       <ReactFlow
         nodes={nodes}
+        edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         fitView
         className="bg-slate-900"
@@ -185,7 +145,7 @@ export default function VisualizationView({
       </ReactFlow>
       <button
         onClick={handleReset}
-        disabled={!visualizationId || loading}
+        disabled={isReseting}
         title="초기화"
         className="absolute top-4 right-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
       >
