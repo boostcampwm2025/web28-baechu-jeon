@@ -9,14 +9,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // 분석 단계 타입
 type AnalysisStep =
-  | "STEP1_GROUPING"
+  | "STEP1_FEATURE_ANALYSIS"
   | "STEP2_HYPOTHESIS"
   | "STEP3_INTENT"
   | "STEP4_NLP";
 
 // 단계별 메시지 매핑
 const STEP_MESSAGES: Record<AnalysisStep, string> = {
-  STEP1_GROUPING: "프로젝트 구조 그룹화 중...",
+  STEP1_FEATURE_ANALYSIS: "프로젝트 기능 분석 중...",
   STEP2_HYPOTHESIS: "폴더별 가설 생성 중...",
   STEP3_INTENT: "프로젝트 의도 분석 중...",
   STEP4_NLP: "자연어 처리 중...",
@@ -24,7 +24,7 @@ const STEP_MESSAGES: Record<AnalysisStep, string> = {
 
 // 각 단계별 예상 소요 시간 (초)
 const STEP_DURATIONS: Record<AnalysisStep, number> = {
-  STEP1_GROUPING: 30,
+  STEP1_FEATURE_ANALYSIS: 30,
   STEP2_HYPOTHESIS: 30,
   STEP3_INTENT: 30,
   STEP4_NLP: 30,
@@ -38,7 +38,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<string>("분석 시작 중...");
   const [completedSteps, setCompletedSteps] = useState<number>(0);
-  const [estimatedTime, setEstimatedTime] = useState<number>(50); // 총 예상 시간 (초)
+  const [estimatedTime, setEstimatedTime] = useState<number>(120); // 총 예상 시간 (초)
   const [error, setError] = useState<string | null>(null);
   const totalSteps = 4;
 
@@ -124,8 +124,8 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
     if (seconds <= 0) return "곧 완료됩니다";
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    if (mins === 0) return `약 ${secs}초`;
-    return `약 ${mins}분 ${secs}초`;
+    if (mins === 0) return `예상 소요 시간: ${secs}초`;
+    return `예상 소요 시간: ${mins}분 ${secs}초`;
   };
 
   return (
@@ -157,7 +157,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
           <ProgressBar />
 
           {/* 단계 완료 및 예상 소요 시간 표시 */}
-          <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-500">
+          <div className="mt-3 flex flex-col items-center gap-1 text-xs text-gray-500">
             {completedSteps > 0 && (
               <span className="font-medium text-gray-700">
                 {completedSteps}/{totalSteps} 단계 완료

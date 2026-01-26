@@ -1,4 +1,5 @@
-import { Node, Edge } from "@xyflow/react";
+import type { Node, Edge } from "@xyflow/react";
+import type { VisualizationResponse, ApiNode } from "@/api/visualization";
 import dagre from "dagre";
 import { VisualizationResponse, ApiNode, ApiEdge } from "@/api/visualization";
 

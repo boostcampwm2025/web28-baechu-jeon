@@ -6,7 +6,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   useNodesState,
   useEdgesState,
   Handle,
@@ -81,10 +80,10 @@ interface VisualizationViewProps {
 }
 
 export default function VisualizationView({
-  visualizationId,
-  initialNodes,
-  initialEdges,
   onNodeClick,
+  initialNodes = [],
+  initialEdges = [],
+  visualizationId,
 }: VisualizationViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -134,11 +133,6 @@ export default function VisualizationView({
       >
         <Background color="#334155" gap={24} />
         <Controls className="!rounded-lg !border-slate-700 !bg-slate-800 [&>button]:!border-slate-700 [&>button]:!bg-slate-800 [&>button]:!text-slate-400 [&>button:hover]:!bg-slate-700" />
-        <MiniMap
-          className="!rounded-lg !border-slate-700 !bg-slate-800"
-          nodeColor="#3b82f6"
-          maskColor="rgba(15, 23, 42, 0.8)"
-        />
       </ReactFlow>
       <button
         onClick={handleReset}

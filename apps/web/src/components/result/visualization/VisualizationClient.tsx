@@ -50,10 +50,10 @@ export default function VisualizationClient({
   return (
     <div className="relative h-full w-full overflow-hidden bg-slate-900">
       <VisualizationView
-        visualizationId={visualizationId}
+        onNodeClick={handleNodeClick}
         initialNodes={initialNodes}
         initialEdges={initialEdges}
-        onNodeClick={handleNodeClick}
+        visualizationId={visualizationId}
       />
 
       <aside className="pointer-events-none absolute top-6 right-6 bottom-6 z-50 flex w-96 flex-col gap-4">
@@ -84,7 +84,7 @@ export default function VisualizationClient({
           </div>
         )}
 
-        <div className="pointer-events-auto">
+        <div className="pointer-events-auto mt-auto">
           <SaveButtons
             isProjectOpen={isProjectOpen}
             onReopen={() => setIsProjectOpen(true)}

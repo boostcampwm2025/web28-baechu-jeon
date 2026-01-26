@@ -3,12 +3,13 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 // API 응답 타입
 export interface ApiNode {
   id: string;
+  visualizationId: string;
+  x: number;
+  y: number;
   label: string;
   diagramType: string;
   group?: string;
   contents: string;
-  x: number;
-  y: number;
 }
 
 export interface ApiEdge {
@@ -29,19 +30,15 @@ export interface InitialNodes {
 // 전체 응답 타입
 export interface VisualizationResponse {
   visualizationId: string;
-  layoutState: "INITIAL" | "LAYOUTED";
-  nodes: Record<string, ApiNode[]>;
-  edges: Record<string, ApiEdge[]>;
-}
-
-export interface UpdateVisualizationRequest {
-  nodes: ApiNode[];
-  edges: Record<string, ApiEdge[]>;
-}
-
-export interface UpdateVisualizationResponse {
-  visualizationId: string;
-  success: boolean;
+  layoutState: "INITIAL" | "FIXED";
+  nodes: {
+    STEP1: ApiNode[];
+    STEP2: ApiNode[];
+  };
+  edges: {
+    STEP1: ApiEdge[];
+    STEP2: ApiEdge[];
+  };
 }
 
 export class VisualizationError extends Error {

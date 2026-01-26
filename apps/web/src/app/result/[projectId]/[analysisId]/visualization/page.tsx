@@ -12,47 +12,25 @@ interface PageProps {
 export default async function VisualizationPage({ params }: PageProps) {
   const { analysisId } = await params;
 
-  const [intentionsResult, visualizationResult] = await Promise.allSettled([
+  const [intentions, visualization] = await Promise.all([
     getIntentions(analysisId),
     getVisualization(analysisId),
   ]);
 
-  const intentions =
-    intentionsResult.status === "fulfilled"
-      ? intentionsResult.value.contents
-      : undefined;
+  const { reactFlowNodes, reactFlowEdges, updatedApiNodes } =
+    transformApiToReactFlow(visualization);
 
-  const visualization =
-    visualizationResult.status === "fulfilled"
-      ? visualizationResult.value
-      : undefined;
-
-  let initialNodes: Node<BaseNodeData>[] = [];
-  let initialEdges: Edge[] = [];
-  const visualizationId = visualization?.visualizationId;
-
-  if (visualization) {
-    const { reactFlowNodes, reactFlowEdges, updatedApiNodes } =
-      transformApiToReactFlow(visualization);
-
-    initialNodes = reactFlowNodes;
-    initialEdges = reactFlowEdges;
-
-    if (visualization.layoutState === "INITIAL" && visualizationId) {
-      try {
-        await updateVisualization(visualizationId, updatedApiNodes);
-      } catch (error) {
-        console.error(`[Layout Update Fail] ID: ${visualizationId}`, error);
-      }
-    }
+  // layoutState가 INITIAL인 경우만 좌표 업데이트
+  if (visualization.layoutState === "INITIAL") {
+    await updateVisualization(visualization.visualizationId, updatedApiNodes);
   }
 
   return (
     <VisualizationClient
-      initialPurposes={intentions}
-      initialNodes={initialNodes}
-      initialEdges={initialEdges}
-      visualizationId={visualizationId}
+      initialPurposes={intentions.contents}
+      initialNodes={reactFlowNodes}
+      initialEdges={reactFlowEdges}
+      visualizationId={visualization.visualizationId}
     />
   );
 }
