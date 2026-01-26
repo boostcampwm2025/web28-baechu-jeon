@@ -16,4 +16,5 @@ model Node {
   incomingEdges Edge[] @relation("TargetNode")
   
   @@map("nodes")
+  @@index([visualizationId])
 }
