@@ -9,7 +9,7 @@ import {
 export interface BaseNodeData extends Record<string, unknown> {
   label: string;
   contents: string;
-  group: string;
+  groups: string;
   width: number;
   height: number;
   theme: {
@@ -118,7 +118,7 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
           data: {
             label: n.label,
             contents: n.contents,
-            group: n.group,
+            groups: n.group,
             width: settings.w,
             height: settings.h,
             theme: settings.theme,
@@ -155,12 +155,12 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
         data: {
           label: n.label,
           contents: n.contents,
-          group: n.group,
+          groups: n.group,
           width: settings.w,
           height: settings.h,
           theme: settings.theme,
         },
-        position: { x: n.x || 0, y: n.y || 0 },
+        position: { x: Number(n.x) || 0, y: Number(n.y) || 0 },
       });
       allUpdatedApiNodes.push(n);
     });
