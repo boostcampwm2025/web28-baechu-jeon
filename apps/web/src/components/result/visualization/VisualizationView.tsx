@@ -71,12 +71,10 @@ function BaseNode({ data }: NodeProps<Node<BaseNodeData>>) {
 
 const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
-  folder: BaseNode,
-  group: BaseNode,
 };
 
 interface VisualizationViewProps {
-  visualizationId: string;
+  visualizationId?: string;
   initialNodes: Node<BaseNodeData>[];
   initialEdges: Edge[];
   onNodeClick: (node: NodeData) => void;
@@ -91,7 +89,6 @@ export default function VisualizationView({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isReseting, setIsReseting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<BaseNodeData>) => {
@@ -99,7 +96,7 @@ export default function VisualizationView({
         id: node.id,
         label: node.data.label,
         contents: node.data.contents,
-        groups: node.data.group,
+        groups: node.data.groups,
       });
     },
     [onNodeClick],
@@ -117,7 +114,7 @@ export default function VisualizationView({
       setNodes(reactFlowNodes);
       setEdges(reactFlowEdges);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Reset failed");
+      console.error("Reset failed:", err instanceof Error ? err.message : err);
     } finally {
       setIsReseting(false);
     }
