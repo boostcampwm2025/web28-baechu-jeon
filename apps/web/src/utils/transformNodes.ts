@@ -51,11 +51,11 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
 
   Object.values(apiResponse.edges).forEach((edgeGroup: ApiEdge[]) => {
     edgeGroup.forEach((edge) => {
-      if (edge.source && edge.target) {
+      if (edge.sourceNodeId && edge.targetNodeId) {
         reactFlowEdges.push({
           id: String(edge.id),
-          source: edge.source,
-          target: edge.target,
+          source: edge.sourceNodeId,
+          target: edge.targetNodeId,
           label: edge.label,
           animated: edge.type === "DASHED",
           style: { stroke: "#475569", strokeWidth: 2 },

@@ -1,4 +1,5 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
 // API 응답 타입
 export interface ApiNode {
@@ -14,8 +15,8 @@ export interface ApiNode {
 
 export interface ApiEdge {
   id: string;
-  source: string;
-  target: string;
+  sourceNodeId: string;
+  targetNodeId: string;
   diagramType: string;
   type?: string;
   label?: string;
@@ -73,41 +74,44 @@ export async function getVisualization(
     method: "GET",
     signal,
   });
+  console.log("response", response);
   if (!response.ok)
     throw new VisualizationError("Fetch failed", response.status);
   return response.json();
 }
 
+console.log(getVisualization("bb1d5c1f-d497-4df5-85d5-eca17a5b7393"));
+
 /**
  * PUT: nodes와 edges를 모두 포함해서 보냄
  */
-export async function updateVisualization(
-  visualizationId: string,
-  data: UpdateVisualizationRequest,
-): Promise<UpdateVisualizationResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/visualizations/${visualizationId}`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    },
-  );
-  if (!response.ok)
-    throw new VisualizationError("Update failed", response.status);
-  return response.json();
-}
+// export async function updateVisualization(
+//   visualizationId: string,
+//   data: UpdateVisualizationRequest,
+// ): Promise<UpdateVisualizationResponse> {
+//   const response = await fetch(
+//     `${API_BASE_URL}/visualizations/${visualizationId}`,
+//     {
+//       method: "PUT",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify(data),
+//     },
+//   );
+//   if (!response.ok)
+//     throw new VisualizationError("Update failed", response.status);
+//   return response.json();
+// }
 
-export async function resetVisualization(
-  visualizationId: string,
-): Promise<VisualizationResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/visualizations/${visualizationId}/reset`,
-    {
-      method: "GET",
-    },
-  );
-  if (!response.ok)
-    throw new VisualizationError("Reset failed", response.status);
-  return response.json();
-}
+// export async function resetVisualization(
+//   visualizationId: string,
+// ): Promise<VisualizationResponse> {
+//   const response = await fetch(
+//     `${API_BASE_URL}/visualizations/${visualizationId}/reset`,
+//     {
+//       method: "GET",
+//     },
+//   );
+//   if (!response.ok)
+//     throw new VisualizationError("Reset failed", response.status);
+//   return response.json();
+// }

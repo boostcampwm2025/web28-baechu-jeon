@@ -1,6 +1,7 @@
 import VisualizationClient from "@/components/result/visualization/VisualizationClient";
 import { getIntentions } from "@/api/intention";
-import { getVisualization, updateVisualization } from "@/api/visualization";
+// import { getVisualization, updateVisualization } from "@/api/visualization";
+import { getVisualization } from "@/api/visualization";
 import { transformApiToReactFlow } from "@/utils/transformNodes";
 
 interface PageProps {
@@ -24,11 +25,11 @@ export default async function VisualizationPage({ params }: PageProps) {
       STEP2: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP2"),
     };
 
-    await updateVisualization(visualization.visualizationId, {
-      nodes: groupedNodes,
-      edges: updatedApiNodes.edges,
-      layoutState: "FIXED",
-    });
+    // await updateVisualization(visualization.visualizationId, {
+    //   nodes: groupedNodes,
+    //   edges: updatedApiNodes.edges,
+    //   layoutState: "FIXED",
+    // });
   }
 
   return (

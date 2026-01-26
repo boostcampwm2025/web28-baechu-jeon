@@ -20,7 +20,7 @@ import {
   type BaseNodeData,
   transformApiToReactFlow,
 } from "@/utils/transformNodes";
-import { resetVisualization } from "@/api/visualization";
+// import { resetVisualization } from "@/api/visualization";
 import resetIcon from "@/assets/reset.svg";
 import { NodeData } from "./VisualizationClient";
 // 커스텀 노드 컴포넌트
@@ -102,22 +102,22 @@ export default function VisualizationView({
   );
 
   // 서버에서 초기화된 데이터를 GET 해옴
-  const handleReset = useCallback(async () => {
-    if (!visualizationId || isReseting) return;
+  // const handleReset = useCallback(async () => {
+  //   if (!visualizationId || isReseting) return;
 
-    try {
-      setIsReseting(true);
-      const data = await resetVisualization(visualizationId);
-      const { reactFlowNodes, reactFlowEdges } = transformApiToReactFlow(data);
+  //   try {
+  //     setIsReseting(true);
+  //     const data = await resetVisualization(visualizationId);
+  //     const { reactFlowNodes, reactFlowEdges } = transformApiToReactFlow(data);
 
-      setNodes(reactFlowNodes);
-      setEdges(reactFlowEdges);
-    } catch (err) {
-      console.error("Reset failed:", err instanceof Error ? err.message : err);
-    } finally {
-      setIsReseting(false);
-    }
-  }, [visualizationId, isReseting, setNodes, setEdges]);
+  //     setNodes(reactFlowNodes);
+  //     setEdges(reactFlowEdges);
+  //   } catch (err) {
+  //     console.error("Reset failed:", err instanceof Error ? err.message : err);
+  //   } finally {
+  //     setIsReseting(false);
+  //   }
+  // }, [visualizationId, isReseting, setNodes, setEdges]);
 
   return (
     <div className="relative h-full w-full">
@@ -135,7 +135,7 @@ export default function VisualizationView({
         <Controls className="!rounded-lg !border-slate-700 !bg-slate-800 [&>button]:!border-slate-700 [&>button]:!bg-slate-800 [&>button]:!text-slate-400 [&>button:hover]:!bg-slate-700" />
       </ReactFlow>
       <button
-        onClick={handleReset}
+        // onClick={handleReset}
         disabled={isReseting}
         title="초기화"
         className="absolute top-4 right-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
