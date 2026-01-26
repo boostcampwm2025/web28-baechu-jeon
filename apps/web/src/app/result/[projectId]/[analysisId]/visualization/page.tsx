@@ -1,4 +1,4 @@
-import type { Node } from "@xyflow/react";
+import type { Node, Edge } from "@xyflow/react";
 import VisualizationClient from "@/components/result/visualization/VisualizationClient";
 import { getIntentions } from "@/api/intention";
 import { getVisualization, updateVisualization } from "@/api/visualization";
@@ -26,20 +26,17 @@ export default async function VisualizationPage({ params }: PageProps) {
       : undefined;
 
   let initialNodes: Node[] = [];
+  let initialEdges: Edge[] = [];
   const visualizationId = visualization?.visualizationId;
 
   if (visualization) {
-    const { reactFlowNodes, updatedApiNodes } =
+    const { reactFlowNodes, reactFlowEdges, updatedApiNodes } =
       transformApiToReactFlow(visualization);
     initialNodes = reactFlowNodes;
+    initialEdges = reactFlowEdges;
 
-    // 모든 노드가 "default"(초기 상태)인지 확인
-    const isInitialState = visualization.nodes.every(
-      (node) => node.x === "default" && node.y === "default",
-    );
-
-    // 기존 데이터가 초기 상태인 경우만 서버에 처음 계산한 좌표 업데이트
-    if (isInitialState) {
+    // layoutState가 INITIAL인 경우만 좌표 업데이트
+    if (visualization.layoutState === "INITIAL") {
       await updateVisualization(visualization.visualizationId, updatedApiNodes);
     }
   }
@@ -48,6 +45,7 @@ export default async function VisualizationPage({ params }: PageProps) {
     <VisualizationClient
       initialPurposes={intentions}
       initialNodes={initialNodes}
+      initialEdges={initialEdges}
       visualizationId={visualizationId}
     />
   );

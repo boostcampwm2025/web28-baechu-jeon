@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Node } from "@xyflow/react";
+import type { Node, Edge } from "@xyflow/react";
 import NodeDetails from "./NodeDetails";
 import ProjectDetails from "./ProjectDetails";
 import SaveButtons from "./SaveButtons";
@@ -26,12 +26,14 @@ export interface ProjectDetailsData {
 
 interface VisualizationClientProps {
   initialNodes?: Node[];
+  initialEdges?: Edge[];
   initialPurposes?: ProjectDetailsData;
   visualizationId?: string;
 }
 
 export default function VisualizationClient({
   initialNodes = [],
+  initialEdges = [],
   initialPurposes,
   visualizationId,
 }: VisualizationClientProps) {
@@ -49,6 +51,7 @@ export default function VisualizationClient({
       <VisualizationView
         onNodeClick={handleNodeClick}
         initialNodes={initialNodes}
+        initialEdges={initialEdges}
         visualizationId={visualizationId}
       />
 

@@ -7,7 +7,9 @@ import {
   Background,
   Controls,
   useNodesState,
+  useEdgesState,
   type Node,
+  type Edge,
   type NodeTypes,
   type NodeProps,
 } from "@xyflow/react";
@@ -20,6 +22,7 @@ import resetIcon from "@/assets/reset.svg";
 interface VisualizationViewProps {
   onNodeClick: (node: NodeDetailsProps["node"] | null) => void;
   initialNodes?: Node[];
+  initialEdges?: Edge[];
   visualizationId?: string;
 }
 
@@ -73,9 +76,11 @@ const nodeTypes: NodeTypes = {
 export default function VisualizationView({
   onNodeClick,
   initialNodes = [],
+  initialEdges = [],
   visualizationId,
 }: VisualizationViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,8 +108,10 @@ export default function VisualizationView({
     try {
       setLoading(true);
       const data = await resetVisualization(visualizationId);
-      const { reactFlowNodes, updatedApiNodes } = transformApiToReactFlow(data);
+      const { reactFlowNodes, reactFlowEdges, updatedApiNodes } =
+        transformApiToReactFlow(data);
       setNodes(reactFlowNodes);
+      setEdges(reactFlowEdges);
 
       // 초기화 후 다시 계산된 위치를 서버에 저장
       await updateVisualization(visualizationId, updatedApiNodes);
@@ -119,8 +126,10 @@ export default function VisualizationView({
     <div className="relative h-full w-full">
       <ReactFlow
         nodes={nodes}
+        edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         fitView
         className="bg-slate-900"

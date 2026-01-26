@@ -3,17 +3,36 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 // API 응답 타입
 export interface ApiNode {
   id: string;
+  visualizationId: string;
+  diagramType: string;
+  x: number;
+  y: number;
   label: string;
-  group: string;
-  x: number | "default";
-  y: number | "default";
   contents: string;
+  groups: string | null;
+}
+
+export interface ApiEdge {
+  id: string;
+  visualizationId: string;
+  diagramType: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  label: string | null;
+  type: string | null;
 }
 
 export interface VisualizationResponse {
   visualizationId: string;
-  nodes: ApiNode[];
-  edges: unknown[];
+  layoutState: "INITIAL" | "FIXED";
+  nodes: {
+    STEP1: ApiNode[];
+    STEP2: ApiNode[];
+  };
+  edges: {
+    STEP1: ApiEdge[];
+    STEP2: ApiEdge[];
+  };
 }
 
 export class VisualizationError extends Error {
