@@ -36,9 +36,9 @@ export class AnalysesService {
 
       if (cachedResults) {
         // 저장된 결과가 있다면 Context에 넣음
-        if (cachedResults['STEP1_GROUPING']) {
+        if (cachedResults['STEP1_FEATURE_ANALYSIS']) {
           context.step1 = JSON.parse(
-            cachedResults['STEP1_GROUPING'],
+            cachedResults['STEP1_FEATURE_ANALYSIS'],
           ) as unknown;
           this.logger.log(`[${analysisId}] Step 1 결과 복구 완료`);
         }

@@ -39,13 +39,13 @@ export class PipelineRunner {
         this.logger.log(`[${analysisId}] Step 1 이미 완료됨. 스킵.`);
         await this.emitStep(
           analysisId,
-          'STEP1_GROUPING',
+          'STEP1_FEATURE_ANALYSIS',
           'COMPLETED',
           30,
           context.step1,
         );
       } else {
-        await this.emitStep(analysisId, 'STEP1_GROUPING', 'STARTED', 10);
+        await this.emitStep(analysisId, 'STEP1_FEATURE_ANALYSIS', 'STARTED', 10);
         const step1 = await this.geminiService.getResult({
           projectId,
           step: 1,
@@ -55,7 +55,7 @@ export class PipelineRunner {
 
         await this.emitStep(
           analysisId,
-          'STEP1_GROUPING',
+          'STEP1_FEATURE_ANALYSIS',
           'COMPLETED',
           30,
           context.step1,
