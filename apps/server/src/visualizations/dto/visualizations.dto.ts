@@ -5,7 +5,7 @@ import {
   ValidateNested,
   IsUUID,
   IsNumber,
-  ValidateIf,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -16,36 +16,43 @@ export class NodeDto {
   @IsString()
   label: string;
 
-  @IsString()
-  group: string;
-
-  @ValidateIf((o: NodeDto) => o.x !== 'default')
-  @IsNumber()
-  @IsOptional()
-  x: number | 'default';
-
-  @ValidateIf((o: NodeDto) => o.x !== 'default')
-  @IsNumber()
-  @IsOptional()
-  y: number | 'default';
-
   @IsOptional()
   @IsString()
-  path?: string;
+  group?: string;
+
+  @IsString()
+  diagramType: string;
+
+  @IsOptional()
+  @IsNumber()
+  x?: number;
+
+  @IsOptional()
+  @IsNumber()
+  y?: number;
 
   @IsOptional()
   @IsString()
   contents?: string;
-
-  @IsOptional()
-  @IsString()
-  type?: string;
-
-  @IsOptional()
-  metadata?: Record<string, unknown>;
 }
 
-// 시각화 엣지 DTO
+export class InitialNodesDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => NodeDto)
+  diagram1: NodeDto[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => NodeDto)
+  diagram2: NodeDto[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => NodeDto)
+  diagram3: NodeDto[];
+}
+
 export class EdgeDto {
   @IsString()
   id: string;
@@ -56,35 +63,34 @@ export class EdgeDto {
   @IsString()
   target: string;
 
+  @IsString()
+  diagramType: string;
+
   @IsOptional()
   @IsString()
   type?: string;
 
   @IsOptional()
-  metadata?: Record<string, unknown>;
+  @IsString()
+  label?: string;
 }
 
 export class VisualizationResponseDto {
-  @IsUUID()
-  visualizationId: string;
+  @IsUUID() visualizationId: string;
+  @IsEnum(['INITIAL', 'LAYOUTED']) layoutState: 'INITIAL' | 'LAYOUTED';
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => NodeDto)
-  nodes: NodeDto[];
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => EdgeDto)
-  edges?: EdgeDto[];
+  nodes: Record<string, NodeDto[]>;
+  edges: Record<string, EdgeDto[]>;
 }
 
 export class UpdateVisualizationDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => NodeDto)
-  formattedData: NodeDto[];
+  nodes: NodeDto[];
+
+  @IsOptional()
+  edges: Record<string, EdgeDto[]>;
 }
 
 export class UpdateVisualizationResponseDto {

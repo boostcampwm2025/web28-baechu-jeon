@@ -1,234 +1,166 @@
 import type { Node, Edge } from "@xyflow/react";
-import type { VisualizationResponse, ApiNode } from "@/api/visualization";
+import type {
+  VisualizationResponse,
+  ApiNode,
+  ApiEdge,
+} from "@/api/visualization";
 import dagre from "dagre";
 
-// 1. 상수
-const COLOR_PALETTE = [
-  {
-    name: "blue",
-    border: "border-blue-500",
-    bg: "bg-blue-500",
-    text: "text-blue-400",
-  },
-  {
-    name: "green",
-    border: "border-green-500",
-    bg: "bg-green-500",
-    text: "text-green-400",
-  },
-  {
-    name: "purple",
-    border: "border-purple-500",
-    bg: "bg-purple-500",
-    text: "text-purple-400",
-  },
-  {
-    name: "orange",
-    border: "border-orange-500",
-    bg: "bg-orange-500",
-    text: "text-orange-400",
-  },
-  {
-    name: "yellow",
-    border: "border-yellow-500",
-    bg: "bg-yellow-500",
-    text: "text-yellow-400",
-  },
-  {
-    name: "pink",
-    border: "border-pink-500",
-    bg: "bg-pink-500",
-    text: "text-pink-400",
-  },
-  {
-    name: "cyan",
-    border: "border-cyan-500",
-    bg: "bg-cyan-500",
-    text: "text-cyan-400",
-  },
-  {
-    name: "red",
-    border: "border-red-500",
-    bg: "bg-red-500",
-    text: "text-red-400",
-  },
-];
-
-const NODE_CONFIG = {
-  folderWidth: 280,
-  folderHeight: 70,
-  groupPadding: 40,
-  groupHeaderHeight: 40,
-};
-
-// 내부 레이아웃 결과 저장을 위한 타입
-interface LayoutInfo {
+export interface BaseNodeData extends Record<string, unknown> {
+  label: string;
+  contents: string;
+  groups: string;
   width: number;
   height: number;
-  nodes: { id: string; x: number; y: number }[];
-}
-
-// 변환 결과 타입
-export interface TransformResult {
-  reactFlowNodes: Node[];
-  reactFlowEdges: Edge[];
-  updatedApiNodes: ApiNode[];
-}
-
-/**
- * 그룹 내 노드들의 상대적 위치와 그룹의 전체 크기를 계산
- */
-function calculateInnerLayout(nodesInGroup: ApiNode[]): LayoutInfo {
-  const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: "TB", nodesep: 20, ranksep: 30 });
-  g.setDefaultEdgeLabel(() => ({}));
-
-  nodesInGroup.forEach((node) => {
-    g.setNode(node.id, {
-      width: NODE_CONFIG.folderWidth,
-      height: NODE_CONFIG.folderHeight,
-    });
-  });
-
-  dagre.layout(g);
-
-  let maxX = 0;
-  let maxY = 0;
-  const positions = g.nodes().map((id) => {
-    const n = g.node(id);
-    maxX = Math.max(maxX, n.x + NODE_CONFIG.folderWidth / 2);
-    maxY = Math.max(maxY, n.y + NODE_CONFIG.folderHeight / 2);
-    return { id, x: n.x, y: n.y };
-  });
-
-  return {
-    width: maxX + NODE_CONFIG.groupPadding * 2,
-    height: maxY + NODE_CONFIG.groupPadding + NODE_CONFIG.groupHeaderHeight,
-    nodes: positions,
+  theme: {
+    borderColor: string;
+    bgColor: string;
+    textColor: string;
   };
 }
 
-export function transformApiToReactFlow(
-  apiResponse: VisualizationResponse,
-): TransformResult {
-  // STEP1 노드 사용 (TODO: STEP2 지원 필요시 추가)
-  const nodes = apiResponse.nodes.STEP1;
-  const edges = apiResponse.edges.STEP1;
+const LAYOUT_SETTINGS = {
+  diagram1: {
+    w: 800,
+    h: 160,
+    nSep: 100,
+    rSep: 150,
+    theme: {
+      borderColor: "#3b82f6",
+      bgColor: "rgba(59, 130, 246, 0.1)",
+      textColor: "#60a5fa",
+    },
+  },
+  diagram2: {
+    w: 220,
+    h: 60,
+    nSep: 120,
+    rSep: 100,
+    theme: {
+      borderColor: "#a855f7",
+      bgColor: "rgba(168, 85, 247, 0.1)",
+      textColor: "#c084fc",
+    },
+  },
+} as const;
 
-  // 1. 그룹핑 및 내부 레이아웃 미리 계산
-  const groupMap: Record<string, { apiNodes: ApiNode[]; layout?: LayoutInfo }> =
-    {};
-  nodes.forEach((node) => {
-    const groupKey = node.groups || "ungrouped";
-    if (!groupMap[groupKey]) groupMap[groupKey] = { apiNodes: [] };
-    groupMap[groupKey].apiNodes.push(node);
-  });
+export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
+  const reactFlowNodes: Node<BaseNodeData>[] = [];
+  const allUpdatedApiNodes: ApiNode[] = [];
+  const reactFlowEdges: Edge[] = [];
 
-  Object.keys(groupMap).forEach((groupName) => {
-    groupMap[groupName].layout = calculateInnerLayout(
-      groupMap[groupName].apiNodes,
-    );
-  });
-
-  // 2. 외부(그룹 간) 레이아웃 계산
-  const groupGraph = new dagre.graphlib.Graph();
-  groupGraph.setGraph({ rankdir: "LR", nodesep: 60, ranksep: 80 });
-
-  Object.entries(groupMap).forEach(([name, data]) => {
-    groupGraph.setNode(name, {
-      width: data.layout!.width,
-      height: data.layout!.height,
+  Object.values(apiResponse.edges).forEach((edgeGroup: ApiEdge[]) => {
+    edgeGroup.forEach((edge) => {
+      if (edge.source && edge.target) {
+        reactFlowEdges.push({
+          id: String(edge.id),
+          source: edge.source,
+          target: edge.target,
+          label: edge.label,
+          animated: edge.type === "DASHED",
+          style: { stroke: "#475569", strokeWidth: 2 },
+        });
+      }
     });
   });
 
-  dagre.layout(groupGraph);
+  if (apiResponse.layoutState === "INITIAL") {
+    const nodeGroups = apiResponse.nodes;
+    // key를 string이 아닌 정확한 타입으로 제한 (STEP1 | STEP2)
+    const groupKeys = Object.keys(nodeGroups) as (keyof typeof nodeGroups)[];
 
-  // 3. 최종노드 생성
-  const reactFlowNodes: Node[] = [];
-  const updatedApiNodes: ApiNode[] = [];
+    groupKeys.forEach((key, index) => {
+      const nodesInGroup = nodeGroups[key] || [];
+      if (nodesInGroup.length === 0) return;
 
-  Object.keys(groupMap).forEach((groupName, idx) => {
-    const groupData = groupMap[groupName];
-    const groupPos = groupGraph.node(groupName);
-    const layout = groupData.layout!;
-    const colors = COLOR_PALETTE[idx % COLOR_PALETTE.length];
+      const xOffset = index * 1200;
 
-    const groupX = groupPos.x - layout.width / 2;
-    const groupY = groupPos.y - layout.height / 2;
+      const settings =
+        key === "STEP1" ? LAYOUT_SETTINGS.diagram1 : LAYOUT_SETTINGS.diagram2;
 
-    // 그룹 노드 추가
-    const groupNodeId = `group-${groupName}`;
-    reactFlowNodes.push({
-      id: groupNodeId,
-      type: "group",
-      data: {
-        label: formatGroupName(groupName),
-        colors: {
-          border: `${colors.border}/30`,
-          bg: `${colors.bg}/10`,
-          text: colors.text,
-        },
-      },
-      position: { x: groupX, y: groupY },
-      style: { width: layout.width, height: layout.height },
-    });
+      const g = new dagre.graphlib.Graph();
+      g.setGraph({
+        rankdir: "TB",
+        nodesep: settings.nSep,
+        ranksep: settings.rSep,
+      });
+      g.setDefaultEdgeLabel(() => ({}));
 
-    // 폴더 노드 추가
-    layout.nodes.forEach((posInfo) => {
-      const apiNode = groupData.apiNodes.find((n) => n.id === posInfo.id)!;
+      // n에 ApiNode 타입 명시
+      nodesInGroup.forEach((n: ApiNode) => {
+        g.setNode(n.id, { width: settings.w, height: settings.h });
+      });
 
-      // React Flow 노드용 상대 좌표
-      const relativeX =
-        posInfo.x - NODE_CONFIG.folderWidth / 2 + NODE_CONFIG.groupPadding;
-      const relativeY =
-        posInfo.y -
-        NODE_CONFIG.folderHeight / 2 +
-        NODE_CONFIG.groupHeaderHeight;
+      reactFlowEdges.forEach((e) => {
+        if (
+          nodesInGroup.some((n: ApiNode) => n.id === e.source) &&
+          nodesInGroup.some((n: ApiNode) => n.id === e.target)
+        ) {
+          g.setEdge(e.source, e.target);
+        }
+      });
 
-      reactFlowNodes.push({
-        id: `folder-${apiNode.id}`,
-        type: "folder",
-        data: {
-          label: apiNode.label,
-          path: apiNode.contents,
-          group: groupName,
-          colors: {
-            border: colors.border,
-            bg: `${colors.bg}/20`,
-            text: colors.text,
+      dagre.layout(g);
+
+      nodesInGroup.forEach((n: ApiNode) => {
+        const pos = g.node(n.id);
+        const finalX = pos.x - settings.w / 2 + xOffset;
+        const finalY = pos.y - settings.h / 2;
+
+        reactFlowNodes.push({
+          id: n.id,
+          type: "baseNode",
+          data: {
+            label: n.label,
+            contents: n.contents,
+            groups: n.group || "",
+            width: settings.w,
+            height: settings.h,
+            theme: settings.theme,
           },
-        },
-        position: { x: relativeX, y: relativeY },
-        parentId: groupNodeId,
-        extent: "parent",
-        style: {
-          width: NODE_CONFIG.folderWidth,
-          height: NODE_CONFIG.folderHeight,
-        },
-      });
+          position: { x: finalX, y: finalY },
+        });
 
-      // 서버에 보낼 절대 좌표 (그룹 위치 + 상대 위치)
-      updatedApiNodes.push({
-        ...apiNode,
-        x: Math.round(groupX + relativeX),
-        y: Math.round(groupY + relativeY),
+        allUpdatedApiNodes.push({
+          ...n,
+          x: Math.round(finalX),
+          y: Math.round(finalY),
+        });
       });
     });
-  });
+  } else {
+    Object.values(apiResponse.nodes)
+      .flat()
+      .forEach((n: ApiNode) => {
+        const settings =
+          n.diagramType === "STEP1"
+            ? LAYOUT_SETTINGS.diagram1
+            : LAYOUT_SETTINGS.diagram2;
 
-  // 4. 엣지 변환
-  const reactFlowEdges: Edge[] = edges.map((edge) => ({
-    id: edge.id,
-    source: `folder-${edge.sourceNodeId}`,
-    target: `folder-${edge.targetNodeId}`,
-  }));
+        reactFlowNodes.push({
+          id: n.id,
+          type: "baseNode",
+          data: {
+            label: n.label,
+            contents: n.contents,
+            groups: n.group || "",
+            width: settings.w,
+            height: settings.h,
+            theme: settings.theme,
+          },
+          position: { x: Number(n.x), y: Number(n.y) },
+        });
 
-  return { reactFlowNodes, reactFlowEdges, updatedApiNodes };
-}
+        allUpdatedApiNodes.push(n);
+      });
+  }
 
-function formatGroupName(name: string): string {
-  return name
-    .split("_")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
+  return {
+    reactFlowNodes,
+    reactFlowEdges,
+    updatedApiNodes: {
+      nodes: allUpdatedApiNodes,
+      edges: apiResponse.edges,
+    },
+  };
 }

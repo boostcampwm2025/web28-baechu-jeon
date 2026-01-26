@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Node, Edge } from "@xyflow/react";
+import { BaseNodeData } from "@/utils/transformNodes";
 import NodeDetails from "./NodeDetails";
 import ProjectDetails from "./ProjectDetails";
 import SaveButtons from "./SaveButtons";
@@ -13,7 +14,7 @@ export interface NodeData {
   label: string;
   groups: string | string[];
   contents: string;
-  type: "group" | "folder";
+  type?: "baseNode";
 }
 
 export interface ProjectDetailsData {
@@ -25,7 +26,7 @@ export interface ProjectDetailsData {
 }
 
 interface VisualizationClientProps {
-  initialNodes?: Node[];
+  initialNodes?: Node<BaseNodeData>[];
   initialEdges?: Edge[];
   initialPurposes?: ProjectDetailsData;
   visualizationId?: string;

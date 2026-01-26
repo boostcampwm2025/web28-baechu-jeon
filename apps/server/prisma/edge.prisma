@@ -1,0 +1,24 @@
+enum EdgeType {
+  SOLID   // 실선
+  DASHED  // 점선
+  DOTTED  // 도트선
+}
+
+model Edge {
+  id              BigInt @id @default(autoincrement())
+  visualizationId String @map("visualization_id") @db.Uuid
+  diagramType     String // "STEP1" | "STEP2"
+  sourceNodeId    BigInt @map("source_node")
+  targetNodeId    BigInt @map("target_node")
+  label           String? @db.VarChar
+  type            EdgeType @default(SOLID)
+
+  visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)
+  sourceNode Node @relation("SourceNode", fields: [sourceNodeId], references: [id], onDelete: Cascade)
+  targetNode Node @relation("TargetNode", fields: [targetNodeId], references: [id], onDelete: Cascade)
+
+  @@map("edges")
+  @@index([visualizationId])
+  @@index([sourceNodeId])
+  @@index([targetNodeId])
+}

@@ -13,7 +13,6 @@ export default function NodeDetails({
   isOpen,
 }: NodeDetailsProps) {
   if (!isOpen || !node) return null;
-  const showBadge = node.groups && node.type !== "group";
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-800/90 shadow-2xl backdrop-blur-md">
@@ -31,11 +30,6 @@ export default function NodeDetails({
           <h3 className="text-xl leading-tight font-bold text-white">
             {node.label}
           </h3>
-          {showBadge && (
-            <span className="inline-block rounded border border-blue-500/30 bg-blue-500/20 px-2 py-0.5 text-xs font-medium text-blue-400">
-              {node.groups}
-            </span>
-          )}
         </div>
         <div className="text-sm leading-relaxed text-slate-300">
           {node.contents}
