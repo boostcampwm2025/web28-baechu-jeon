@@ -20,6 +20,9 @@ export class NodeDto {
   @IsString()
   group?: string;
 
+  @IsString()
+  diagramType: string;
+
   @IsOptional()
   @IsNumber()
   x?: number;
@@ -60,6 +63,9 @@ export class EdgeDto {
   @IsString()
   target: string;
 
+  @IsString()
+  diagramType: string;
+
   @IsOptional()
   @IsString()
   type?: string;
@@ -73,17 +79,8 @@ export class VisualizationResponseDto {
   @IsUUID() visualizationId: string;
   @IsEnum(['INITIAL', 'LAYOUTED']) layoutState: 'INITIAL' | 'LAYOUTED';
 
-  @ValidateNested()
-  @Type((opts) =>
-    opts?.object?.layoutState === 'INITIAL' ? InitialNodesDto : NodeDto,
-  )
-  nodes: InitialNodesDto | NodeDto[] = [];
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => EdgeDto)
-  edges: EdgeDto[] = [];
+  nodes: Record<string, NodeDto[]>;
+  edges: Record<string, EdgeDto[]>;
 }
 
 export class UpdateVisualizationDto {
@@ -92,10 +89,8 @@ export class UpdateVisualizationDto {
   @Type(() => NodeDto)
   nodes: NodeDto[];
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => EdgeDto)
-  edges: EdgeDto[];
+  @IsOptional()
+  edges: Record<string, EdgeDto[]>;
 }
 
 export class UpdateVisualizationResponseDto {

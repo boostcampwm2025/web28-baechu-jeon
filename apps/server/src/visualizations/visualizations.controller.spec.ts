@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { VisualizationsController } from './visualizations.controller';
 import { VisualizationsService } from './visualizations.service';

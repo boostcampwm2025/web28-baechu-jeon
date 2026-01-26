@@ -1,8 +1,9 @@
 // Node 테이블 스키마
 
 model Node {
-  id              String  @id @default(uuid()) @db.Uuid
+  id              BigInt @id @default(autoincrement())
   visualizationId String @map("visualization_id") @db.Uuid
+  diagramType     String // "STEP1" | "STEP2"
   x               Float  @default(0) @db.Real
   y               Float  @default(0) @db.Real
   label           String @db.VarChar
@@ -11,8 +12,9 @@ model Node {
 
   visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)
 
-  sources Edge[] @relation("SourceNode")
-  targets Edge[] @relation("TargetNode")
-
+  outgoingEdges Edge[] @relation("SourceNode")
+  incomingEdges Edge[] @relation("TargetNode")
+  
   @@map("nodes")
+  @@index([visualizationId])
 }

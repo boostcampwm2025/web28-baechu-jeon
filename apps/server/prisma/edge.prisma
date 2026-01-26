@@ -1,5 +1,3 @@
-// Edge 테이블 스키마
-
 enum EdgeType {
   SOLID   // 실선
   DASHED  // 점선
@@ -9,16 +7,18 @@ enum EdgeType {
 model Edge {
   id              BigInt @id @default(autoincrement())
   visualizationId String @map("visualization_id") @db.Uuid
-  sourceNodeId    String   @map("source_node") @db.Uuid
-  targetNodeId    String   @map("target_node") @db.Uuid
-
+  diagramType     String // "STEP1" | "STEP2"
+  sourceNodeId    BigInt @map("source_node")
+  targetNodeId    BigInt @map("target_node")
   label           String? @db.VarChar
   type            EdgeType @default(SOLID)
 
   visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)
-  sourceNode    Node          @relation("SourceNode", fields: [sourceNodeId], references: [id], onDelete: Cascade)
-  targetNode    Node          @relation("TargetNode", fields: [targetNodeId], references: [id], onDelete: Cascade)
+  sourceNode Node @relation("SourceNode", fields: [sourceNodeId], references: [id], onDelete: Cascade)
+  targetNode Node @relation("TargetNode", fields: [targetNodeId], references: [id], onDelete: Cascade)
 
-  @@unique([sourceNodeId, targetNodeId]) 
   @@map("edges")
+  @@index([visualizationId])
+  @@index([sourceNodeId])
+  @@index([targetNodeId])
 }

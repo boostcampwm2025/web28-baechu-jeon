@@ -4,16 +4,18 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 export interface ApiNode {
   id: string;
   label: string;
-  group: string;
+  diagramType: string;
+  group?: string;
   contents: string;
-  x?: number; // INITIAL일 땐 없을 수 있음
-  y?: number;
+  x: number;
+  y: number;
 }
 
 export interface ApiEdge {
   id: string;
   source: string;
   target: string;
+  diagramType: string;
   type?: string;
   label?: string;
 }
@@ -28,13 +30,13 @@ export interface InitialNodes {
 export interface VisualizationResponse {
   visualizationId: string;
   layoutState: "INITIAL" | "LAYOUTED";
-  nodes: InitialNodes | ApiNode[]; // 상태에 따라 객체 또는 배열
-  edges: ApiEdge[];
+  nodes: Record<string, ApiNode[]>;
+  edges: Record<string, ApiEdge[]>;
 }
 
 export interface UpdateVisualizationRequest {
   nodes: ApiNode[];
-  edges: ApiEdge[];
+  edges: Record<string, ApiEdge[]>;
 }
 
 export interface UpdateVisualizationResponse {

@@ -1,19 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Node, Edge, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { Node, Edge } from '@prisma/client';
 import {
   VisualizationResponseDto,
   NodeDto,
-  InitialNodesDto,
   EdgeDto,
   UpdateVisualizationDto,
   UpdateVisualizationResponseDto,
 } from './dto/visualizations.dto';
-
-interface SnapshotData {
-  nodes: NodeDto[];
-  edges: EdgeDto[];
-}
 
 @Injectable()
 export class VisualizationsService {
@@ -25,8 +19,12 @@ export class VisualizationsService {
     const visualization = await this.prisma.visualization.findFirst({
       where: { analysisResultId: analysisId },
     });
-    if (!visualization)
-      throw new NotFoundException('시각화 데이터가 없습니다.');
+
+    if (!visualization) {
+      throw new NotFoundException(
+        '시각화 데이터가 없습니다. 먼저 분석을 완료해주세요.',
+      );
+    }
 
     const [rawNodes, rawEdges] = await Promise.all([
       this.prisma.node.findMany({
@@ -37,13 +35,12 @@ export class VisualizationsService {
       }),
     ]);
 
-    // 좌표가 0이 아니면 LAYOUTED, 모두 0이면 INITIAL
     const isLayouted =
       rawNodes.length > 0 &&
       rawNodes.some((n) => Number(n.x) !== 0 || Number(n.y) !== 0);
     const layoutState = isLayouted ? 'LAYOUTED' : 'INITIAL';
 
-    return this.mapToResponseDto(
+    return this.buildGraphResponse(
       visualization.id,
       layoutState,
       rawNodes,
@@ -55,43 +52,20 @@ export class VisualizationsService {
     visualizationId: string,
     updateDto: UpdateVisualizationDto,
   ): Promise<UpdateVisualizationResponseDto> {
-    const { nodes, edges } = updateDto;
+    const { nodes } = updateDto;
 
     await this.prisma.$transaction(async (tx) => {
-      // DB의 개별 Node 좌표 업데이트
       await Promise.all(
         nodes.map((node) =>
           tx.node.update({
-            where: { id: node.id },
-            data: { x: node.x ?? 0, y: node.y ?? 0 },
+            where: { id: BigInt(node.id) },
+            data: {
+              x: node.x ?? 0,
+              y: node.y ?? 0,
+            },
           }),
         ),
       );
-
-      // 최초 1회만 스냅샷(formattedData) 저장
-      const current = await tx.visualization.findUnique({
-        where: { id: visualizationId },
-        select: { formattedData: true },
-      });
-
-      const currentData =
-        current?.formattedData as unknown as SnapshotData | null;
-
-      if (
-        !currentData ||
-        !currentData.nodes ||
-        currentData.nodes.length === 0
-      ) {
-        const snapshot = {
-          nodes,
-          edges,
-        } as unknown as Prisma.InputJsonValue;
-
-        await tx.visualization.update({
-          where: { id: visualizationId },
-          data: { formattedData: snapshot },
-        });
-      }
     });
 
     return { visualizationId, success: true };
@@ -102,61 +76,75 @@ export class VisualizationsService {
   ): Promise<VisualizationResponseDto> {
     const visualization = await this.prisma.visualization.findUnique({
       where: { id: visualizationId },
+      include: { nodes: true, edges: true },
     });
 
-    if (!visualization || !visualization.formattedData) {
-      throw new NotFoundException('저장된 초기 레이아웃이 없습니다.');
-    }
+    if (!visualization)
+      throw new NotFoundException('데이터를 찾을 수 없습니다.');
 
-    const snapshot = visualization.formattedData as unknown as SnapshotData;
-
-    return {
+    return this.buildGraphResponse(
       visualizationId,
-      layoutState: 'LAYOUTED',
-      nodes: snapshot.nodes,
-      edges: snapshot.edges,
-    };
+      'INITIAL',
+      visualization.nodes,
+      visualization.edges,
+    );
   }
 
-  private mapToResponseDto(
-    id: string,
+  private buildGraphResponse(
+    visualizationId: string,
     state: 'INITIAL' | 'LAYOUTED',
     nodes: Node[],
     edges: Edge[],
   ): VisualizationResponseDto {
-    const mappedEdges: EdgeDto[] = edges.map((e) => ({
-      id: e.id.toString(),
-      source: e.sourceNodeId,
-      target: e.targetNodeId,
-      type: e.type ?? undefined,
-      label: e.label ?? undefined,
-    }));
+    // Node 전용 직렬화 함수 (매개변수 타입 명시)
+    const serializeNode = (node: Node): NodeDto => ({
+      id: node.id.toString(),
+      label: node.label,
+      contents: node.contents,
+      group: node.groups ?? undefined,
+      diagramType: node.diagramType,
+      x: Number(node.x),
+      y: Number(node.y),
+    });
 
-    const mappedNodes: NodeDto[] = nodes.map((n) => ({
-      id: n.id,
-      label: n.label,
-      contents: n.contents ?? undefined,
-      group: n.groups ?? undefined,
-      ...(state === 'LAYOUTED' && { x: n.x, y: n.y }),
-    }));
+    // Edge 전용 직렬화 함수 (매개변수 타입 명시)
+    const serializeEdge = (edge: Edge): EdgeDto => ({
+      id: edge.id.toString(),
+      source: edge.sourceNodeId.toString(),
+      target: edge.targetNodeId.toString(),
+      label: edge.label ?? undefined,
+      type: edge.type,
+      diagramType: edge.diagramType,
+    });
+
+    /**
+     * 그룹화 로직 (any 제거)
+     * U: 소스 데이터 타입 (Node 또는 Edge)
+     * T: 결과 DTO 타입 (NodeDto 또는 EdgeDto, diagramType 속성 필수)
+     */
+    const groupByDiagram = <
+      U extends { diagramType: string },
+      T extends { diagramType: string },
+    >(
+      items: U[],
+      serializer: (item: U) => T,
+    ): Record<string, T[]> => {
+      return items.reduce(
+        (acc, item) => {
+          const type = item.diagramType;
+          if (!acc[type]) acc[type] = [];
+          acc[type].push(serializer(item));
+          return acc;
+        },
+        {} as Record<string, T[]>,
+      );
+    };
 
     return {
-      visualizationId: id,
+      visualizationId,
       layoutState: state,
-      nodes:
-        state === 'INITIAL' ? this.distributeNodes(mappedNodes) : mappedNodes,
-      edges: mappedEdges,
+      nodes: groupByDiagram(nodes, serializeNode),
+      edges: groupByDiagram(edges, serializeEdge),
     };
-  }
-
-  private distributeNodes(nodes: NodeDto[]): InitialNodesDto {
-    const res: InitialNodesDto = { diagram1: [], diagram2: [], diagram3: [] };
-    nodes.forEach((n) => {
-      const g = n.group || '';
-      if (g.includes('1')) res.diagram1.push(n);
-      else if (g.includes('2')) res.diagram2.push(n);
-      else res.diagram3.push(n);
-    });
-    return res;
   }
 }

@@ -1,10 +1,6 @@
 import { Node, Edge } from "@xyflow/react";
 import dagre from "dagre";
-import {
-  VisualizationResponse,
-  ApiNode,
-  InitialNodes,
-} from "@/api/visualization";
+import { VisualizationResponse, ApiNode, ApiEdge } from "@/api/visualization";
 
 export interface BaseNodeData extends Record<string, unknown> {
   label: string;
@@ -42,48 +38,42 @@ const LAYOUT_SETTINGS = {
       textColor: "#c084fc",
     },
   },
-  diagram3: {
-    w: 250,
-    h: 60,
-    nSep: 80,
-    rSep: 80,
-    theme: {
-      borderColor: "#10b981",
-      bgColor: "rgba(16, 185, 129, 0.1)",
-      textColor: "#34d399",
-    },
-  },
 } as const;
 
 export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
   const reactFlowNodes: Node<BaseNodeData>[] = [];
   const allUpdatedApiNodes: ApiNode[] = [];
+  const reactFlowEdges: Edge[] = [];
 
-  const reactFlowEdges: Edge[] = apiResponse.edges
-    .filter((edge) => edge.source && edge.target)
-    .map((edge) => ({
-      id: String(edge.id),
-      source: edge.source,
-      target: edge.target,
-      label: edge.label,
-      animated: edge.type === "DASHED",
-      style: { stroke: "#475569", strokeWidth: 2 },
-    }));
+  Object.values(apiResponse.edges).forEach((edgeGroup: ApiEdge[]) => {
+    edgeGroup.forEach((edge) => {
+      if (edge.source && edge.target) {
+        reactFlowEdges.push({
+          id: String(edge.id),
+          source: edge.source,
+          target: edge.target,
+          label: edge.label,
+          animated: edge.type === "DASHED",
+          style: { stroke: "#475569", strokeWidth: 2 },
+        });
+      }
+    });
+  });
 
   if (apiResponse.layoutState === "INITIAL") {
-    const diagrams = apiResponse.nodes as InitialNodes;
+    const nodeGroups = apiResponse.nodes;
+    const groupKeys = Object.keys(nodeGroups);
 
-    const xOffsets = {
-      diagram1: 0,
-      diagram2: 1200, // diagram1 오른쪽에 배치
-      diagram3: 2400, // diagram2 오른쪽에 배치
-    };
-
-    (["diagram1", "diagram2", "diagram3"] as const).forEach((key) => {
-      const nodesInGroup = diagrams[key] || [];
+    groupKeys.forEach((key, index) => {
+      const nodesInGroup = nodeGroups[key] || [];
       if (nodesInGroup.length === 0) return;
 
-      const settings = LAYOUT_SETTINGS[key];
+      // STEP1, STEP2 순서대로 가로로 1200px씩 띄워서 배치
+      const xOffset = index * 1200;
+
+      const settings =
+        key === "STEP1" ? LAYOUT_SETTINGS.diagram1 : LAYOUT_SETTINGS.diagram2;
+
       const g = new dagre.graphlib.Graph();
       g.setGraph({
         rankdir: "TB",
@@ -96,7 +86,7 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
         g.setNode(n.id, { width: settings.w, height: settings.h });
       });
 
-      apiResponse.edges.forEach((e) => {
+      reactFlowEdges.forEach((e) => {
         if (
           nodesInGroup.some((n) => n.id === e.source) &&
           nodesInGroup.some((n) => n.id === e.target)
@@ -109,7 +99,7 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
 
       nodesInGroup.forEach((n) => {
         const pos = g.node(n.id);
-        const finalX = pos.x - settings.w / 2 + xOffsets[key];
+        const finalX = pos.x - settings.w / 2 + xOffset;
         const finalY = pos.y - settings.h / 2;
 
         reactFlowNodes.push({
@@ -118,7 +108,7 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
           data: {
             label: n.label,
             contents: n.contents,
-            groups: n.group,
+            groups: n.group || "",
             width: settings.w,
             height: settings.h,
             theme: settings.theme,
@@ -134,41 +124,38 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
       });
     });
   } else {
-    // 기존 LAYOUTED 로직 유지
-    const nodes = apiResponse.nodes as ApiNode[];
-    nodes.forEach((n) => {
-      let groupKey: keyof typeof LAYOUT_SETTINGS = "diagram1";
+    Object.values(apiResponse.nodes)
+      .flat()
+      .forEach((n) => {
+        const settings =
+          n.diagramType === "STEP1"
+            ? LAYOUT_SETTINGS.diagram1
+            : LAYOUT_SETTINGS.diagram2;
 
-      if (n.group?.includes("1") || n.group === "diagram1") {
-        groupKey = "diagram1";
-      } else if (n.group?.includes("2") || n.group === "diagram2") {
-        groupKey = "diagram2";
-      } else if (n.group?.includes("3") || n.group === "diagram3") {
-        groupKey = "diagram3";
-      }
+        reactFlowNodes.push({
+          id: n.id,
+          type: "baseNode",
+          data: {
+            label: n.label,
+            contents: n.contents,
+            groups: n.group || "",
+            width: settings.w,
+            height: settings.h,
+            theme: settings.theme,
+          },
+          position: { x: Number(n.x), y: Number(n.y) },
+        });
 
-      const settings = LAYOUT_SETTINGS[groupKey];
-
-      reactFlowNodes.push({
-        id: n.id,
-        type: "baseNode",
-        data: {
-          label: n.label,
-          contents: n.contents,
-          groups: n.group,
-          width: settings.w,
-          height: settings.h,
-          theme: settings.theme,
-        },
-        position: { x: Number(n.x) || 0, y: Number(n.y) || 0 },
+        allUpdatedApiNodes.push(n);
       });
-      allUpdatedApiNodes.push(n);
-    });
   }
 
   return {
     reactFlowNodes,
     reactFlowEdges,
-    updatedApiNodes: { nodes: allUpdatedApiNodes, edges: apiResponse.edges },
+    updatedApiNodes: {
+      nodes: allUpdatedApiNodes,
+      edges: apiResponse.edges,
+    },
   };
 }
