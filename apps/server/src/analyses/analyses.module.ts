@@ -9,6 +9,7 @@ import { AiModule } from '../ai/ai.module.js';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AnalysisEmitter } from './events/analysis.emitter.js';
 import { SseModule } from '../sse/sse.module';
+import { PrismaModule } from '../prisma/prisma.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SseModule } from '../sse/sse.module';
     AiModule,
     EventEmitterModule.forRoot(),
     SseModule,
+    PrismaModule,
   ],
   controllers: [AnalysesController],
   providers: [
