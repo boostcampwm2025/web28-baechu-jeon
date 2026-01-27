@@ -4,11 +4,10 @@ const API_BASE_URL =
 // API 응답 타입
 export interface ApiNode {
   id: string;
-  visualizationId: string;
   x: number;
   y: number;
   label: string;
-  diagramType: string;
+  diagramType: "STEP1" | "STEP2" | "STEP3"; // TODO: 유저스토리, 트리, 스택 타입에 맞게 이름 바꾸기
   group?: string;
   contents: string;
 }
@@ -17,15 +16,9 @@ export interface ApiEdge {
   id: string;
   sourceNodeId: string;
   targetNodeId: string;
-  diagramType: string;
+  diagramType: "STEP1" | "STEP2" | "STEP3";
   type?: string;
   label?: string;
-}
-
-export interface InitialNodes {
-  diagram1: ApiNode[];
-  diagram2: ApiNode[];
-  diagram3: ApiNode[];
 }
 
 // 전체 응답 타입
