@@ -8,15 +8,16 @@ export interface ApiNode {
   y: number;
   label: string;
   diagramType: "STEP1" | "STEP2" | "STEP3"; // TODO: 유저스토리, 트리, 스택 타입에 맞게 이름 바꾸기
-  group?: string;
+  groups?: string;
   contents: string;
+  relatedFolders?: string[];
 }
 
 export interface ApiEdge {
   id: string;
   sourceNodeId: string;
   targetNodeId: string;
-  diagramType: "STEP1" | "STEP2" | "STEP3";
+  diagramType?: "STEP2";
   type?: string;
   label?: string;
 }
@@ -28,22 +29,18 @@ export interface VisualizationResponse {
   nodes: {
     STEP1: ApiNode[];
     STEP2: ApiNode[];
+    STEP3: ApiNode[];
   };
-  edges: {
-    STEP1: ApiEdge[];
-    STEP2: ApiEdge[];
-  };
+  edges: ApiEdge[];
 }
 
 export interface UpdateVisualizationRequest {
   nodes: {
     STEP1: ApiNode[];
     STEP2: ApiNode[];
+    STEP3: ApiNode[];
   };
-  edges: {
-    STEP1: ApiEdge[];
-    STEP2: ApiEdge[];
-  };
+  edges: ApiEdge[];
   layoutState?: "INITIAL" | "FIXED";
 }
 
@@ -72,8 +69,6 @@ export async function getVisualization(
     throw new VisualizationError("Fetch failed", response.status);
   return response.json();
 }
-
-console.log(getVisualization("bb1d5c1f-d497-4df5-85d5-eca17a5b7393"));
 
 /**
  * PUT: nodes와 edges를 모두 포함해서 보냄
