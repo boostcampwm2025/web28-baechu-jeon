@@ -70,6 +70,16 @@ jobs:
             docker compose pull
             docker compose up -d --remove-orphans
 
+            # 컨테이너가 준비될 때까지 대기
+            sleep 5
+
+            # DB 마이그레이션 실행
+            echo "🔄 Running database migrations..."
+            docker compose exec -T server npx prisma migrate deploy
+
+            # nginx 설정 리로드
+            docker compose exec -T nginx nginx -s reload || true
+
             # 불필요한 미사용 이미지 삭제
             docker image prune -f
 
