@@ -1,21 +1,24 @@
-export interface Step1Json {
-  project_overview: {
-    description: string;
+export interface Step3Analysis {
+  project_intent: {
+    overview: string;
     purpose: string;
+    architectural_tendencies: string;
+    key_features: string[];
+    technology_stack: {
+      frontend: string[];
+      backend: string[];
+      infrastructure: string[];
+    };
+    evidence: string[];
+    confidence: 'low' | 'medium' | 'high';
   };
-  project_features: Array<{
-    feature_name: string;
-    feature_description: string;
-    feature_detailed_description: string;
-    related_folders: string[];
-    depends_on_features: string[];
-  }>;
-  technology_stack: {
-    frontend: string[];
-    backend: string[];
-    database: string[];
-    infrastructure: string[];
-  };
+  user_stories: [
+    {
+      story: string; // node
+      related_folders: string[];
+      rationale: string;
+    },
+  ];
 }
 
 export interface Step2Json {
@@ -38,13 +41,15 @@ export type EdgeInput = {
 
 export type NodeInput = {
   label: string;
-  contents: string;
+  contents?: string;
+  diagramType: 'STEP1' | 'STEP2' | 'STEP3';
 };
 
 export type NodeTemp = {
   path: string; // 임시 node id
   label: string;
   contents: string;
+  diagramType: 'STEP1' | 'STEP2' | 'STEP3';
 };
 
 export type GraphBuildResult = {
