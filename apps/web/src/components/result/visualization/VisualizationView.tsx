@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
+// import { useState } from "react"; // TODO: reset 기능 복구 시 주석 해제
 import Image from "next/image";
 import {
   ReactFlow,
@@ -16,10 +17,8 @@ import {
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {
-  type BaseNodeData,
-  transformApiToReactFlow,
-} from "@/utils/transformNodes";
+import { type BaseNodeData } from "@/utils/transformNodes";
+// import { transformApiToReactFlow } from "@/utils/transformNodes";
 // import { resetVisualization } from "@/api/visualization";
 import resetIcon from "@/assets/reset.svg";
 import { NodeData } from "./VisualizationClient";
@@ -83,11 +82,13 @@ export default function VisualizationView({
   onNodeClick,
   initialNodes = [],
   initialEdges = [],
-  visualizationId,
+  // visualizationId, // TODO: reset 기능 복구 시 주석 해제
 }: VisualizationViewProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [isReseting, setIsReseting] = useState(false);
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
+  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+  // TODO: reset 기능 복구 시 아래 주석 해제
+  // const [isReseting, setIsReseting] = useState(false);
+  const isReseting = false; // 임시 값
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<BaseNodeData>) => {

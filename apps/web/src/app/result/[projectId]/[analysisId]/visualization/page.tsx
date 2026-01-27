@@ -1,6 +1,5 @@
 import VisualizationClient from "@/components/result/visualization/VisualizationClient";
 import { getIntentions } from "@/api/intention";
-// import { getVisualization, updateVisualization } from "@/api/visualization";
 import { getVisualization } from "@/api/visualization";
 import { transformApiToReactFlow } from "@/utils/transformNodes";
 
@@ -16,21 +15,23 @@ export default async function VisualizationPage({ params }: PageProps) {
     getVisualization(analysisId),
   ]);
 
-  const { reactFlowNodes, reactFlowEdges, updatedApiNodes } =
+  const { reactFlowNodes, reactFlowEdges } =
     transformApiToReactFlow(visualization);
 
-  if (visualization.layoutState === "INITIAL") {
-    const groupedNodes = {
-      STEP1: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP1"),
-      STEP2: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP2"),
-    };
-
-    // await updateVisualization(visualization.visualizationId, {
-    //   nodes: groupedNodes,
-    //   edges: updatedApiNodes.edges,
-    //   layoutState: "FIXED",
-    // });
-  }
+  // TODO: 나중에 updateVisualization 기능 복구 시 아래 주석 해제
+  // const { updatedApiNodes } = transformApiToReactFlow(visualization);
+  // if (visualization.layoutState === "INITIAL") {
+  //   const groupedNodes = {
+  //     STEP1: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP1"),
+  //     STEP2: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP2"),
+  //   };
+  //
+  //   await updateVisualization(visualization.visualizationId, {
+  //     nodes: groupedNodes,
+  //     edges: updatedApiNodes.edges,
+  //     layoutState: "FIXED",
+  //   });
+  // }
 
   return (
     <VisualizationClient
