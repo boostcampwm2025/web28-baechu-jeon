@@ -42,14 +42,12 @@ export type EdgeInput = {
 export type NodeInput = {
   label: string;
   contents?: string;
-  diagramType: 'STEP1' | 'STEP2' | 'STEP3';
 };
 
 export type NodeTemp = {
   path: string; // 임시 node id
   label: string;
   contents: string;
-  diagramType: 'STEP1' | 'STEP2' | 'STEP3';
 };
 
 export type GraphBuildResult = {
