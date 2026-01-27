@@ -9,6 +9,7 @@ enum NodeGroup {
   BE
   INFRA
   DB
+  EXTRA
 }
 
 model Node {
@@ -19,7 +20,7 @@ model Node {
   y               Float  @default(0) @db.Real
   label           String @db.VarChar
   contents        String? @db.Text
-  relatedFolders Json @map("related_folders") @default("[]")
+  relatedFolders  String[] @map("related_folders") @default([])
   groups          NodeGroup?
 
   visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)
