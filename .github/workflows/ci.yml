@@ -15,6 +15,8 @@ jobs:
   frontend-ci:
     name: Frontend CI
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://user:pass@localhost:5432/db
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -44,6 +46,8 @@ jobs:
   backend-ci:
     name: Backend CI
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://user:pass@localhost:5432/db
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -75,6 +79,8 @@ jobs:
     needs: [frontend-ci, backend-ci] # CI 테스트가 통과해야만 실행
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' # main 브랜치에 push 때만 실행
+    env:
+      DATABASE_URL: postgresql://user:pass@localhost:5432/db
     permissions:
       contents: read
       packages: write # 만들어진 이미지를 GHCR에 업로드할 수 있는 권한
