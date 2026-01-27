@@ -45,6 +45,7 @@ export type NodeInput = {
   label: string;
   contents?: string;
   groups?: 'FE' | 'BE' | 'INFRA' | 'DB' | 'EXTRA';
+  relatedFolders?: string[];
 };
 
 export type NodeTemp = {
