@@ -56,6 +56,7 @@ COPY --from=installer --chown=nestjs:nodejs /app/apps/server/node_modules ./apps
 COPY --from=installer --chown=nestjs:nodejs /app/apps/server/dist ./apps/server/dist
 COPY --from=installer --chown=nestjs:nodejs /app/apps/server/prisma ./apps/server/prisma
 COPY --from=installer --chown=nestjs:nodejs /app/apps/server/package.json ./apps/server/package.json
+COPY --from=installer --chown=nestjs:nodejs /app/apps/server/prisma.config.ts ./apps/server/prisma.config.ts
 
 USER nestjs
 
