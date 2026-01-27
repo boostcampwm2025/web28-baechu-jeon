@@ -10,6 +10,7 @@ import {
   useEdgesState,
   Handle,
   Position,
+  MarkerType,
   type Node,
   type Edge,
   type NodeTypes,
@@ -23,10 +24,16 @@ import {
 // import { resetVisualization } from "@/api/visualization";
 import resetIcon from "@/assets/reset.svg";
 import { NodeData } from "./VisualizationClient";
+
 // 커스텀 노드 컴포넌트
 function BaseNode({ data }: NodeProps<Node<BaseNodeData>>) {
   const { width, height, theme, label } = data;
   const isFirstNode = width >= 500;
+
+  const hiddenHandleStyle: React.CSSProperties = {
+    visibility: "hidden",
+    pointerEvents: "none",
+  };
 
   return (
     <div
@@ -39,12 +46,7 @@ function BaseNode({ data }: NodeProps<Node<BaseNodeData>>) {
       }}
       className="flex flex-col items-center justify-center rounded-xl border-2 px-6 py-4 shadow-lg transition-all"
     >
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ background: theme.borderColor }}
-        className={`!border-none ${isFirstNode ? "!h-4 !w-4" : "!h-3 !w-3"}`}
-      />
+      <Handle type="target" position={Position.Top} style={hiddenHandleStyle} />
       <div className="flex h-full w-full items-center justify-center overflow-hidden text-center">
         <span
           style={{
@@ -61,8 +63,7 @@ function BaseNode({ data }: NodeProps<Node<BaseNodeData>>) {
       <Handle
         type="source"
         position={Position.Bottom}
-        style={{ background: theme.borderColor }}
-        className={`!border-none ${isFirstNode ? "!h-4 !w-4" : "!h-3 !w-3"}`}
+        style={hiddenHandleStyle}
       />
     </div>
   );
@@ -128,6 +129,10 @@ export default function VisualizationView({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
+        nodesConnectable={false}
+        deleteKeyCode={null}
+        elementsSelectable
+        nodesDraggable
         fitView
         className="bg-slate-900"
       >
