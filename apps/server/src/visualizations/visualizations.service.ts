@@ -12,22 +12,12 @@ export class VisualizationsService {
   ) {}
 
   async getGraph(analysisId: string) {
-    // 그래프가 이미 있는지 중복 조회를 해야하나? ㅇㅇ 새로고침할 때 필요
-    // analysisId(= analysisResultId)를 가진 Visualization이 이미 DB에 존재하는지 확인하고 싶다
+    // 그래프가 이미 있는지 확인
     const exist = await this.prismaService.visualization.findFirst({
       where: { analysisResultId: analysisId },
-      select: { id: true },
     });
 
-    if (exist) {
-      const saved = await this.prismaService.visualization.findUnique({
-        where: { id: exist.id },
-      });
-
-      if (!saved) throw new Error('시각화 조회에 실패했습니다.');
-
-      return saved.formattedData;
-    }
+    if (exist) return exist.formattedData;
 
     // 그래프 없으면 새로 만들자.
     // 일단 분석 결과가 존재하는지 확인하기
@@ -46,7 +36,7 @@ export class VisualizationsService {
     const visualization = await this.prismaService.visualization.create({
       data: {
         analysisResultId: analysisResult.id,
-        formattedData: {}, // 나중에 채우기
+        formattedData: {},
       },
     });
 
@@ -137,18 +127,7 @@ export class VisualizationsService {
     const saved = await this.prismaService.visualization.findUnique({
       where: { id: visualization.id },
       include: {
-        nodes: {
-          select: {
-            id: true,
-            diagramType: true,
-            x: true,
-            y: true,
-            label: true,
-            relatedFolders: true,
-            contents: true,
-            groups: true,
-          },
-        },
+        nodes: true,
         edges: true,
       },
     });
@@ -164,6 +143,23 @@ export class VisualizationsService {
     });
 
     return formattedGraph;
+  }
+
+  async updateGraph(visualizationId: string, formattedData: Prisma.JsonObject) {
+    // visualizationId 존재 확인
+    const exist = await this.prismaService.visualization.findUnique({
+      where: { id: visualizationId },
+    });
+
+    if (!exist) throw new Error('시각화를 찾을 수 없습니다.');
+
+    // formattedData 업데이트
+    await this.prismaService.visualization.update({
+      where: { id: visualizationId },
+      data: { formattedData },
+    });
+
+    return { visualizationId };
   }
 
   private buildGraphResponse(graph: any): Prisma.JsonObject {
