@@ -14,12 +14,12 @@ enum NodeGroup {
 model Node {
   id              BigInt @id @default(autoincrement())
   visualizationId String @map("visualization_id") @db.Uuid
-  diagramType     DiagramType
+  diagramType     DiagramType @map("diagram_type")
   x               Float  @default(0) @db.Real
   y               Float  @default(0) @db.Real
   label           String @db.VarChar
   contents        String? @db.Text
-  relatedFolders Json @default("[]")
+  relatedFolders Json @map("related_folders") @default("[]")
   groups          NodeGroup?
 
   visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)
