@@ -19,8 +19,8 @@ WORKDIR /app
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
-# 모든 의존성 설치 (devDependencies 포함)
-RUN pnpm install --frozen-lockfile
+# 모든 의존성 설치 (devDependencies 포함, postinstall 스크립트는 스킵)
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY --from=builder /app/out/full/ .
 
