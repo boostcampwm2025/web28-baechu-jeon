@@ -1,11 +1,10 @@
 services:
   web:
-    image: ghcr.io/${GITHUB_ACTOR}/repository-name/client:latest
+    image: ghcr.io/boostcampwm2025/web28-baechu-jeon/client:latest
     ports:
       - '${WEB_PORT}:${WEB_PORT}'
     environment:
       - PORT=${WEB_PORT}
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     depends_on:
       - server
 
@@ -20,7 +19,7 @@ services:
       - server
 
   server:
-    image: ghcr.io/${GITHUB_ACTOR}/repository-name/server:latest
+    image: ghcr.io/boostcampwm2025/web28-baechu-jeon/server:latest
     ports:
       - '${SERVER_PORT}:${SERVER_PORT}'
     environment:
