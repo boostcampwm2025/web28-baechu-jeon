@@ -8,6 +8,8 @@ export interface Step3Analysis {
       frontend: string[];
       backend: string[];
       infrastructure: string[];
+      database: string[];
+      extra: string[];
     };
     evidence: string[];
     confidence: 'low' | 'medium' | 'high';
@@ -42,12 +44,14 @@ export type EdgeInput = {
 export type NodeInput = {
   label: string;
   contents?: string;
+  groups?: 'FE' | 'BE' | 'INFRA' | 'DB' | 'EXTRA';
 };
 
 export type NodeTemp = {
   path: string; // 임시 node id
   label: string;
   contents: string;
+  relatedFolders?: string[];
 };
 
 export type GraphBuildResult = {
@@ -57,6 +61,10 @@ export type GraphBuildResult = {
   };
   step2: {
     nodes: NodeTemp[];
+    edges: EdgeInput[];
+  };
+  step3: {
+    nodes: NodeInput[];
     edges: EdgeInput[];
   };
 };
