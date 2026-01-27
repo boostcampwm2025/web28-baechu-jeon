@@ -21,7 +21,7 @@ export interface Step3Analysis {
   ];
 }
 
-export interface Step2Json {
+export interface Step2Analysis {
   responsibility_hypotheses: Array<{
     folder_path: string;
     hypothesis: string;

@@ -1,17 +1,20 @@
-import { EdgeInput, NodeTemp, Step2Json } from '../types/graph-builder.type';
+import {
+  EdgeInput,
+  NodeTemp,
+  Step2Analysis,
+} from '../types/graph-builder.type';
 
-export function buildStep2(step2: Step2Json, maxDepth: number) {
+export function buildDiagram2(
+  step2AnalysisResult: Step2Analysis,
+  maxDepth: number,
+) {
   const nodes: NodeTemp[] = [];
   const edges: EdgeInput[] = [];
-
-  // apps 외에 다른 root 폴더도 포함되어 있어서 그거 필터링 해야 할 듯?
-  // 트리 모양이 이상할 것 같음. 근데 흠...
-  // 그냥 프롬프트에서 root의 애매한 폴더 빼달라고 하면 될 수도. git, docker 등등 그래서 apps만 받도록.
 
   const map = new Map<string, NodeTemp>();
 
   // 1. folder_path -> node (중복 제거)
-  for (const item of step2.responsibility_hypotheses) {
+  for (const item of step2AnalysisResult.responsibility_hypotheses) {
     const path = normalize(item.folder_path, maxDepth);
 
     if (!map.has(path)) {
@@ -36,24 +39,12 @@ export function buildStep2(step2: Step2Json, maxDepth: number) {
       edges.push({
         sourcePath: parentPath,
         targetPath: node.path,
-        // type: 'folder',
       });
     }
   }
 
   return { nodes, edges };
 }
-
-// // {
-// //   "responsibility_hypotheses": [
-// //     {
-// //       "folder_path": "폴더 경로",
-// //       "hypothesis": "이 폴더가 무슨 일을 할 가능성이 있는지 가설",
-// //       "evidence": "가설의 근거 (구조적 특징, 메타데이터 내용 등)",
-// //       "confidence": 0.0 ~ 1.0
-// //     }
-// //   ]
-// // }
 
 function normalize(path: string, maxDepth: number): string {
   const parts = path.split('/').filter(Boolean);
