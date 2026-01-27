@@ -24,9 +24,9 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY --from=builder /app/out/full/ .
 
-# Prisma Client 생성
-# RUN cd apps/server && npx prisma generate
+# Prisma Client 생성 (더미 URL - generate는 실제 연결 안 함)
 WORKDIR /app/apps/server
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 RUN npx prisma generate
 WORKDIR /app
 
