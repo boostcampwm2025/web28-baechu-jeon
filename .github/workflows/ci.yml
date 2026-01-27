@@ -31,7 +31,10 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Generate Prisma Client
+        run: pnpm --filter=server exec prisma generate
 
       - name: FE Lint & Type Check
         run: pnpm turbo run lint check-types --filter=web
@@ -62,7 +65,10 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Generate Prisma Client
+        run: pnpm --filter=server exec prisma generate
 
       - name: BE Lint & Type Check
         run: pnpm turbo run lint check-types --filter=server
