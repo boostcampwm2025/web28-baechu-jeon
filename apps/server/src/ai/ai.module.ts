@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
-import { AiController } from './ai.controller';
-import { AiService } from './ai.service';
+import { GeminiClient } from './gemini/gemini.client';
+import { GeminiService } from './gemini/gemini.service';
+import { ProjectRepository } from 'src/projects/repository/project.repository';
+import { DatabaseModule } from 'src/database/database.module';
 
 @Module({
-  controllers: [AiController],
-  providers: [AiService],
+  imports: [DatabaseModule],
+  providers: [GeminiClient, GeminiService, ProjectRepository],
+  exports: [GeminiClient, GeminiService],
 })
 export class AiModule {}
-

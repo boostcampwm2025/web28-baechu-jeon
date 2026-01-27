@@ -1,135 +1,148 @@
 "use client";
 
-import NodeCard from "./NodeCard";
-import { useState, useRef } from "react";
+import { useCallback } from "react";
+// import { useState } from "react"; // TODO: reset 기능 복구 시 주석 해제
+import Image from "next/image";
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  useNodesState,
+  useEdgesState,
+  Handle,
+  Position,
+  type Node,
+  type Edge,
+  type NodeTypes,
+  type NodeProps,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import { type BaseNodeData } from "@/utils/transformNodes";
+// import { transformApiToReactFlow } from "@/utils/transformNodes";
+// import { resetVisualization } from "@/api/visualization";
+import resetIcon from "@/assets/reset.svg";
+import { NodeData } from "./VisualizationClient";
+// 커스텀 노드 컴포넌트
+function BaseNode({ data }: NodeProps<Node<BaseNodeData>>) {
+  const { width, height, theme, label } = data;
+  const isFirstNode = width >= 500;
+
+  return (
+    <div
+      style={{
+        width: `${width}px`,
+        height: `${height}px`,
+        borderColor: theme.borderColor,
+        backgroundColor: theme.bgColor,
+        color: theme.textColor,
+      }}
+      className="flex flex-col items-center justify-center rounded-xl border-2 px-6 py-4 shadow-lg transition-all"
+    >
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: theme.borderColor }}
+        className={`!border-none ${isFirstNode ? "!h-4 !w-4" : "!h-3 !w-3"}`}
+      />
+      <div className="flex h-full w-full items-center justify-center overflow-hidden text-center">
+        <span
+          style={{
+            color: theme.textColor,
+            wordBreak: "keep-all",
+            lineHeight: 1.3,
+            fontSize: isFirstNode ? "2rem" : "0.95rem",
+            fontWeight: isFirstNode ? 800 : 600,
+          }}
+        >
+          {label}
+        </span>
+      </div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: theme.borderColor }}
+        className={`!border-none ${isFirstNode ? "!h-4 !w-4" : "!h-3 !w-3"}`}
+      />
+    </div>
+  );
+}
+
+const nodeTypes: NodeTypes = {
+  baseNode: BaseNode,
+};
 
 interface VisualizationViewProps {
-  projectId: string;
-  onNodeClick: (node: any) => void;
+  visualizationId?: string;
+  initialNodes: Node<BaseNodeData>[];
+  initialEdges: Edge[];
+  onNodeClick: (node: NodeData) => void;
 }
 
 export default function VisualizationView({
-  projectId,
   onNodeClick,
+  initialNodes = [],
+  initialEdges = [],
+  // visualizationId, // TODO: reset 기능 복구 시 주석 해제
 }: VisualizationViewProps) {
-  const [zoom, setZoom] = useState(100);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
+  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+  // TODO: reset 기능 복구 시 아래 주석 해제
+  // const [isReseting, setIsReseting] = useState(false);
+  const isReseting = false; // 임시 값
 
-  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 10, 200));
-  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 10, 50));
-  const handleZoomReset = () => setZoom(100);
+  const handleNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node<BaseNodeData>) => {
+      onNodeClick({
+        id: node.id,
+        label: node.data.label,
+        contents: node.data.contents,
+        groups: node.data.groups,
+      });
+    },
+    [onNodeClick],
+  );
 
-  // 노드 mock 데이터
-  const nodes = [
-    {
-      title: "API Gateway",
-      path: "/api-gateway",
-      x: 400,
-      y: 150,
-      color: "purple" as const,
-      description: "Main API gateway handling all incoming requests",
-      dependencies: [
-        {
-          name: "User Service",
-          type: "dependency" as const,
-          color: "green" as const,
-        },
-      ],
-      metrics: { testCoverage: 75, complexity: "Medium" as const },
-    },
-    {
-      title: "User Service",
-      path: "/services/users",
-      x: 600,
-      y: 400,
-      color: "blue" as const,
-      description:
-        "Handles user authentication, profile management, and role-based access control.",
-      dependencies: [
-        {
-          name: "Users DB",
-          type: "dependency" as const,
-          color: "green" as const,
-        },
-        {
-          name: "Redis Cache",
-          type: "dependency" as const,
-          color: "orange" as const,
-        },
-        {
-          name: "API Gateway",
-          type: "dependent" as const,
-          color: "gray" as const,
-        },
-      ],
-      metrics: { testCoverage: 88, complexity: "High" as const },
-    },
-  ];
+  // 서버에서 초기화된 데이터를 GET 해옴
+  // const handleReset = useCallback(async () => {
+  //   if (!visualizationId || isReseting) return;
+
+  //   try {
+  //     setIsReseting(true);
+  //     const data = await resetVisualization(visualizationId);
+  //     const { reactFlowNodes, reactFlowEdges } = transformApiToReactFlow(data);
+
+  //     setNodes(reactFlowNodes);
+  //     setEdges(reactFlowEdges);
+  //   } catch (err) {
+  //     console.error("Reset failed:", err instanceof Error ? err.message : err);
+  //   } finally {
+  //     setIsReseting(false);
+  //   }
+  // }, [visualizationId, isReseting, setNodes, setEdges]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
-      <div className="absolute top-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 p-1 shadow-lg">
-        <button
-          onClick={handleZoomReset}
-          className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
-          title="Fit Screen"
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-            />
-          </svg>
-        </button>
-        <div className="h-4 w-px bg-slate-700"></div>
-        <button
-          onClick={handleZoomOut}
-          className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
-        >
-          -
-        </button>
-        <span className="min-w-12 px-2 text-center font-mono text-xs text-slate-400 select-none">
-          {zoom}%
-        </span>
-        <button
-          onClick={handleZoomIn}
-          className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
-        >
-          +
-        </button>
-      </div>
-
-      <div
-        ref={canvasRef}
-        className="h-full w-full bg-slate-900"
-        style={{
-          backgroundImage: "radial-gradient(#334155 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
-          transform: `scale(${zoom / 100}) translate(${position.x}px, ${position.y}px)`,
-        }}
+    <div className="relative h-full w-full">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onNodeClick={handleNodeClick}
+        fitView
+        className="bg-slate-900"
       >
-        <div className="relative h-full w-full p-20">
-          {nodes.map((node, index) => (
-            <NodeCard
-              key={index}
-              title={node.title}
-              path={node.path}
-              x={node.x}
-              y={node.y}
-              color={node.color}
-              onClick={() => onNodeClick(node)}
-            />
-          ))}
-        </div>
-      </div>
+        <Background color="#334155" gap={24} />
+        <Controls className="!rounded-lg !border-slate-700 !bg-slate-800 [&>button]:!border-slate-700 [&>button]:!bg-slate-800 [&>button]:!text-slate-400 [&>button:hover]:!bg-slate-700" />
+      </ReactFlow>
+      <button
+        // onClick={handleReset}
+        disabled={isReseting}
+        title="초기화"
+        className="absolute top-4 right-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Image src={resetIcon} alt="초기화" width={32} height={32} />
+      </button>
     </div>
   );
 }

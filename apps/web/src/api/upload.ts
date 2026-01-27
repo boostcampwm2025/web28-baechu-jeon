@@ -1,4 +1,4 @@
-import { ZipUploadResponse, ApiError } from "@/types/uploadApi";
+import { ZipUploadResponse, ApiError } from "@/types/projectApi";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -20,7 +20,7 @@ export async function uploadZipFile(
   formData.append("file", file);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/upload/zip`, {
+    const response = await fetch(`${API_BASE_URL}/projects`, {
       method: "POST",
       body: formData,
       signal,

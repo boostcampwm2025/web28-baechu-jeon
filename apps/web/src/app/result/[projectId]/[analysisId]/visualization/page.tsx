@@ -1,0 +1,44 @@
+import VisualizationClient from "@/components/result/visualization/VisualizationClient";
+import { getIntentions } from "@/api/intention";
+import { getVisualization } from "@/api/visualization";
+import { transformApiToReactFlow } from "@/utils/transformNodes";
+
+interface PageProps {
+  params: Promise<{ projectId: string; analysisId: string }>;
+}
+
+export default async function VisualizationPage({ params }: PageProps) {
+  const { analysisId } = await params;
+
+  const [intentions, visualization] = await Promise.all([
+    getIntentions(analysisId),
+    getVisualization(analysisId),
+  ]);
+
+  const { reactFlowNodes, reactFlowEdges } =
+    transformApiToReactFlow(visualization);
+
+  // TODO: 나중에 updateVisualization 기능 복구 시 아래 주석 해제
+  // const { updatedApiNodes } = transformApiToReactFlow(visualization);
+  // if (visualization.layoutState === "INITIAL") {
+  //   const groupedNodes = {
+  //     STEP1: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP1"),
+  //     STEP2: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP2"),
+  //   };
+  //
+  //   await updateVisualization(visualization.visualizationId, {
+  //     nodes: groupedNodes,
+  //     edges: updatedApiNodes.edges,
+  //     layoutState: "FIXED",
+  //   });
+  // }
+
+  return (
+    <VisualizationClient
+      initialPurposes={intentions.contents}
+      initialNodes={reactFlowNodes}
+      initialEdges={reactFlowEdges}
+      visualizationId={visualization.visualizationId}
+    />
+  );
+}

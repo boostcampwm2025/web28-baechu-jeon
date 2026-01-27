@@ -1,8 +1,19 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import 'dotenv/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, //dto에 정의되지 않은 속성 자동 제거
+      transform: true, //요청 데이터를 dto클래스로 자동 변환
+    }),
+  );
+
+  app.setGlobalPrefix('api');
 
   app.enableCors({
     origin: process.env.WEB_URL || 'http://localhost:3000',
