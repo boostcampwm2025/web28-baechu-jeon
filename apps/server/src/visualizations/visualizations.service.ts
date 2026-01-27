@@ -162,6 +162,20 @@ export class VisualizationsService {
     return { visualizationId };
   }
 
+  async resetGraph(visualizationId: string) {
+    // visualizationId 존재 확인 및 formattedData 가져오기
+    const saved = await this.prismaService.visualization.findUnique({
+      where: { id: visualizationId },
+    });
+
+    if (!saved) throw new Error('시각화를 찾을 수 없습니다.');
+
+    return {
+      visualizationId,
+      formattedData: saved.formattedData,
+    };
+  }
+
   private buildGraphResponse(graph: any): Prisma.JsonObject {
     // BigInt를 string으로 변환
     const serializeNode = (node: any) => ({

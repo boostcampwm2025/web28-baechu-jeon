@@ -20,4 +20,9 @@ export class VisualizationsController {
       body.formattedData,
     );
   }
+
+  @Get(':visualizationId/reset')
+  async resetVisualization(@Param('visualizationId') visualizationId: string) {
+    return await this.visualizationsService.resetGraph(visualizationId);
+  }
 }
