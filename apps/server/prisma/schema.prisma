@@ -3,6 +3,8 @@
 
 generator client {
   provider = "prisma-client-js"
+//여러 파일로 된 스키마 읽기 
+  previewFeatures = ["prismaSchemaFolder"]
 }
 
 datasource db {
