@@ -104,6 +104,8 @@ jobs:
           context: .
           file: ./apps/web/Dockerfile
           push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
           tags: |
             ghcr.io/${{ steps.repo.outputs.name }}/client:latest
             ghcr.io/${{ steps.repo.outputs.name }}/client:${{ github.sha }}
