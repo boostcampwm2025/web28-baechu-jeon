@@ -160,6 +160,19 @@ export class PipelineRunner {
         analysisId,
         completedAt: new Date(),
       });
+
+      // 분석 완료 후 NCloud ZIP 삭제
+      try {
+        const objectKey = NcloudStorageService.objectKeyForProject(projectId);
+        await this.ncloudStorage.deleteObject(objectKey);
+        this.logger.log(`[${analysisId}] NCloud ZIP 삭제 완료: ${objectKey}`);
+      } catch (err) {
+        // ZIP 삭제 실패는 로그만 남기고 분석 실패로 처리하지 않음
+        this.logger.warn(
+          `[${analysisId}] NCloud ZIP 삭제 실패: ${projectId}`,
+          err,
+        );
+      }
     } catch (err: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       this.logger.error(`Pipeline failed at ${analysisId}: ${err.message}`);

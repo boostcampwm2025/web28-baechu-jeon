@@ -4,6 +4,7 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -80,6 +81,19 @@ export class NcloudStorageService {
     });
 
     return tmpPath;
+  }
+
+  /**
+   * NCloud Object Storage에서 객체를 삭제합니다.
+   * @param objectKey 삭제할 객체 키 (예: projects/{projectId}.zip)
+   */
+  async deleteObject(objectKey: string): Promise<void> {
+    await this.s3.send(
+      new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: objectKey,
+      }),
+    );
   }
 
   /** 객체 키 규칙: projects/{projectId}.zip */
