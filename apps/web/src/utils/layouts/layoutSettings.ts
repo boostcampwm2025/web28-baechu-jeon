@@ -16,6 +16,7 @@ export interface BaseNodeData extends Record<string, unknown> {
   highlightClass?: string;
 }
 
+/*
 interface LayoutSettingItem {
   w: number;
   h: number;
@@ -23,6 +24,7 @@ interface LayoutSettingItem {
   rSep: number;
   theme: NodeTheme;
 }
+*/
 
 export const LAYOUT_SETTINGS = {
   diagram1: {

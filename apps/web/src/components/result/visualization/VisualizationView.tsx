@@ -44,9 +44,9 @@ export default function VisualizationView({
   // visualizationId,
 }: VisualizationViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [isReseting, setIsReseting] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [edges, _setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [isReseting, _setIsReseting] = useState(false);
+  const [_isInitialized, setIsInitialized] = useState(false);
 
   // 노드 하이라이트 관리
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
@@ -134,8 +134,8 @@ export default function VisualizationView({
           type: "smoothstep",
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            width: 20,
-            height: 20,
+            width: 15,
+            height: 15,
             color: "#64748b",
           },
         }}

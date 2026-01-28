@@ -46,7 +46,7 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
 function calculateLayout(nodeGroups: Record<string, ApiNode[]>, edges: Edge[]) {
   const reactFlowNodes: Node<BaseNodeData>[] = [];
   const updatedApiNodes: ApiNode[] = [];
-  let generatedEdges: Edge[] = [];
+  const generatedEdges: Edge[] = [];
 
   const TOP_MARGIN = 100;
 
