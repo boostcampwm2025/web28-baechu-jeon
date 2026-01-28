@@ -24,8 +24,9 @@ export default async function VisualizationPage({ params }: PageProps) {
   //   const groupedNodes = {
   //     STEP1: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP1"),
   //     STEP2: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP2"),
+  //     STEP3: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP3"),
   //   };
-  //
+
   //   await updateVisualization(visualization.visualizationId, {
   //     nodes: groupedNodes,
   //     edges: updatedApiNodes.edges,

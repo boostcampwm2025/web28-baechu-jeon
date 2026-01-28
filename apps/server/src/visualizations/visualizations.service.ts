@@ -86,16 +86,22 @@ export class VisualizationsService {
     });
 
     // step1- 유저 시나리오
+    console.log('🔍 Step1 노드들의 관련 폴더:');
     for (const node of step1.nodes) {
-      // relatedFolders의 경로를 노드 ID로 변환
+      // relatedFolders의 경로를 노드 ID로 변환 (존재하는 경로만 필터링)
       const relatedNodeIds =
-        node.relatedFolders?.map((folderPath) => {
-          const nodeId = step2NodeIdMap.get(folderPath);
-          if (!nodeId) {
-            throw new Error(`관련 폴더를 찾을 수 없습니다: ${folderPath}`);
-          }
-          return nodeId.toString();
-        }) ?? [];
+        node.relatedFolders
+          ?.map((folderPath) => {
+            const nodeId = step2NodeIdMap.get(folderPath);
+            if (!nodeId) {
+              console.warn(
+                `⚠️ 매핑 건너뛰기: "${folderPath}" not found in step2NodeIdMap`,
+              );
+              return null;
+            }
+            return nodeId.toString();
+          })
+          .filter((id): id is string => id !== null) ?? [];
 
       await this.prismaService.node.create({
         data: {
@@ -208,7 +214,7 @@ export class VisualizationsService {
       layoutState: 'INITIAL',
       visualizationId: graph.id.toString(),
       nodes: groupByDiagram(graph.nodes, serializeNode),
-      edges: graph.edges.map(serializeEdge),
+      edges: graph.edges?.map(serializeEdge) ?? [],
     } as Prisma.JsonObject;
   }
   /* eslint-enable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */

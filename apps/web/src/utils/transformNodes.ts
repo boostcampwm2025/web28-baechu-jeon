@@ -114,6 +114,8 @@ function transformExistingNodes(apiNodes: Record<string, ApiNode[]>) {
 }
 
 function getReactFlowEdges(apiEdges: ApiEdge[]): Edge[] {
+  if (!apiEdges) return [];
+
   return apiEdges
     .filter((edge) => edge.sourceNodeId && edge.targetNodeId)
     .map((edge) => ({

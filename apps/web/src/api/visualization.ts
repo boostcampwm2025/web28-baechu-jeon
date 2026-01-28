@@ -62,7 +62,6 @@ export async function getVisualization(
     method: "GET",
     signal,
   });
-  console.log("response", response);
   if (!response.ok)
     throw new VisualizationError("Fetch failed", response.status);
   return response.json();
@@ -71,33 +70,33 @@ export async function getVisualization(
 /**
  * PUT: nodes와 edges를 모두 포함해서 보냄
  */
-// export async function updateVisualization(
-//   visualizationId: string,
-//   data: UpdateVisualizationRequest,
-// ): Promise<UpdateVisualizationResponse> {
-//   const response = await fetch(
-//     `${API_BASE_URL}/visualizations/${visualizationId}`,
-//     {
-//       method: "PUT",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify(data),
-//     },
-//   );
-//   if (!response.ok)
-//     throw new VisualizationError("Update failed", response.status);
-//   return response.json();
-// }
+export async function updateVisualization(
+  visualizationId: string,
+  data: UpdateVisualizationRequest,
+): Promise<UpdateVisualizationResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/visualizations/${visualizationId}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    },
+  );
+  if (!response.ok)
+    throw new VisualizationError("Update failed", response.status);
+  return response.json();
+}
 
-// export async function resetVisualization(
-//   visualizationId: string,
-// ): Promise<VisualizationResponse> {
-//   const response = await fetch(
-//     `${API_BASE_URL}/visualizations/${visualizationId}/reset`,
-//     {
-//       method: "GET",
-//     },
-//   );
-//   if (!response.ok)
-//     throw new VisualizationError("Reset failed", response.status);
-//   return response.json();
-// }
+export async function resetVisualization(
+  visualizationId: string,
+): Promise<VisualizationResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/visualizations/${visualizationId}/reset`,
+    {
+      method: "GET",
+    },
+  );
+  if (!response.ok)
+    throw new VisualizationError("Reset failed", response.status);
+  return response.json();
+}
