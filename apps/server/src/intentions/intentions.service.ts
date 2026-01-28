@@ -10,6 +10,11 @@ interface Step3Response {
     technology_stack: Record<string, string[]>;
     architectural_tendencies?: string;
   };
+  user_stories?: Array<{
+    story: string;
+    related_folders: string[];
+    rationale: string;
+  }>;
 }
 
 @Injectable()

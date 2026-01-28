@@ -18,6 +18,12 @@ RUN turbo prune --scope=web --docker
 FROM base AS installer
 WORKDIR /app
 
+# 빌드 타임 환경변수 (NEXT_PUBLIC_* 는 빌드 시점에 번들에 포함됨)
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Prisma postinstall을 위한 더미 URL
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+
 # Prune 단계에서 분류된 패키지 파일들 복사
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml

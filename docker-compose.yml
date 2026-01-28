@@ -1,6 +1,6 @@
 services:
   web:
-    image: ghcr.io/${GITHUB_ACTOR}/repository-name/client:latest
+    image: ghcr.io/boostcampwm2025/web28-baechu-jeon/client:latest
     ports:
       - '${WEB_PORT}:${WEB_PORT}'
     environment:
@@ -19,26 +19,13 @@ services:
       - server
 
   server:
-    # build 대신 image 사용
-    image: ghcr.io/${GITHUB_ACTOR}/repository-name/server:latest
+    image: ghcr.io/boostcampwm2025/web28-baechu-jeon/server:latest
     ports:
       - '${SERVER_PORT}:${SERVER_PORT}'
     environment:
       - PORT=${SERVER_PORT}
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?schema=public
-    depends_on:
-      - db
-
-  db:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    ports:
-      - '${DB_PORT}:${DB_PORT}'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - WEB_URL=${WEB_URL}

@@ -10,6 +10,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AnalysisEmitter } from './events/analysis.emitter.js';
 import { SseModule } from '../sse/sse.module';
 import { PrismaModule } from '../prisma/prisma.module.js';
+import { ProjectsModule } from '../projects/projects.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PrismaModule } from '../prisma/prisma.module.js';
     EventEmitterModule.forRoot(),
     SseModule,
     PrismaModule,
+    ProjectsModule,
   ],
   controllers: [AnalysesController],
   providers: [

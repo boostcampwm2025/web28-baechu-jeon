@@ -19,14 +19,14 @@ WORKDIR /app
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
-# 모든 의존성 설치 (devDependencies 포함)
-RUN pnpm install --frozen-lockfile
+# 모든 의존성 설치 (devDependencies 포함, postinstall 스크립트는 스킵)
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY --from=builder /app/out/full/ .
 
-# Prisma Client 생성
-# RUN cd apps/server && npx prisma generate
+# Prisma Client 생성 (더미 URL - generate는 실제 연결 안 함)
 WORKDIR /app/apps/server
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 RUN npx prisma generate
 WORKDIR /app
 
@@ -56,6 +56,7 @@ COPY --from=installer --chown=nestjs:nodejs /app/apps/server/node_modules ./apps
 COPY --from=installer --chown=nestjs:nodejs /app/apps/server/dist ./apps/server/dist
 COPY --from=installer --chown=nestjs:nodejs /app/apps/server/prisma ./apps/server/prisma
 COPY --from=installer --chown=nestjs:nodejs /app/apps/server/package.json ./apps/server/package.json
+COPY --from=installer --chown=nestjs:nodejs /app/apps/server/prisma.config.ts ./apps/server/prisma.config.ts
 
 USER nestjs
 
