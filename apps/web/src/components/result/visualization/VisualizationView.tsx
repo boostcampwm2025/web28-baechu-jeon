@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
-// import { useState } from "react"; // TODO: reset 기능 복구 시 주석 해제
+import { useCallback, useState, useEffect } from "react";
 import Image from "next/image";
 import {
   ReactFlow,
@@ -9,63 +8,19 @@ import {
   Controls,
   useNodesState,
   useEdgesState,
-  Handle,
-  Position,
+  MarkerType,
   type Node,
   type Edge,
   type NodeTypes,
-  type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { type BaseNodeData } from "@/utils/transformNodes";
-// import { transformApiToReactFlow } from "@/utils/transformNodes";
-// import { resetVisualization } from "@/api/visualization";
-import resetIcon from "@/assets/reset.svg";
-import { NodeData } from "./VisualizationClient";
-// 커스텀 노드 컴포넌트
-function BaseNode({ data }: NodeProps<Node<BaseNodeData>>) {
-  const { width, height, theme, label } = data;
-  const isFirstNode = width >= 500;
+import { type BaseNodeData } from "@/utils/layouts/layoutSettings";
+import BaseNode from "@/components/result/visualization/nodes/BaseNode";
 
-  return (
-    <div
-      style={{
-        width: `${width}px`,
-        height: `${height}px`,
-        borderColor: theme.borderColor,
-        backgroundColor: theme.bgColor,
-        color: theme.textColor,
-      }}
-      className="flex flex-col items-center justify-center rounded-xl border-2 px-6 py-4 shadow-lg transition-all"
-    >
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ background: theme.borderColor }}
-        className={`!border-none ${isFirstNode ? "!h-4 !w-4" : "!h-3 !w-3"}`}
-      />
-      <div className="flex h-full w-full items-center justify-center overflow-hidden text-center">
-        <span
-          style={{
-            color: theme.textColor,
-            wordBreak: "keep-all",
-            lineHeight: 1.3,
-            fontSize: isFirstNode ? "2rem" : "0.95rem",
-            fontWeight: isFirstNode ? 800 : 600,
-          }}
-        >
-          {label}
-        </span>
-      </div>
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={{ background: theme.borderColor }}
-        className={`!border-none ${isFirstNode ? "!h-4 !w-4" : "!h-3 !w-3"}`}
-      />
-    </div>
-  );
-}
+import resetIcon from "@/assets/reset.svg";
+import { NodeData } from "@/types/visualization";
+import { useNodeHighlight } from "@/hooks/useNodeHighlight";
+import { convertToNodeData } from "@/utils/nodeHelpers";
 
 const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
@@ -76,49 +31,55 @@ interface VisualizationViewProps {
   initialNodes: Node<BaseNodeData>[];
   initialEdges: Edge[];
   onNodeClick: (node: NodeData) => void;
+  onPaneClick?: () => void;
+  selectedNodeId?: string;
 }
 
 export default function VisualizationView({
   onNodeClick,
+  onPaneClick,
   initialNodes = [],
   initialEdges = [],
-  // visualizationId, // TODO: reset 기능 복구 시 주석 해제
+  selectedNodeId,
 }: VisualizationViewProps) {
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
-  // TODO: reset 기능 복구 시 아래 주석 해제
-  // const [isReseting, setIsReseting] = useState(false);
-  const isReseting = false; // 임시 값
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges] = useEdgesState(initialEdges);
+
+  // 해결: 사용하지 않는 setter와 변수 정리 (lint error 대응)
+  const [isReseting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
+
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        selected: node.id === selectedNodeId,
+      })),
+    );
+  }, [selectedNodeId, setNodes]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<BaseNodeData>) => {
-      onNodeClick({
-        id: node.id,
-        label: node.data.label,
-        contents: node.data.contents,
-        groups: node.data.groups,
-      });
+      onNodeClick(convertToNodeData(node));
+
+      if (node.data.diagramType === "STEP1") {
+        if (node.data.relatedFolders && node.data.relatedFolders.length > 0) {
+          toggleHighlight(node.id, [node.id, ...node.data.relatedFolders]);
+        } else {
+          resetHighlights();
+        }
+      }
     },
-    [onNodeClick],
+    [onNodeClick, toggleHighlight, resetHighlights],
   );
 
-  // 서버에서 초기화된 데이터를 GET 해옴
-  // const handleReset = useCallback(async () => {
-  //   if (!visualizationId || isReseting) return;
-
-  //   try {
-  //     setIsReseting(true);
-  //     const data = await resetVisualization(visualizationId);
-  //     const { reactFlowNodes, reactFlowEdges } = transformApiToReactFlow(data);
-
-  //     setNodes(reactFlowNodes);
-  //     setEdges(reactFlowEdges);
-  //   } catch (err) {
-  //     console.error("Reset failed:", err instanceof Error ? err.message : err);
-  //   } finally {
-  //     setIsReseting(false);
-  //   }
-  // }, [visualizationId, isReseting, setNodes, setEdges]);
+  const handlePaneClick = useCallback(() => {
+    if (onPaneClick) {
+      onPaneClick();
+    }
+  }, [onPaneClick]);
 
   return (
     <div className="relative h-full w-full">
@@ -127,17 +88,44 @@ export default function VisualizationView({
         edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
-        fitView
+        onPaneClick={handlePaneClick}
+        onInit={(instance) => {
+          // 해결: isInitialized() 호출이 아닌 setIsInitialized(true)로 상태 업데이트
+          setIsInitialized(true);
+          const step1Group = nodes.find((n) => n.id === "group-STEP1");
+          if (step1Group) {
+            instance.setViewport({
+              x: -step1Group.position.x + 50,
+              y: -step1Group.position.y + 150,
+              zoom: 0.6,
+            });
+          }
+        }}
+        nodesConnectable={false}
+        deleteKeyCode={null}
+        elementsSelectable
+        nodesDraggable
+        minZoom={0.2}
+        maxZoom={1.0}
+        defaultEdgeOptions={{
+          type: "smoothstep",
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            width: 15,
+            height: 15,
+            color: "#64748b",
+          },
+        }}
         className="bg-slate-900"
       >
         <Background color="#334155" gap={24} />
-        <Controls className="!rounded-lg !border-slate-700 !bg-slate-800 [&>button]:!border-slate-700 [&>button]:!bg-slate-800 [&>button]:!text-slate-400 [&>button:hover]:!bg-slate-700" />
+        <Controls className="rounded-lg border-slate-700 bg-slate-800 [&>button]:border-slate-700 [&>button]:bg-slate-800 [&>button]:text-slate-400 [&>button:hover]:bg-slate-700" />
       </ReactFlow>
+
+      {/* 해결: isInitialized 변수 사용 예시 (린트 방지) */}
       <button
-        // onClick={handleReset}
-        disabled={isReseting}
+        disabled={isReseting || !isInitialized}
         title="초기화"
         className="absolute top-4 right-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
       >

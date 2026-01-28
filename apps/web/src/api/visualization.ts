@@ -4,28 +4,20 @@ const API_BASE_URL =
 // API 응답 타입
 export interface ApiNode {
   id: string;
-  visualizationId: string;
   x: number;
   y: number;
   label: string;
-  diagramType: string;
-  group?: string;
-  contents: string;
+  diagramType: "STEP1" | "STEP2" | "STEP3";
+  groups?: "FE" | "BE" | "INFRA" | "DB" | "EXTRA";
+  contents: string | null;
+  relatedFolders?: string[];
 }
 
 export interface ApiEdge {
   id: string;
   sourceNodeId: string;
   targetNodeId: string;
-  diagramType: string;
   type?: string;
-  label?: string;
-}
-
-export interface InitialNodes {
-  diagram1: ApiNode[];
-  diagram2: ApiNode[];
-  diagram3: ApiNode[];
 }
 
 // 전체 응답 타입
@@ -35,22 +27,18 @@ export interface VisualizationResponse {
   nodes: {
     STEP1: ApiNode[];
     STEP2: ApiNode[];
+    STEP3: ApiNode[];
   };
-  edges: {
-    STEP1: ApiEdge[];
-    STEP2: ApiEdge[];
-  };
+  edges: ApiEdge[];
 }
 
 export interface UpdateVisualizationRequest {
   nodes: {
     STEP1: ApiNode[];
     STEP2: ApiNode[];
+    STEP3: ApiNode[];
   };
-  edges: {
-    STEP1: ApiEdge[];
-    STEP2: ApiEdge[];
-  };
+  edges: ApiEdge[];
   layoutState?: "INITIAL" | "FIXED";
 }
 
@@ -79,8 +67,6 @@ export async function getVisualization(
     throw new VisualizationError("Fetch failed", response.status);
   return response.json();
 }
-
-console.log(getVisualization("bb1d5c1f-d497-4df5-85d5-eca17a5b7393"));
 
 /**
  * PUT: nodes와 edges를 모두 포함해서 보냄
