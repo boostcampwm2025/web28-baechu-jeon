@@ -18,6 +18,24 @@ export type Step2Input = {
 };
 export type Step3Input = { project: Project; analysisResult: AnalysisResult };
 
+/** Step3 AI 응답: 프로젝트 의도 + 사용자 스토리(유즈케이스별 관련 폴더 목록 포함) */
+export interface Step3Result {
+  project_intent: {
+    overview: string;
+    purpose: string;
+    architectural_tendencies: string;
+    key_features: string[];
+    technology_stack: Record<string, string[]>;
+    evidence: string[];
+    confidence: 'low' | 'medium' | 'high';
+  };
+  user_stories: Array<{
+    story: string;
+    related_folders: string[];
+    rationale: string;
+  }>;
+}
+
 export interface AiClientRequest {
   userPrompt: string;
   systemPrompt: string;
