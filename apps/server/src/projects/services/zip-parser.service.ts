@@ -20,6 +20,73 @@ export class ZipParserService {
     };
   }
 
+  /**
+   * ZIP에서 지정한 경로들의 파일 내용만 추출합니다.
+   * (Step1 이후 AI가 요청한 "주요 파일" 내용 꺼낼 때 사용)
+   * @param zipPath ZIP 파일 경로 (로컬 또는 임시 다운로드 경로)
+   * @param paths 추출할 파일 경로 목록 (예: ["src/app/foo.ts", "README.md"])
+   */
+  async extractPaths(
+    zipPath: string,
+    paths: string[],
+  ): Promise<Map<string, string>> {
+    const result = new Map<string, string>();
+    const normalizedToOriginal = new Map<string, string>();
+    paths.forEach((p) => {
+      const norm = p.replace(/\\/g, '/');
+      if (norm.length > 0 && !norm.endsWith('/')) {
+        normalizedToOriginal.set(norm, p);
+      }
+    });
+
+    if (normalizedToOriginal.size === 0) {
+      return result;
+    }
+
+    return new Promise((resolve, reject) => {
+      yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
+        if (err) {
+          return reject(err instanceof Error ? err : new Error(String(err)));
+        }
+
+        zipfile.readEntry();
+
+        zipfile.on('entry', (entry: yauzl.Entry) => {
+          const normEntry = entry.fileName.replace(/\\/g, '/');
+          const requestedPath = normalizedToOriginal.get(normEntry);
+
+          if (!requestedPath) {
+            zipfile.readEntry();
+            return;
+          }
+
+          zipfile.openReadStream(entry, (err, readStream) => {
+            if (err) {
+              zipfile.readEntry();
+              return;
+            }
+
+            const chunks: Buffer[] = [];
+            readStream.on('data', (chunk: Buffer) => chunks.push(chunk));
+            readStream.on('end', () => {
+              const content = Buffer.concat(chunks).toString('utf8');
+              result.set(requestedPath, content);
+              zipfile.readEntry();
+            });
+          });
+        });
+
+        zipfile.on('end', () => {
+          resolve(result);
+        });
+
+        zipfile.on('error', (error) => {
+          reject(error instanceof Error ? error : new Error(String(error)));
+        });
+      });
+    });
+  }
+
   private async collectEntries(
     zipPath: string,
   ): Promise<{ allEntries: string[]; gitignoreContent: string | null }> {

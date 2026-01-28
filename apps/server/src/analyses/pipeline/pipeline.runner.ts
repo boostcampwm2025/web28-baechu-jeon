@@ -3,6 +3,8 @@ import { GeminiService } from 'src/ai/gemini/gemini.service';
 import { PipelineContext } from './pipeline.context';
 import { AnalysisEmitter } from '../events/analysis.emitter';
 import { AnalysisStep } from '../analysis.events';
+import { ProjectsService } from 'src/projects/projects.service';
+import { Step1Result } from 'src/ai/types/ai.types';
 
 // TODO: 에러 핸들링 추가: 한 단계에서 에러가 나면 context에 에러 상태를 기록하고 작업을 중단하거나 >>재시도하는 로직<<
 @Injectable()
@@ -12,6 +14,7 @@ export class PipelineRunner {
   constructor(
     private readonly geminiService: GeminiService,
     private readonly emitter: AnalysisEmitter,
+    private readonly projectsService: ProjectsService,
   ) {}
 
   private async emitStep(
@@ -76,11 +79,17 @@ export class PipelineRunner {
         await this.emitStep(analysisId, 'STEP2_HYPOTHESIS', 'STARTED', 40);
         if (!context.step1) throw new Error('Step 1 result missing');
 
+        const additionalFileContents = await this.projectsService.extractMainFiles(
+          projectId,
+          context.step1 as Step1Result,
+        );
+
         const step2 = await this.geminiService.getResult({
           projectId,
           step: 2,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           analysisResult: { step1: context.step1 } as any,
+          additionalFileContents,
         });
 
         context.step2 = step2.result;
@@ -121,6 +130,18 @@ export class PipelineRunner {
         analysisId,
         completedAt: new Date(),
       });
+
+      // 분석 완료 후 NCloud ZIP 삭제
+      try {
+        await this.projectsService.deleteProjectZip(projectId);
+        this.logger.log(`[${analysisId}] NCloud ZIP 삭제 완료: ${projectId}`);
+      } catch (err) {
+        // ZIP 삭제 실패는 로그만 남기고 분석 실패로 처리하지 않음
+        this.logger.warn(
+          `[${analysisId}] NCloud ZIP 삭제 실패: ${projectId}`,
+          err,
+        );
+      }
     } catch (err: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       this.logger.error(`Pipeline failed at ${analysisId}: ${err.message}`);

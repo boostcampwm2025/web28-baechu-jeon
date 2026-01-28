@@ -9,6 +9,7 @@ import { AnalysesModule } from './analyses/analyses.module';
 import { VisualizationsModule } from './visualizations/visualizations.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { IntentionsModule } from './intentions/intentions.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { IntentionsModule } from './intentions/intentions.module';
     }),
 
     DatabaseModule,
+    StorageModule,
     ProjectsModule,
     IntentionsModule,
     AiModule,
