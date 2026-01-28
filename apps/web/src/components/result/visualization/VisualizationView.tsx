@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import Image from "next/image";
 import {
   ReactFlow,
@@ -8,66 +8,19 @@ import {
   Controls,
   useNodesState,
   useEdgesState,
-  Handle,
-  Position,
   MarkerType,
   type Node,
   type Edge,
   type NodeTypes,
-  type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {
-  type BaseNodeData,
-  transformApiToReactFlow,
-} from "@/utils/transformNodes";
-// import { resetVisualization } from "@/api/visualization";
+import { type BaseNodeData } from "@/utils/layouts/layoutSettings";
+import BaseNode from "@/components/result/visualization/nodes/BaseNode";
+
 import resetIcon from "@/assets/reset.svg";
-import { NodeData } from "./VisualizationClient";
-
-// 커스텀 노드 컴포넌트
-function BaseNode({ data }: NodeProps<Node<BaseNodeData>>) {
-  const { width, height, theme, label } = data;
-  const isFirstNode = width >= 500;
-
-  const hiddenHandleStyle: React.CSSProperties = {
-    visibility: "hidden",
-    pointerEvents: "none",
-  };
-
-  return (
-    <div
-      style={{
-        width: `${width}px`,
-        height: `${height}px`,
-        borderColor: theme.borderColor,
-        backgroundColor: theme.bgColor,
-        color: theme.textColor,
-      }}
-      className="flex flex-col items-center justify-center rounded-xl border-2 px-6 py-4 shadow-lg transition-all"
-    >
-      <Handle type="target" position={Position.Top} style={hiddenHandleStyle} />
-      <div className="flex h-full w-full items-center justify-center overflow-hidden text-center">
-        <span
-          style={{
-            color: theme.textColor,
-            wordBreak: "keep-all",
-            lineHeight: 1.3,
-            fontSize: isFirstNode ? "2rem" : "0.95rem",
-            fontWeight: isFirstNode ? 800 : 600,
-          }}
-        >
-          {label}
-        </span>
-      </div>
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={hiddenHandleStyle}
-      />
-    </div>
-  );
-}
+import { NodeData } from "@/types/visualization";
+import { useNodeHighlight } from "@/hooks/useNodeHighlight";
+import { convertToNodeData } from "@/utils/nodeHelpers";
 
 const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
@@ -78,29 +31,58 @@ interface VisualizationViewProps {
   initialNodes: Node<BaseNodeData>[];
   initialEdges: Edge[];
   onNodeClick: (node: NodeData) => void;
+  onPaneClick?: () => void;
+  selectedNodeId?: string;
 }
 
 export default function VisualizationView({
   onNodeClick,
+  onPaneClick,
   initialNodes = [],
   initialEdges = [],
-  visualizationId,
+  selectedNodeId,
+  // visualizationId,
 }: VisualizationViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isReseting, setIsReseting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // 노드 하이라이트 관리
+  const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
+
+  // 상위 컴포넌트에서 selectedNodeId가 바뀌면 nodes 상태 업데이트
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        selected: node.id === selectedNodeId,
+      })),
+    );
+  }, [selectedNodeId, setNodes]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<BaseNodeData>) => {
-      onNodeClick({
-        id: node.id,
-        label: node.data.label,
-        contents: node.data.contents,
-        groups: node.data.groups,
-      });
+      onNodeClick(convertToNodeData(node));
+
+      // 하이라이트 로직 (STEP1 노드 클릭 시 연관 폴더 강조)
+      if (node.data.diagramType === "STEP1") {
+        if (node.data.relatedFolders && node.data.relatedFolders.length > 0) {
+          // 자기 자신 포함해서 하이라이트
+          toggleHighlight(node.id, [node.id, ...node.data.relatedFolders]);
+        } else {
+          resetHighlights();
+        }
+      }
     },
-    [onNodeClick],
+    [onNodeClick, toggleHighlight, resetHighlights],
   );
+
+  const handlePaneClick = useCallback(() => {
+    if (onPaneClick) {
+      onPaneClick();
+    }
+  }, [onPaneClick]);
 
   // 서버에서 초기화된 데이터를 GET 해옴
   // const handleReset = useCallback(async () => {
@@ -129,16 +111,41 @@ export default function VisualizationView({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
+        onPaneClick={handlePaneClick}
+        onInit={(instance) => {
+          setIsInitialized(true);
+          // STEP1 그룹의 위치와 크기 찾기
+          const step1Group = nodes.find((n) => n.id === "group-STEP1");
+          if (step1Group) {
+            instance.setViewport({
+              x: -step1Group.position.x + 50,
+              y: -step1Group.position.y + 150,
+              zoom: 0.6,
+            });
+          }
+        }}
         nodesConnectable={false}
         deleteKeyCode={null}
         elementsSelectable
         nodesDraggable
-        fitView
+        minZoom={0.2}
+        maxZoom={1.0}
+        defaultEdgeOptions={{
+          type: "smoothstep",
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            width: 20,
+            height: 20,
+            color: "#64748b",
+          },
+        }}
         className="bg-slate-900"
       >
         <Background color="#334155" gap={24} />
-        <Controls className="!rounded-lg !border-slate-700 !bg-slate-800 [&>button]:!border-slate-700 [&>button]:!bg-slate-800 [&>button]:!text-slate-400 [&>button:hover]:!bg-slate-700" />
+        <Controls className="rounded-lg border-slate-700 bg-slate-800 [&>button]:border-slate-700 [&>button]:bg-slate-800 [&>button]:text-slate-400 [&>button:hover]:bg-slate-700" />
       </ReactFlow>
+
+      {/* 초기화 버튼 (현재 기능 연결은 안 되어 있음 - handleReset 필요) */}
       <button
         // onClick={handleReset}
         disabled={isReseting}
