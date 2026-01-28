@@ -1,5 +1,5 @@
 import { IoClose } from "react-icons/io5";
-import { NodeData } from "./VisualizationClient";
+import { NodeData } from "@/types/visualization";
 
 export interface NodeDetailsProps {
   node: NodeData | null;
