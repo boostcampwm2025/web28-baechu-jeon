@@ -176,16 +176,14 @@ export class VisualizationsService {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
   private buildGraphResponse(graph: any): Prisma.JsonObject {
     // BigInt를 string으로 변환
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const serializeNode = (node: any) => ({
       ...node,
       id: node.id.toString(),
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const serializeEdge = (edge: any) => ({
       ...edge,
       id: edge.id.toString(),
@@ -208,12 +206,10 @@ export class VisualizationsService {
     // TODO: layoutState 관리해야 함. 지금은 무조건 INITIAL로 줌
     return {
       layoutState: 'INITIAL',
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       visualizationId: graph.id.toString(),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       nodes: groupByDiagram(graph.nodes, serializeNode),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       edges: graph.edges.map(serializeEdge),
     } as Prisma.JsonObject;
   }
+  /* eslint-enable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 }

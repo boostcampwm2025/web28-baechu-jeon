@@ -15,7 +15,6 @@ export class VisualizationsController {
     @Param('visualizationId') visualizationId: string,
     @Body() body: { formattedData: any },
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return await this.visualizationsService.updateGraph(
       visualizationId,
       body.formattedData,
