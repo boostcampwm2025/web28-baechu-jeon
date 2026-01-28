@@ -1,14 +1,27 @@
-// Node 테이블 스키마
+enum DiagramType {
+  STEP1
+  STEP2
+  STEP3
+}
+
+enum NodeGroup {
+  FE
+  BE
+  INFRA
+  DB
+  EXTRA
+}
 
 model Node {
   id              BigInt @id @default(autoincrement())
   visualizationId String @map("visualization_id") @db.Uuid
-  diagramType     String // "STEP1" | "STEP2"
+  diagramType     DiagramType @map("diagram_type")
   x               Float  @default(0) @db.Real
   y               Float  @default(0) @db.Real
   label           String @db.VarChar
-  contents        String @db.Text
-  groups          String? @db.Text
+  contents        String? @db.Text
+  relatedFolders  String[] @map("related_folders") @default([])
+  groups          NodeGroup?
 
   visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)
 
@@ -16,5 +29,5 @@ model Node {
   incomingEdges Edge[] @relation("TargetNode")
   
   @@map("nodes")
-  @@index([visualizationId])
+  @@index([visualizationId, diagramType])
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/database/prisma.service';
-import { AnalysisResult, Node, Edge, Prisma } from '@prisma/client';
+import { AnalysisResult, Prisma } from '@prisma/client';
 import { GraphBuilderService } from './graph-builder/graph-builder.service';
 import { GraphBuildResult } from './graph-builder/types/graph-builder.type';
 
@@ -12,22 +12,12 @@ export class VisualizationsService {
   ) {}
 
   async getGraph(analysisId: string) {
-    // 그래프가 이미 있는지 중복 조회를 해야하나? ㅇㅇ 새로고침할 때 필요
-    // analysisId(= analysisResultId)를 가진 Visualization이 이미 DB에 존재하는지 확인하고 싶다
+    // 그래프가 이미 있는지 확인
     const exist = await this.prismaService.visualization.findFirst({
       where: { analysisResultId: analysisId },
-      select: { id: true },
     });
 
-    if (exist) {
-      const saved = await this.prismaService.visualization.findUnique({
-        where: { id: exist.id },
-      });
-
-      if (!saved) throw new Error('시각화 조회에 실패했습니다.');
-
-      return saved.formattedData;
-    }
+    if (exist) return exist.formattedData;
 
     // 그래프 없으면 새로 만들자.
     // 일단 분석 결과가 존재하는지 확인하기
@@ -46,7 +36,7 @@ export class VisualizationsService {
     const visualization = await this.prismaService.visualization.create({
       data: {
         analysisResultId: analysisResult.id,
-        formattedData: {}, // 나중에 채우기
+        formattedData: {},
       },
     });
 
@@ -55,52 +45,12 @@ export class VisualizationsService {
     const result: GraphBuildResult =
       this.graphBuilderService.build(analysisResult);
 
-    const { step1, step2 } = result;
-
-    const step1NodeIdMap = new Map<string | number, bigint>();
+    const { step1, step2, step3 } = result;
 
     // node, edge row 만들고
-
-    // step1
-    for (const node of step1.nodes) {
-      const created = await this.prismaService.node.create({
-        data: {
-          visualizationId: visualization.id,
-          diagramType: 'STEP1',
-          x: 0,
-          y: 0,
-          label: node.label,
-          contents: node.contents,
-        },
-      });
-
-      step1NodeIdMap.set(node.label, created.id);
-    }
-
-    const edgesData = step1.edges.map((edge) => {
-      const sourceNodeId = step1NodeIdMap.get(edge.sourcePath);
-      const targetNodeId = step1NodeIdMap.get(edge.targetPath);
-
-      if (!sourceNodeId || !targetNodeId)
-        throw new Error(
-          `Edge 생성 실패: 노드를 찾을 수 없습니다. (${edge.sourcePath} -> ${edge.targetPath})`,
-        );
-
-      return {
-        visualizationId: visualization.id,
-        diagramType: 'STEP1',
-        sourceNodeId,
-        targetNodeId,
-      };
-    });
-
-    await this.prismaService.edge.createMany({
-      data: edgesData,
-    });
-
     const step2NodeIdMap = new Map<string | number, bigint>();
 
-    // step2
+    // step2- 폴더 가설
     for (const node of step2.nodes) {
       const created = await this.prismaService.node.create({
         data: {
@@ -126,7 +76,6 @@ export class VisualizationsService {
 
       return {
         visualizationId: visualization.id,
-        diagramType: 'STEP2',
         sourceNodeId,
         targetNodeId,
       };
@@ -135,6 +84,44 @@ export class VisualizationsService {
     await this.prismaService.edge.createMany({
       data: step2EdgesData,
     });
+
+    // step1- 유저 시나리오
+    for (const node of step1.nodes) {
+      // relatedFolders의 경로를 노드 ID로 변환
+      const relatedNodeIds =
+        node.relatedFolders?.map((folderPath) => {
+          const nodeId = step2NodeIdMap.get(folderPath);
+          if (!nodeId) {
+            throw new Error(`관련 폴더를 찾을 수 없습니다: ${folderPath}`);
+          }
+          return nodeId.toString();
+        }) ?? [];
+
+      await this.prismaService.node.create({
+        data: {
+          visualizationId: visualization.id,
+          diagramType: 'STEP1',
+          x: 0,
+          y: 0,
+          label: node.label,
+          relatedFolders: relatedNodeIds,
+        },
+      });
+    }
+
+    // step3- 기술 스택
+    for (const node of step3.nodes) {
+      await this.prismaService.node.create({
+        data: {
+          visualizationId: visualization.id,
+          diagramType: 'STEP3',
+          x: 0,
+          y: 0,
+          label: node.label,
+          groups: node.groups,
+        },
+      });
+    }
 
     // graph 반환하기.
     const saved = await this.prismaService.visualization.findUnique({
@@ -158,15 +145,46 @@ export class VisualizationsService {
     return formattedGraph;
   }
 
-  private buildGraphResponse(graph: { nodes: Node[]; edges: Edge[] }) {
-    // BigInt를 string으로 변환
-    const serializeNode = (node: Node) => ({
-      ...node,
-      id: node.id.toString(),
-      visualizationId: node.visualizationId.toString(),
+  async updateGraph(visualizationId: string, formattedData: Prisma.JsonObject) {
+    // visualizationId 존재 확인
+    const exist = await this.prismaService.visualization.findUnique({
+      where: { id: visualizationId },
     });
 
-    const serializeEdge = (edge: Edge) => ({
+    if (!exist) throw new Error('시각화를 찾을 수 없습니다.');
+
+    // formattedData 업데이트
+    await this.prismaService.visualization.update({
+      where: { id: visualizationId },
+      data: { formattedData },
+    });
+
+    return { visualizationId };
+  }
+
+  async resetGraph(visualizationId: string) {
+    // visualizationId 존재 확인 및 formattedData 가져오기
+    const saved = await this.prismaService.visualization.findUnique({
+      where: { id: visualizationId },
+    });
+
+    if (!saved) throw new Error('시각화를 찾을 수 없습니다.');
+
+    return {
+      visualizationId,
+      formattedData: saved.formattedData,
+    };
+  }
+
+  /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+  private buildGraphResponse(graph: any): Prisma.JsonObject {
+    // BigInt를 string으로 변환
+    const serializeNode = (node: any) => ({
+      ...node,
+      id: node.id.toString(),
+    });
+
+    const serializeEdge = (edge: any) => ({
       ...edge,
       id: edge.id.toString(),
       visualizationId: edge.visualizationId.toString(),
@@ -188,16 +206,10 @@ export class VisualizationsService {
     // TODO: layoutState 관리해야 함. 지금은 무조건 INITIAL로 줌
     return {
       layoutState: 'INITIAL',
+      visualizationId: graph.id.toString(),
       nodes: groupByDiagram(graph.nodes, serializeNode),
-      edges: groupByDiagram(graph.edges, serializeEdge),
+      edges: graph.edges.map(serializeEdge),
     } as Prisma.JsonObject;
   }
+  /* eslint-enable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 }
-
-// {
-//   "layoutState": "INITIAL", // or "FIXED"
-//   "nodes": {
-//     "diagram1": [...],
-//     "diagram2": [...],
-//   }
-// }

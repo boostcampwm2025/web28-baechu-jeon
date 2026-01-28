@@ -48,7 +48,12 @@ export class PipelineRunner {
           context.step1,
         );
       } else {
-        await this.emitStep(analysisId, 'STEP1_FEATURE_ANALYSIS', 'STARTED', 10);
+        await this.emitStep(
+          analysisId,
+          'STEP1_FEATURE_ANALYSIS',
+          'STARTED',
+          10,
+        );
         const step1 = await this.geminiService.getResult({
           projectId,
           step: 1,
