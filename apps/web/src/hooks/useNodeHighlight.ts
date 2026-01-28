@@ -1,72 +1,52 @@
-import { useRef, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { type Node } from "@xyflow/react";
 import { type BaseNodeData } from "@/utils/transformNodes";
 
 export function useNodeHighlight(
   setNodes: React.Dispatch<React.SetStateAction<Node<BaseNodeData>[]>>,
 ) {
-  const highlightTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // 현재 하이라이트를 유발한 STEP1 노드의 ID
+  const [activeStep1Id, setActiveStep1Id] = useState<string | null>(null);
 
-  // 타이머 정리 함수
-  const clearTimer = useCallback(() => {
-    if (highlightTimerRef.current) {
-      clearTimeout(highlightTimerRef.current);
-      highlightTimerRef.current = null;
-    }
-  }, []);
-
-  // 하이라이트 초기화 (빈 배경 클릭 시)
+  // 하이라이트 초기화
   const resetHighlights = useCallback(() => {
-    clearTimer();
+    setActiveStep1Id(null);
     setNodes((nds) =>
       nds.map((n) => ({
         ...n,
         data: { ...n.data, highlightClass: "" },
       })),
     );
-  }, [setNodes, clearTimer]);
+  }, [setNodes]);
 
-  // 하이라이트 실행 (노드 클릭 시)
-  const triggerHighlight = useCallback(
-    (targetIds: string[]) => {
-      clearTimer();
+  // 하이라이트 토글 (STEP1 노드 클릭 시)
+  const toggleHighlight = useCallback(
+    (triggerNodeId: string, targetIds: string[]) => {
+      setNodes((prevNodes) => {
+        // 이미 켜져있는 STEP1을 다시 눌렀다면? -> 끄기
+        if (activeStep1Id === triggerNodeId) {
+          setActiveStep1Id(null); // 상태 업데이트 (비동기지만 다음 렌더링에 반영)
+          return prevNodes.map((n) => ({
+            ...n,
+            data: { ...n.data, highlightClass: "" },
+          }));
+        }
 
-      // 1단계: 반짝이는 애니메이션 적용
-      setNodes((nds) =>
-        nds.map((n) => ({
+        // 새로운 STEP1을 눌렀다면? -> 켜기
+        setActiveStep1Id(triggerNodeId);
+
+        return prevNodes.map((n) => ({
           ...n,
           data: {
             ...n.data,
-            highlightClass: targetIds.includes(n.id)
-              ? "animate-blink-highlight"
-              : "",
+            // 타겟이면 하이라이트 클래스 적용, 아니면 초기화
+            highlightClass: targetIds.includes(n.id) ? "highlight-fixed" : "",
           },
-        })),
-      );
-
-      // 2단계: 1.5초 후 고정 상태로 변경
-      highlightTimerRef.current = setTimeout(() => {
-        setNodes((nds) =>
-          nds.map((n) => {
-            if (targetIds.includes(n.id)) {
-              return {
-                ...n,
-                data: { ...n.data, highlightClass: "highlight-fixed" },
-              };
-            }
-            return n;
-          }),
-        );
-        highlightTimerRef.current = null;
-      }, 1500);
+        }));
+      });
     },
-    [setNodes, clearTimer],
+    [setNodes, activeStep1Id],
   );
 
-  // 언마운트 시 정리
-  useEffect(() => {
-    return () => clearTimer();
-  }, [clearTimer]);
-
-  return { triggerHighlight, resetHighlights };
+  return { toggleHighlight, resetHighlights };
 }
