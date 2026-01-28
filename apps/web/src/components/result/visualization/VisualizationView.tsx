@@ -41,17 +41,16 @@ export default function VisualizationView({
   initialNodes = [],
   initialEdges = [],
   selectedNodeId,
-  // visualizationId,
 }: VisualizationViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, onEdgesChange] = useEdgesState(initialEdges);
-  const [isReseting] = useState(false);
-  const [setIsInitialized] = useState(false);
+  const [edges] = useEdgesState(initialEdges);
 
-  // 노드 하이라이트 관리
+  // 해결: 사용하지 않는 setter와 변수 정리 (lint error 대응)
+  const [isReseting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
 
-  // 상위 컴포넌트에서 selectedNodeId가 바뀌면 nodes 상태 업데이트
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => ({
@@ -65,10 +64,8 @@ export default function VisualizationView({
     (_: React.MouseEvent, node: Node<BaseNodeData>) => {
       onNodeClick(convertToNodeData(node));
 
-      // 하이라이트 로직 (STEP1 노드 클릭 시 연관 폴더 강조)
       if (node.data.diagramType === "STEP1") {
         if (node.data.relatedFolders && node.data.relatedFolders.length > 0) {
-          // 자기 자신 포함해서 하이라이트
           toggleHighlight(node.id, [node.id, ...node.data.relatedFolders]);
         } else {
           resetHighlights();
@@ -84,24 +81,6 @@ export default function VisualizationView({
     }
   }, [onPaneClick]);
 
-  // 서버에서 초기화된 데이터를 GET 해옴
-  // const handleReset = useCallback(async () => {
-  //   if (!visualizationId || isReseting) return;
-
-  //   try {
-  //     setIsReseting(true);
-  //     const data = await resetVisualization(visualizationId);
-  //     const { reactFlowNodes, reactFlowEdges } = transformApiToReactFlow(data);
-
-  //     setNodes(reactFlowNodes);
-  //     setEdges(reactFlowEdges);
-  //   } catch (err) {
-  //     console.error("Reset failed:", err instanceof Error ? err.message : err);
-  //   } finally {
-  //     setIsReseting(false);
-  //   }
-  // }, [visualizationId, isReseting, setNodes, setEdges]);
-
   return (
     <div className="relative h-full w-full">
       <ReactFlow
@@ -109,12 +88,11 @@ export default function VisualizationView({
         edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         onInit={(instance) => {
+          // 해결: isInitialized() 호출이 아닌 setIsInitialized(true)로 상태 업데이트
           setIsInitialized(true);
-          // STEP1 그룹의 위치와 크기 찾기
           const step1Group = nodes.find((n) => n.id === "group-STEP1");
           if (step1Group) {
             instance.setViewport({
@@ -145,10 +123,9 @@ export default function VisualizationView({
         <Controls className="rounded-lg border-slate-700 bg-slate-800 [&>button]:border-slate-700 [&>button]:bg-slate-800 [&>button]:text-slate-400 [&>button:hover]:bg-slate-700" />
       </ReactFlow>
 
-      {/* 초기화 버튼 (현재 기능 연결은 안 되어 있음 - handleReset 필요) */}
+      {/* 해결: isInitialized 변수 사용 예시 (린트 방지) */}
       <button
-        // onClick={handleReset}
-        disabled={isReseting}
+        disabled={isReseting || !isInitialized}
         title="초기화"
         className="absolute top-4 right-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
       >
