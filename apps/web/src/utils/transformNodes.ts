@@ -1,77 +1,40 @@
-import type { Node, Edge } from "@xyflow/react";
-import type {
-  VisualizationResponse,
-  ApiNode,
-  ApiEdge,
-} from "@/api/visualization";
-import dagre from "dagre";
+import { Node, Edge } from "@xyflow/react";
+import { VisualizationResponse, ApiNode, ApiEdge } from "@/api/visualization";
+import { BaseNodeData, LAYOUT_SETTINGS } from "./layouts/layoutSettings";
+import { createReactFlowNode } from "./layouts/layoutUtils";
+import { layoutStep1 } from "./layouts/layoutStep1";
+import { layoutStep2 } from "./layouts/layoutStep2";
+import { layoutStep3 } from "./layouts/layoutStep3";
 
-interface NodeTheme {
-  borderColor: string;
-  bgColor: string;
-  textColor: string;
-}
-
-export interface BaseNodeData extends Record<string, unknown> {
-  label: string;
-  contents: string;
-  groups: string;
-  width: number;
-  height: number;
-  theme: NodeTheme;
-}
-
-interface LayoutSettingItem {
-  w: number;
-  h: number;
-  nSep: number;
-  rSep: number;
-  theme: NodeTheme;
-}
-
-const LAYOUT_SETTINGS = {
-  diagram1: {
-    w: 800,
-    h: 160,
-    nSep: 100,
-    rSep: 150,
-    theme: {
-      borderColor: "#3b82f6",
-      bgColor: "rgba(59, 130, 246, 0.1)",
-      textColor: "#60a5fa",
-    },
-  },
-  diagram2: {
-    w: 220,
-    h: 60,
-    nSep: 120,
-    rSep: 100,
-    theme: {
-      borderColor: "#a855f7",
-      bgColor: "rgba(168, 85, 247, 0.1)",
-      textColor: "#c084fc",
-    },
-  },
-} as const;
+export type { BaseNodeData };
 
 export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
-  // Edge부터 변환
   const reactFlowEdges = getReactFlowEdges(apiResponse.edges);
+  let layoutEdges: Edge[] = [];
 
-  // Node는 좌표 초기화 상태에 따라 다르게 처리
   let nodesResult: {
     reactFlowNodes: Node<BaseNodeData>[];
     updatedApiNodes: ApiNode[];
+    generatedEdges?: Edge[];
   };
 
   if (apiResponse.layoutState === "INITIAL") {
-    nodesResult = calculateLayout(apiResponse.nodes, reactFlowEdges);
+    const calcResult = calculateLayout(apiResponse.nodes, reactFlowEdges);
+    nodesResult = {
+      reactFlowNodes: calcResult.reactFlowNodes,
+      updatedApiNodes: calcResult.updatedApiNodes,
+    };
+    if (calcResult.generatedEdges) {
+      layoutEdges = calcResult.generatedEdges;
+    }
   } else {
-    nodesResult = transformNodes(apiResponse.nodes);
+    nodesResult = transformExistingNodes(apiResponse.nodes);
   }
 
+  const finalEdges = [...reactFlowEdges, ...layoutEdges];
+
   return {
-    reactFlowEdges,
+    reactFlowEdges: finalEdges,
     reactFlowNodes: nodesResult.reactFlowNodes,
     updatedApiNodes: {
       nodes: nodesResult.updatedApiNodes,
@@ -80,126 +43,83 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
   };
 }
 
-// API Edge -> React Flow Edge 변환
-function getReactFlowEdges(apiEdges: Record<string, ApiEdge[]>): Edge[] {
-  const edges: Edge[] = [];
-
-  Object.values(apiEdges).forEach((edgeGroup: ApiEdge[]) => {
-    edgeGroup.forEach((edge) => {
-      if (edge.sourceNodeId && edge.targetNodeId) {
-        edges.push({
-          id: String(edge.id),
-          source: edge.sourceNodeId,
-          target: edge.targetNodeId,
-          label: edge.label,
-          animated: edge.type === "DASHED",
-          style: { stroke: "#475569", strokeWidth: 2 },
-        });
-      }
-    });
-  });
-
-  return edges;
-}
-
-// 초기 레이아웃 계산
 function calculateLayout(nodeGroups: Record<string, ApiNode[]>, edges: Edge[]) {
   const reactFlowNodes: Node<BaseNodeData>[] = [];
   const updatedApiNodes: ApiNode[] = [];
+  let generatedEdges: Edge[] = [];
 
-  const groupKeys = Object.keys(nodeGroups) as (keyof typeof nodeGroups)[];
+  const TOP_MARGIN = 100;
 
-  groupKeys.forEach((key, index) => {
-    const nodesInGroup = nodeGroups[key] || [];
-    if (nodesInGroup.length === 0) return;
+  // STEP1 배치
+  let step1Width = 0;
+  if (nodeGroups.STEP1) {
+    // yOffset에 TOP_MARGIN 전달
+    const s1 = layoutStep1(nodeGroups.STEP1, 0, TOP_MARGIN, 600, 100);
+    reactFlowNodes.push(...s1.groupNodes, ...s1.childNodes);
+    updatedApiNodes.push(...s1.apiNodes);
+    step1Width = s1.width;
+  }
 
-    const xOffset = index * 1200;
+  // STEP2 배치 (STEP1 우측)
+  const STEP1_GAP = 200;
+  const step2X = step1Width + STEP1_GAP;
+  let step2Width = 0;
 
-    const settings: LayoutSettingItem =
-      key === "STEP1" ? LAYOUT_SETTINGS.diagram1 : LAYOUT_SETTINGS.diagram2;
+  if (nodeGroups.STEP2) {
+    // STEP1과 높이 맞춤
+    const s2 = layoutStep2(nodeGroups.STEP2, edges, step2X, TOP_MARGIN);
+    reactFlowNodes.push(...s2.reactFlowNodes);
+    updatedApiNodes.push(...s2.apiNodes);
+    step2Width = s2.width;
+  }
 
-    const g = new dagre.graphlib.Graph();
-    g.setGraph({
-      rankdir: "TB",
-      nodesep: settings.nSep,
-      ranksep: settings.rSep,
-    });
-    g.setDefaultEdgeLabel(() => ({}));
+  // STEP3 배치 (STEP2 우측)
+  const STEP2_GAP = 200;
+  const validStep2Width = step2Width > 0 ? step2Width : 500;
+  const step3X = step2X + validStep2Width + STEP2_GAP;
 
-    nodesInGroup.forEach((n) => {
-      g.setNode(n.id, { width: settings.w, height: settings.h });
-    });
+  if (nodeGroups.STEP3) {
+    const s3 = layoutStep3(nodeGroups.STEP3, step3X, TOP_MARGIN);
 
-    edges.forEach((e) => {
-      if (
-        nodesInGroup.some((n) => n.id === e.source) &&
-        nodesInGroup.some((n) => n.id === e.target)
-      ) {
-        g.setEdge(e.source, e.target);
-      }
-    });
+    reactFlowNodes.push(...s3.groupNodes, ...s3.childNodes);
+    updatedApiNodes.push(...s3.apiNodes);
 
-    dagre.layout(g);
+    if (s3.generatedEdges) {
+      generatedEdges.push(...s3.generatedEdges);
+    }
+  }
 
-    nodesInGroup.forEach((n) => {
-      const pos = g.node(n.id);
-      const finalX = pos.x - settings.w / 2 + xOffset;
-      const finalY = pos.y - settings.h / 2;
-
-      reactFlowNodes.push(createReactFlowNode(n, finalX, finalY, settings));
-
-      updatedApiNodes.push({
-        ...n,
-        x: Math.round(finalX),
-        y: Math.round(finalY),
-      });
-    });
-  });
-
-  return { reactFlowNodes, updatedApiNodes };
+  return { reactFlowNodes, updatedApiNodes, generatedEdges };
 }
 
-// 단순 API Node -> React Flow Node 변환
-function transformNodes(apiNodes: Record<string, ApiNode[]>) {
+function transformExistingNodes(apiNodes: Record<string, ApiNode[]>) {
   const reactFlowNodes: Node<BaseNodeData>[] = [];
   const updatedApiNodes: ApiNode[] = [];
 
   Object.values(apiNodes)
     .flat()
     .forEach((n) => {
-      const settings: LayoutSettingItem =
-        n.diagramType === "STEP1"
-          ? LAYOUT_SETTINGS.diagram1
-          : LAYOUT_SETTINGS.diagram2;
+      let settings;
+      if (n.diagramType === "STEP1") settings = LAYOUT_SETTINGS.diagram1;
+      else if (n.diagramType === "STEP2") settings = LAYOUT_SETTINGS.diagram2;
+      else settings = LAYOUT_SETTINGS.diagram3Child;
 
       reactFlowNodes.push(
         createReactFlowNode(n, Number(n.x), Number(n.y), settings),
       );
-
       updatedApiNodes.push(n);
     });
 
   return { reactFlowNodes, updatedApiNodes };
 }
 
-// React Flow 노드 객체 생성
-function createReactFlowNode(
-  n: ApiNode,
-  x: number,
-  y: number,
-  settings: LayoutSettingItem,
-): Node<BaseNodeData> {
-  return {
-    id: n.id,
-    type: "baseNode",
-    data: {
-      label: n.label,
-      contents: n.contents,
-      groups: n.group || "",
-      width: settings.w,
-      height: settings.h,
-      theme: settings.theme,
-    },
-    position: { x, y },
-  };
+function getReactFlowEdges(apiEdges: ApiEdge[]): Edge[] {
+  return apiEdges
+    .filter((edge) => edge.sourceNodeId && edge.targetNodeId)
+    .map((edge) => ({
+      id: String(edge.id),
+      source: edge.sourceNodeId,
+      target: edge.targetNodeId,
+      style: { stroke: "#475569", strokeWidth: 5 },
+    }));
 }
