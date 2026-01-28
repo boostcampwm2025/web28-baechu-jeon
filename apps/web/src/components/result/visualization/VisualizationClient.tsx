@@ -31,13 +31,10 @@ export default function VisualizationClient({
   const [isNodeOpen, setIsNodeOpen] = useState(!!selectedNode);
 
   const handleNodeClick = useCallback((node: NodeData | null) => {
-    setSelectedNode(node);
-
     // STEP2일 때만 상세 패널 열기
     if (node && node.diagramType === "STEP2") {
+      setSelectedNode(node);
       setIsNodeOpen(true);
-    } else {
-      setIsNodeOpen(false);
     }
   }, []);
 
