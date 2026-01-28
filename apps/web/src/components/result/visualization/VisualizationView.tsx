@@ -44,9 +44,9 @@ export default function VisualizationView({
   // visualizationId,
 }: VisualizationViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, _setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [isReseting, _setIsReseting] = useState(false);
-  const [_isInitialized, setIsInitialized] = useState(false);
+  const [edges, onEdgesChange] = useEdgesState(initialEdges);
+  const [isReseting] = useState(false);
+  const [setIsInitialized] = useState(false);
 
   // 노드 하이라이트 관리
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
