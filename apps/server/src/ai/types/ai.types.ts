@@ -10,7 +10,12 @@ export interface Step1Result {
     confidence: 'low' | 'medium' | 'high';
   }>;
 }
-export type Step2Input = { project: Project; analysisResult: AnalysisResult };
+export type Step2Input = {
+  project: Project;
+  analysisResult: AnalysisResult;
+  /** 1단계에서 요청한 주요 파일 내용 (경로 -> 내용). Step2에만 제공 */
+  additionalFileContents?: Record<string, string>;
+};
 export type Step3Input = { project: Project; analysisResult: AnalysisResult };
 
 export interface AiClientRequest {

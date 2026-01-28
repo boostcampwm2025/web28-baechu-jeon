@@ -35,6 +35,7 @@ export class GeminiService implements AiProvider {
         return buildStep2Prompts({
           project,
           analysisResult: input.analysisResult,
+          additionalFileContents: input.additionalFileContents,
         });
       case 3:
         if (!input.analysisResult)

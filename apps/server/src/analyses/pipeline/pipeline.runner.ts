@@ -1,8 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { promisify } from 'util';
+import * as fs from 'fs';
 import { GeminiService } from 'src/ai/gemini/gemini.service';
 import { PipelineContext } from './pipeline.context';
 import { AnalysisEmitter } from '../events/analysis.emitter';
 import { AnalysisStep } from '../analysis.events';
+import { NcloudStorageService } from 'src/storage/ncloud-storage.service';
+import { ZipParserService } from 'src/projects/services/zip-parser.service';
+import { Step1Result } from 'src/ai/types/ai.types';
+
+const unlink = promisify(fs.unlink);
 
 // TODO: 에러 핸들링 추가: 한 단계에서 에러가 나면 context에 에러 상태를 기록하고 작업을 중단하거나 >>재시도하는 로직<<
 @Injectable()
@@ -12,6 +19,8 @@ export class PipelineRunner {
   constructor(
     private readonly geminiService: GeminiService,
     private readonly emitter: AnalysisEmitter,
+    private readonly ncloudStorage: NcloudStorageService,
+    private readonly zipParser: ZipParserService,
   ) {}
 
   private async emitStep(
@@ -76,11 +85,41 @@ export class PipelineRunner {
         await this.emitStep(analysisId, 'STEP2_HYPOTHESIS', 'STARTED', 40);
         if (!context.step1) throw new Error('Step 1 result missing');
 
+        let additionalFileContents: Record<string, string> = {};
+        const step1Result = context.step1 as Step1Result;
+        if (
+          step1Result.project_main_files?.length &&
+          step1Result.project_main_files.length > 0
+        ) {
+          const paths = step1Result.project_main_files.map(
+            (item) => item.file_path,
+          );
+          const objectKey = NcloudStorageService.objectKeyForProject(projectId);
+          let tmpPath: string | null = null;
+          try {
+            tmpPath = await this.ncloudStorage.downloadToTempFile(objectKey);
+            const fileContents = await this.zipParser.extractPaths(
+              tmpPath,
+              paths,
+            );
+            additionalFileContents = Object.fromEntries(fileContents);
+          } finally {
+            if (tmpPath) {
+              try {
+                await unlink(tmpPath);
+              } catch (err) {
+                this.logger.warn(`임시 파일 삭제 실패: ${tmpPath}`, err);
+              }
+            }
+          }
+        }
+
         const step2 = await this.geminiService.getResult({
           projectId,
           step: 2,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           analysisResult: { step1: context.step1 } as any,
+          additionalFileContents,
         });
 
         context.step2 = step2.result;

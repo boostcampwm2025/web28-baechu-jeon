@@ -15,7 +15,7 @@ export const buildStep1Prompts = (project: Step1Input) => {
 - 개수는 5~20개 정도가 적당합니다. 과하지 않게, 꼭 필요한 것만 골라 주세요.
 
 # 출력 형식 (JSON)
-
+반드시 다음 JSON 형식을 정확히 따르세요. (마크다운 없이 JSON만 반환)
 
 {
   "project_main_files": [
