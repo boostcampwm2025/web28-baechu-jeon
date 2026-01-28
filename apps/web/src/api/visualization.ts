@@ -7,9 +7,9 @@ export interface ApiNode {
   x: number;
   y: number;
   label: string;
-  diagramType: "STEP1" | "STEP2" | "STEP3"; // TODO: 유저스토리, 트리, 스택 타입에 맞게 이름 바꾸기
-  groups?: string;
-  contents: string;
+  diagramType: "STEP1" | "STEP2" | "STEP3";
+  groups?: "FE" | "BE" | "INFRA" | "DB" | "EXTRA";
+  contents: string | null;
   relatedFolders?: string[];
 }
 
@@ -17,9 +17,7 @@ export interface ApiEdge {
   id: string;
   sourceNodeId: string;
   targetNodeId: string;
-  diagramType?: "STEP2";
   type?: string;
-  label?: string;
 }
 
 // 전체 응답 타입
