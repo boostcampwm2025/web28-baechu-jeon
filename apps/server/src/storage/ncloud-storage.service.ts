@@ -19,7 +19,7 @@ export class NcloudStorageService {
     this.bucket = this.config.getOrThrow<string>('NCLOUD_BUCKET');
     this.s3 = new S3Client({
       endpoint: this.config.getOrThrow<string>('NCLOUD_S3_ENDPOINT'),
-      region: 'kr-standard',
+      region: 'kr',
       credentials: {
         accessKeyId: this.config.getOrThrow<string>('NCLOUD_ACCESS_KEY_ID'),
         secretAccessKey: this.config.getOrThrow<string>(
