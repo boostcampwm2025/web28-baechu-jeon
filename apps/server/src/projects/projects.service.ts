@@ -8,6 +8,7 @@ import {
 } from './services/project-structure.service';
 import { GitignoreMatcherService } from './services/gitignore-matcher.service';
 import { ProjectRepository } from './repository/project.repository';
+import { NcloudStorageService } from '../storage/ncloud-storage.service';
 
 const unlink = promisify(fs.unlink);
 
@@ -22,6 +23,7 @@ export class ProjectsService {
     private readonly projectStructure: ProjectStructureService,
     private readonly gitignoreMatcher: GitignoreMatcherService,
     private readonly projectRepository: ProjectRepository,
+    private readonly ncloudStorage: NcloudStorageService,
   ) {}
 
   async parseZipFile(file: Express.Multer.File): Promise<ZipParseResult> {
@@ -47,6 +49,11 @@ export class ProjectsService {
         structure,
         files: filesWithContent,
       });
+
+      const objectKey = NcloudStorageService.objectKeyForProject(
+        savedProject.id,
+      );
+      await this.ncloudStorage.uploadFile(file.path, objectKey);
 
       console.log('프로젝트 저장 완료');
 
