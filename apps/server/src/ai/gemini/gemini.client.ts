@@ -59,21 +59,21 @@ export class GeminiClient {
           this.logger.log(`Gemini API 호출 성공 (${attempt + 1}번째 시도)`);
         }
         return response;
-      } catch (error: any) {
+      } catch (error: unknown) {
         const isLastAttempt = attempt === this.maxRetries;
         const shouldRetry = this.shouldRetry(error);
 
         if (isLastAttempt || !shouldRetry) {
           this.logger.error(
             `Gemini API 호출 실패 (최종 실패, ${attempt + 1}/${this.maxRetries + 1}번째 시도)`,
-            error?.message || error,
+            this.getErrorMessage(error),
           );
           throw error;
         }
 
         const delay = this.calculateDelay(attempt);
         this.logger.warn(
-          `Gemini API 호출 실패, ${delay}ms 후 재시도 (${attempt + 1}/${this.maxRetries + 1}번째 시도): ${error?.message || error}`,
+          `Gemini API 호출 실패, ${delay}ms 후 재시도 (${attempt + 1}/${this.maxRetries + 1}번째 시도): ${this.getErrorMessage(error)}`,
         );
 
         await this.sleep(delay);
@@ -83,20 +83,23 @@ export class GeminiClient {
     throw new Error('모든 재시도 실패');
   }
 
-  private shouldRetry(error: any): boolean {
+  private shouldRetry(error: unknown): boolean {
     // HTTP 상태 코드 확인
-    if (error?.status && this.retryableStatusCodes.includes(error.status)) {
+    if (
+      this.hasStatus(error) &&
+      this.retryableStatusCodes.includes(error.status)
+    ) {
       return true;
     }
 
     // 네트워크 에러나 타임아웃 등
     if (
-      error?.code === 'ECONNRESET' ||
-      error?.code === 'ETIMEDOUT' ||
-      error?.code === 'ENOTFOUND' ||
-      error?.message?.includes('timeout') ||
-      error?.message?.includes('network') ||
-      error?.message?.includes('connection')
+      this.hasCode(error, 'ECONNRESET') ||
+      this.hasCode(error, 'ETIMEDOUT') ||
+      this.hasCode(error, 'ENOTFOUND') ||
+      this.hasMessageContaining(error, 'timeout') ||
+      this.hasMessageContaining(error, 'network') ||
+      this.hasMessageContaining(error, 'connection')
     ) {
       return true;
     }
@@ -113,5 +116,51 @@ export class GeminiClient {
 
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    if (typeof error === 'string') {
+      return error;
+    }
+    if (
+      error &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof error.message === 'string'
+    ) {
+      return error.message;
+    }
+    return String(error);
+  }
+
+  private hasStatus(error: unknown): error is { status: number } {
+    return (
+      error !== null &&
+      typeof error === 'object' &&
+      'status' in error &&
+      typeof error.status === 'number'
+    );
+  }
+
+  private hasCode(error: unknown, code: string): boolean {
+    return (
+      error !== null &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === code
+    );
+  }
+
+  private hasMessageContaining(error: unknown, text: string): boolean {
+    return (
+      error !== null &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof error.message === 'string' &&
+      error.message.includes(text)
+    );
   }
 }
