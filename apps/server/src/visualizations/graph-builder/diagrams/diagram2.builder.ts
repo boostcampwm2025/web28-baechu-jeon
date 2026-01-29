@@ -3,6 +3,12 @@ import {
   NodeTemp,
   Step2Analysis,
 } from '../types/graph-builder.type';
+import {
+  normalize,
+  inferPathType,
+  getLastSegment,
+  getParentPath,
+} from '../utils/graph-builder.util';
 
 export function buildDiagram2(
   step2AnalysisResult: Step2Analysis,
@@ -16,13 +22,20 @@ export function buildDiagram2(
   // 1. folder_path -> node (중복 제거)
   for (const item of step2AnalysisResult.responsibility_hypotheses) {
     const path = normalize(item.folder_path, maxDepth);
+    const type = inferPathType(item.folder_path, path, maxDepth);
 
     if (!map.has(path)) {
       map.set(path, {
         path,
         label: getLastSegment(path),
         contents: item.hypothesis,
+        type,
       });
+    } else if (type === 'FOLDER') {
+      const existing = map.get(path);
+      if (existing) {
+        existing.type = 'FOLDER';
+      }
     }
   }
 
@@ -44,20 +57,4 @@ export function buildDiagram2(
   }
 
   return { nodes, edges };
-}
-
-function normalize(path: string, maxDepth: number): string {
-  const parts = path.split('/').filter(Boolean);
-  return parts.slice(0, maxDepth).join('/');
-}
-
-function getLastSegment(path: string): string {
-  const parts = path.split('/').filter(Boolean);
-  return parts[parts.length - 1] ?? path;
-}
-
-function getParentPath(path: string): string | null {
-  const parts = path.split('/').filter(Boolean);
-  if (parts.length <= 1) return null;
-  return parts.slice(0, -1).join('/');
 }
