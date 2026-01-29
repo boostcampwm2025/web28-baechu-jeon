@@ -17,6 +17,7 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const autoExpanded = useRef(false);
   const itemRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFolder = node.type === "folder";
 
   const router = useRouter();
@@ -51,6 +52,12 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
     }
   }, [isHighlighted, highlightedPaths, node.path]);
 
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   const handleClick = () => {
     if (isFolder) {
       setIsOpen(!isOpen);
@@ -58,7 +65,7 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
     }
     if (!isHighlighted) {
       setShowTooltip(true);
-      setTimeout(() => setShowTooltip(false), 2000);
+      timeoutRef.current = setTimeout(() => setShowTooltip(false), 2000);
       return;
     }
     setSelectedFilePath(node.path);
