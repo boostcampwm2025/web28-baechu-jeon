@@ -10,9 +10,9 @@ export interface ApiNode {
   diagramType: "STEP1" | "STEP2" | "STEP3";
   groups?: "FE" | "BE" | "INFRA" | "DB" | "EXTRA";
   contents: string | null;
-  relatedFolders?: string[];
+  relatedNodeIds?: string[];
   relatedPaths?: string[];
-  nodeType?: "FILE" | "FOLDER";
+  type?: "FILE" | "FOLDER";
   path?: string;
 }
 

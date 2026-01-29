@@ -94,8 +94,8 @@ export default function VisualizationView({
       onNodeClick(convertToNodeData(node));
 
       if (node.data.diagramType === "STEP1") {
-        if (node.data.relatedFolders && node.data.relatedFolders.length > 0) {
-          toggleHighlight(node.id, [node.id, ...node.data.relatedFolders]);
+        if (node.data.relatedNodeIds && node.data.relatedNodeIds.length > 0) {
+          toggleHighlight(node.id, [node.id, ...node.data.relatedNodeIds]);
           setHighlightedPaths(node.data.relatedPaths || []);
         } else {
           resetHighlights();
@@ -103,7 +103,7 @@ export default function VisualizationView({
         }
           }
       
-      if (node.data.nodeType === "FILE") {
+      if (node.data.type === "FILE") {
         if (node.data.path) {
           setSelectedFilePath(node.data.path);
         }

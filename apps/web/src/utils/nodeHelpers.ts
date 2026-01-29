@@ -10,7 +10,7 @@ export function convertToNodeData(node: Node<BaseNodeData>): NodeData {
     contents: node.data.contents || "",
     type: node.type,
     diagramType: node.data.diagramType,
-    nodeType: node.data.nodeType,
+    nodeType: node.data.type,
     path: node.data.path,
   };
 }
