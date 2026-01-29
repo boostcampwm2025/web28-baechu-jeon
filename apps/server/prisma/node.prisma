@@ -4,6 +4,11 @@ enum DiagramType {
   STEP3
 }
 
+enum Type {
+  FOLDER
+  FILE
+}
+
 enum NodeGroup {
   FE
   BE
@@ -20,7 +25,9 @@ model Node {
   y               Float  @default(0) @db.Real
   label           String @db.VarChar
   contents        String? @db.Text
-  relatedFolders  String[] @map("related_folders") @default([])
+  relatedNodeIds  BigInt[] @map("related_node_ids")
+  relatedPaths    String[] @map("related_paths")
+  type            Type?
   groups          NodeGroup?
 
   visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)
