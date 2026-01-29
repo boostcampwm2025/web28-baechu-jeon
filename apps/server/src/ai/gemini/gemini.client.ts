@@ -32,14 +32,11 @@ export class GeminiClient {
       contents: userPrompt,
       config: {
         systemInstruction: systemPrompt,
-        // thinkingConfig: {
-        //   thinkingBudget: 0, // Turn thinking OFF
-        //   // thinkingBudget: 1024 // Turn thinking ON with specific token budget
-        // },
-        // temperature: 0.2,
-        // maxOutputTokens: 512,
-        // topK: 40,
-        // topP: 0.8,
+        // 구조화된 JSON + 마크다운 문자열 출력용: 낮은 랜덤성으로 스키마 준수·일관성 우선
+        temperature: 0.2,
+        topK: 40,
+        topP: 0.85,
+        maxOutputTokens: 16384, // step2/step4 마크다운 길이 대비 여유
       },
     });
     return response;
