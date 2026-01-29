@@ -130,7 +130,8 @@ export default function VisualizationClient({
           <div className="pointer-events-auto mt-auto">
             <SaveButtons
               isProjectOpen={isProjectOpen}
-              onReopen={() => setIsProjectOpen(true)}
+              onProjectDetails={() => setIsProjectOpen(true)}
+              onFolderDetails={() => setIsNodeOpen(true)}
             />
           </div>
         </aside>
