@@ -57,6 +57,8 @@ export default function VisualizationClient({
   const handlePaneClick = useCallback(() => {
     // 배경 클릭 시 선택 해제 (STEP1 하이라이트와 패널은 유지)
     setVisualSelectedId(undefined);
+    setIsNodeOpen(false);
+    setIsProjectOpen(false);
   }, []);
 
   return (
