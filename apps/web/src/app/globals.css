@@ -15,6 +15,28 @@
     z-index: 50;
   }
 
+  .thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: #94a3b8;
+    }
+  }
+
   .highlight-fixed {
     border-color: #facc15;
     box-shadow: 0 0 15px rgba(234, 179, 8, 0.6);
