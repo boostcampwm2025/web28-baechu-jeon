@@ -15,10 +15,11 @@ export class GraphBuilderService {
     // TODO: 이중 타입 단언 확인하기, 타입 가드
     const diagram1 = buildDiagram1(
       analysisResult.step3 as unknown as Step3Analysis,
+      10,
     );
     const diagram2 = buildDiagram2(
       analysisResult.step2 as unknown as Step2Analysis,
-      6,
+      10,
     );
     const diagram3 = buildDiagram3(
       analysisResult.step3 as unknown as Step3Analysis,
