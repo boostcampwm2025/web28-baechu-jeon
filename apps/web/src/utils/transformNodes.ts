@@ -118,10 +118,24 @@ function getReactFlowEdges(apiEdges: ApiEdge[]): Edge[] {
 
   return apiEdges
     .filter((edge) => edge.sourceNodeId && edge.targetNodeId)
-    .map((edge) => ({
-      id: String(edge.id),
-      source: edge.sourceNodeId,
-      target: edge.targetNodeId,
-      style: { stroke: "#475569", strokeWidth: 5 },
-    }));
+    .map((edge) => {
+      let dashArray: string | undefined;
+
+      if (edge.type === "DASHED") {
+        dashArray = "12, 6";
+      } else if (edge.type === "DOTTED") {
+        dashArray = "2, 4";
+      }
+
+      return {
+        id: String(edge.id),
+        source: edge.sourceNodeId,
+        target: edge.targetNodeId,
+        style: {
+          stroke: "#475569",
+          strokeWidth: 5,
+          strokeDasharray: dashArray,
+        },
+      };
+    });
 }
