@@ -13,6 +13,7 @@ export interface ApiNode {
   relatedFolders?: string[];
   relatedPaths?: string[];
   nodeType?: "FILE" | "FOLDER";
+  path?: string;
 }
 
 export interface ApiEdge {

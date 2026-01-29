@@ -21,12 +21,9 @@ export function createReactFlowNode(
       theme: settings.theme,
       diagramType: n.diagramType,
       relatedFolders: n.relatedFolders || [],
-<<<<<<< feature/78
       relatedPaths: n.relatedPaths || [],
-=======
       nodeType: n.nodeType,
       path: n.path,
->>>>>>> dev
     },
     position: { x, y },
   };
