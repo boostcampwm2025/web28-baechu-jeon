@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/database/prisma.service';
-import { AnalysisResult, Prisma } from '@prisma/client';
+import { AnalysisResult, Prisma, EdgeType, NodeType } from '@prisma/client';
 import { GraphBuilderService } from './graph-builder/graph-builder.service';
 import { GraphBuildResult } from './graph-builder/types/graph-builder.type';
 
@@ -48,7 +48,10 @@ export class VisualizationsService {
     const { step1, step2, step3 } = result;
 
     // node, edge row 만들고
-    const step2NodeIdMap = new Map<string | number, bigint>();
+    const step2NodeMap = new Map<
+      string | number,
+      { id: bigint; type: NodeType | null }
+    >();
 
     // step2- 폴더 가설
     for (const node of step2.nodes) {
@@ -60,24 +63,37 @@ export class VisualizationsService {
           y: 0,
           label: node.label,
           contents: node.contents,
+          type: node.type || null,
+          path: node.path,
         },
       });
-      step2NodeIdMap.set(node.path, created.id);
+      step2NodeMap.set(node.path, {
+        id: created.id,
+        type: node.type || null,
+      });
+      console.log(`✅ Step2 Node 생성: ${node.path} -> ${created.id}`);
     }
 
     const step2EdgesData = step2.edges.map((edge) => {
-      const sourceNodeId = step2NodeIdMap.get(edge.sourcePath);
-      const targetNodeId = step2NodeIdMap.get(edge.targetPath);
+      const sourceNode = step2NodeMap.get(edge.sourcePath);
+      const targetNode = step2NodeMap.get(edge.targetPath);
 
-      if (!sourceNodeId || !targetNodeId)
+      if (!sourceNode || !targetNode)
         throw new Error(
           `Edge 생성 실패: 노드를 찾을 수 없습니다. (${edge.sourcePath} -> ${edge.targetPath})`,
         );
 
+      // FOLDER -> FILE 관계면 DASHED, 아니면 SOLID
+      const edgeType =
+        sourceNode.type === NodeType.FOLDER && targetNode.type === NodeType.FILE
+          ? EdgeType.DASHED
+          : EdgeType.SOLID;
+
       return {
         visualizationId: visualization.id,
-        sourceNodeId,
-        targetNodeId,
+        sourceNodeId: sourceNode.id,
+        targetNodeId: targetNode.id,
+        type: edgeType,
       };
     });
 
@@ -86,22 +102,47 @@ export class VisualizationsService {
     });
 
     // step1- 유저 시나리오
-    console.log('🔍 Step1 노드들의 관련 폴더:');
     for (const node of step1.nodes) {
-      // relatedFolders의 경로를 노드 ID로 변환 (존재하는 경로만 필터링)
+      // relatedFolders의 경로를 노드 ID로 변환 (없으면 segment로 node 생성 후 매핑 보장)
       const relatedNodeIds =
-        node.relatedFolders
-          ?.map((folderPath) => {
-            const nodeId = step2NodeIdMap.get(folderPath);
-            if (!nodeId) {
-              console.warn(
-                `⚠️ 매핑 건너뛰기: "${folderPath}" not found in step2NodeIdMap`,
+        (
+          await Promise.all(
+            node.relatedPaths?.map(async (folderPath) => {
+              const existingNode = step2NodeMap.get(folderPath);
+              if (existingNode) return existingNode.id;
+
+              const segmentLabel = folderPath.split('/').filter(Boolean).pop();
+              if (!segmentLabel) {
+                console.warn(
+                  `⚠️ 매핑 실패: folderPath가 비어있습니다. (${folderPath})`,
+                );
+                return null;
+              }
+
+              const created = await this.prismaService.node.create({
+                data: {
+                  visualizationId: visualization.id,
+                  diagramType: 'STEP2',
+                  x: 0,
+                  y: 0,
+                  label: segmentLabel,
+                  contents: folderPath,
+                  type: NodeType.FOLDER,
+                },
+              });
+
+              step2NodeMap.set(folderPath, {
+                id: created.id,
+                type: NodeType.FOLDER,
+              });
+              console.log(
+                `✅ Step2 Node 추가 생성: ${folderPath} -> ${created.id}`,
               );
-              return null;
-            }
-            return nodeId.toString();
-          })
-          .filter((id): id is string => id !== null) ?? [];
+
+              return created.id;
+            }) ?? [],
+          )
+        ).filter((id): id is bigint => id !== null) ?? [];
 
       await this.prismaService.node.create({
         data: {
@@ -110,7 +151,8 @@ export class VisualizationsService {
           x: 0,
           y: 0,
           label: node.label,
-          relatedFolders: relatedNodeIds,
+          relatedNodeIds: relatedNodeIds,
+          relatedPaths: node.relatedPaths,
         },
       });
     }
@@ -176,18 +218,22 @@ export class VisualizationsService {
 
     if (!saved) throw new Error('시각화를 찾을 수 없습니다.');
 
-    return {
-      visualizationId,
-      formattedData: saved.formattedData,
-    };
+    return saved.formattedData;
   }
 
   /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
   private buildGraphResponse(graph: any): Prisma.JsonObject {
     // BigInt를 string으로 변환
+    const serializeBigIntArray = (values?: any[]) =>
+      values?.map((value) =>
+        typeof value === 'bigint' ? value.toString() : value,
+      );
+
     const serializeNode = (node: any) => ({
       ...node,
       id: node.id.toString(),
+      visualizationId: node.visualizationId?.toString(),
+      relatedNodeIds: serializeBigIntArray(node.relatedNodeIds),
     });
 
     const serializeEdge = (edge: any) => ({
