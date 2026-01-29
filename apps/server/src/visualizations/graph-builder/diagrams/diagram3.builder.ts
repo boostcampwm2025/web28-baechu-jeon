@@ -14,7 +14,6 @@ export function buildDiagram3(step3AnalysisResult: Step3Analysis) {
     { key: 'backend', group: 'BE' },
     { key: 'infrastructure', group: 'INFRA' },
     { key: 'database', group: 'DB' },
-    { key: 'extra', group: 'EXTRA' },
   ] as const;
 
   const nodes: NodeInput[] = categoryMap.flatMap(({ key, group }) =>
