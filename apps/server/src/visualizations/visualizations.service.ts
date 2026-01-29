@@ -71,7 +71,6 @@ export class VisualizationsService {
         id: created.id,
         type: node.type || null,
       });
-      console.log(`✅ Step2 Node 생성: ${node.path} -> ${created.id}`);
     }
 
     const step2EdgesData = step2.edges.map((edge) => {
@@ -113,7 +112,7 @@ export class VisualizationsService {
 
               const segmentLabel = folderPath.split('/').filter(Boolean).pop();
               if (!segmentLabel) {
-                console.warn(
+                throw new Error(
                   `⚠️ 매핑 실패: folderPath가 비어있습니다. (${folderPath})`,
                 );
                 return null;
@@ -135,9 +134,6 @@ export class VisualizationsService {
                 id: created.id,
                 type: NodeType.FOLDER,
               });
-              console.log(
-                `✅ Step2 Node 추가 생성: ${folderPath} -> ${created.id}`,
-              );
 
               return created.id;
             }) ?? [],
