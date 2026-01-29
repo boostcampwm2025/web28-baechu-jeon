@@ -102,40 +102,13 @@ export class VisualizationsService {
 
     // step1- 유저 시나리오
     for (const node of step1.nodes) {
-      // relatedFolders의 경로를 노드 ID로 변환 (없으면 segment로 node 생성 후 매핑 보장)
+      // relatedFolders의 경로를 노드 ID로 변환 (없으면 스킵)
       const relatedNodeIds =
         (
           await Promise.all(
             node.relatedPaths?.map(async (folderPath) => {
               const existingNode = step2NodeMap.get(folderPath);
-              if (existingNode) return existingNode.id;
-
-              const segmentLabel = folderPath.split('/').filter(Boolean).pop();
-              if (!segmentLabel) {
-                throw new Error(
-                  `⚠️ 매핑 실패: folderPath가 비어있습니다. (${folderPath})`,
-                );
-                return null;
-              }
-
-              const created = await this.prismaService.node.create({
-                data: {
-                  visualizationId: visualization.id,
-                  diagramType: 'STEP2',
-                  x: 0,
-                  y: 0,
-                  label: segmentLabel,
-                  contents: folderPath,
-                  type: NodeType.FOLDER,
-                },
-              });
-
-              step2NodeMap.set(folderPath, {
-                id: created.id,
-                type: NodeType.FOLDER,
-              });
-
-              return created.id;
+              return existingNode ? existingNode.id : null;
             }) ?? [],
           )
         ).filter((id): id is bigint => id !== null) ?? [];

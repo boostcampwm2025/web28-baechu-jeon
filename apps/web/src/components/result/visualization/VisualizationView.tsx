@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import Image from "next/image";
+// import Image from "next/image";
 import {
   ReactFlow,
   Background,
@@ -19,7 +19,7 @@ import "@xyflow/react/dist/style.css";
 import { type BaseNodeData } from "@/utils/layouts/layoutSettings";
 import BaseNode from "@/components/result/visualization/nodes/BaseNode";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
-import resetIcon from "@/assets/reset.svg";
+// import resetIcon from "@/assets/reset.svg";
 import { NodeData } from "@/types/visualization";
 import { useNodeHighlight } from "@/hooks/useNodeHighlight";
 import { convertToNodeData } from "@/utils/nodeHelpers";
@@ -53,13 +53,11 @@ export default function VisualizationView({
   const analysisId = params.analysisId as string;
 
   // 해결: 사용하지 않는 setter와 변수 정리 (lint error 대응)
-  const [isReseting] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  // const [isReseting] = useState(false);
+  // const [isInitialized, setIsInitialized] = useState(false);
 
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
-  const setHighlightedPaths = useExplorerStore(
-    (s) => s.setHighlightedPaths,
-  );
+  const setHighlightedPaths = useExplorerStore((s) => s.setHighlightedPaths);
   const clearHighlightedPaths = useExplorerStore(
     (s) => s.clearHighlightedPaths,
   );
@@ -101,8 +99,8 @@ export default function VisualizationView({
           resetHighlights();
           clearHighlightedPaths();
         }
-          }
-      
+      }
+
       if (node.data.type === "FILE") {
         if (node.data.path) {
           setSelectedFilePath(node.data.path);
@@ -110,8 +108,6 @@ export default function VisualizationView({
         router.push(`/result/${projectId}/${analysisId}/code`);
         return;
       }
-
-    
     },
 
     [
@@ -122,9 +118,9 @@ export default function VisualizationView({
       setSelectedFilePath,
       projectId,
       analysisId,
-      resetHighlights, 
-      setHighlightedPaths, 
-        clearHighlightedPaths
+      resetHighlights,
+      setHighlightedPaths,
+      clearHighlightedPaths,
     ],
   );
 
@@ -151,7 +147,7 @@ export default function VisualizationView({
         onPaneClick={handlePaneClick}
         onMoveEnd={handleMoveEnd}
         onInit={(instance) => {
-          setIsInitialized(true);
+          // setIsInitialized(true);
           const state = useVisualizationStore.getState();
           if (state.viewport) {
             instance.setViewport(state.viewport);
@@ -188,14 +184,14 @@ export default function VisualizationView({
       </ReactFlow>
 
       {/* 해결: isInitialized 변수 사용 예시 (린트 방지) */}
-      <button
+      {/* <button
         disabled={isReseting || !isInitialized}
         title="초기화"
         // onClick={handleReset}
         className="absolute top-4 right-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Image src={resetIcon} alt="초기화" width={32} height={32} />
-      </button>
+      </button> */}
     </div>
   );
 }

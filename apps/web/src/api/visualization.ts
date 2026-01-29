@@ -8,7 +8,7 @@ export interface ApiNode {
   y: number;
   label: string;
   diagramType: "STEP1" | "STEP2" | "STEP3";
-  groups?: "FE" | "BE" | "INFRA" | "DB" | "EXTRA";
+  groups?: "FE" | "BE" | "INFRA" | "DB";
   contents: string | null;
   relatedNodeIds?: string[];
   relatedPaths?: string[];
