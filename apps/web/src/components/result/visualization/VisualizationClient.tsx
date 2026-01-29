@@ -47,7 +47,13 @@ export default function VisualizationClient({
       setIsNodeOpen(true);
       setIsProjectOpen(true);
     }
-  }, [initialData]);
+  }, [
+    initialData,
+    setSelectedNodeId,
+    setPanelNode,
+    setIsNodeOpen,
+    setIsProjectOpen,
+  ]);
 
   const handleNodeClick = useCallback(
     (node: NodeData | null) => {
