@@ -50,7 +50,7 @@ export const LAYOUT_SETTINGS = {
   diagram2: {
     w: 250,
     h: 100,
-    nSep: 80,
+    nSep: 100,
     rSep: 200,
     theme: {
       borderColor: "#a855f7",
