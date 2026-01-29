@@ -14,6 +14,8 @@ export interface BaseNodeData extends Record<string, unknown> {
   diagramType: "STEP1" | "STEP2" | "STEP3";
   relatedFolders?: string[];
   highlightClass?: string;
+  nodeType?: "FILE" | "FOLDER";
+  path?: string;
 }
 
 /*
