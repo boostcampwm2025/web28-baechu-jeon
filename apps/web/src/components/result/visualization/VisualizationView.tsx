@@ -23,6 +23,7 @@ import resetIcon from "@/assets/reset.svg";
 import { NodeData } from "@/types/visualization";
 import { useNodeHighlight } from "@/hooks/useNodeHighlight";
 import { convertToNodeData } from "@/utils/nodeHelpers";
+import { useExplorerStore } from "@/stores/useExplorerStore";
 
 const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
@@ -55,6 +56,13 @@ export default function VisualizationView({
   const [isReseting] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
+  const setHighlightedPaths = useExplorerStore(
+    (s) => s.setHighlightedPaths,
+  );
+  const clearHighlightedPaths = useExplorerStore(
+    (s) => s.clearHighlightedPaths,
+  );
   const { getViewport } = useReactFlow();
   const setStoreViewport = useVisualizationStore((state) => state.setViewport);
 
@@ -64,7 +72,6 @@ export default function VisualizationView({
     setSelectedNodeId,
     setSelectedFilePath,
   } = useVisualizationStore();
-  const { toggleHighlight } = useNodeHighlight(setNodes);
 
   useEffect(() => {
     setNodes((nds) =>
@@ -86,6 +93,16 @@ export default function VisualizationView({
       setSelectedNodeId(node.id);
       onNodeClick(convertToNodeData(node));
 
+      if (node.data.diagramType === "STEP1") {
+        if (node.data.relatedFolders && node.data.relatedFolders.length > 0) {
+          toggleHighlight(node.id, [node.id, ...node.data.relatedFolders]);
+          setHighlightedPaths(node.data.relatedPaths || []);
+        } else {
+          resetHighlights();
+          clearHighlightedPaths();
+        }
+          }
+      
       if (node.data.nodeType === "FILE") {
         if (node.data.path) {
           setSelectedFilePath(node.data.path);
@@ -94,13 +111,9 @@ export default function VisualizationView({
         return;
       }
 
-      if (node.data.diagramType === "STEP1") {
-        const targets = node.data.relatedFolders
-          ? [node.id, ...node.data.relatedFolders]
-          : [];
-        toggleHighlight(node.id, targets);
-      }
+    
     },
+
     [
       onNodeClick,
       toggleHighlight,
@@ -109,6 +122,9 @@ export default function VisualizationView({
       setSelectedFilePath,
       projectId,
       analysisId,
+      resetHighlights, 
+      setHighlightedPaths, 
+        clearHighlightedPaths
     ],
   );
 

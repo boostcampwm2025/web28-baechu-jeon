@@ -13,6 +13,7 @@ export interface BaseNodeData extends Record<string, unknown> {
   theme: NodeTheme;
   diagramType: "STEP1" | "STEP2" | "STEP3";
   relatedFolders?: string[];
+  relatedPaths?: string[];
   highlightClass?: string;
   nodeType?: "FILE" | "FOLDER";
   path?: string;

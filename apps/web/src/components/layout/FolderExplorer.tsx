@@ -21,7 +21,7 @@ export default function FolderExplorer({ tree, onClose }: FolderExplorerProps) {
         </button>
       </div>
 
-      <div className="no-scrollbar grow space-y-0.5 overflow-y-auto">
+      <div className="thin-scrollbar grow space-y-0.5 overflow-y-auto">
         {tree.map((node) => (
           <FileItem key={node.path} node={node} depth={0} />
         ))}
