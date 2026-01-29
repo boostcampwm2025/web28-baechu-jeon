@@ -10,6 +10,7 @@ interface LayoutClientProps {
   treeData: FileNode[];
 }
 
+const CLOSE_THRESHOLD = 100;
 const MIN_WIDTH = 250;
 const MAX_WIDTH = 350;
 const DEFAULT_WIDTH = 288;
@@ -20,11 +21,13 @@ export default function LayoutClient({
 }: LayoutClientProps) {
   const [isExplorerOpen, setIsExplorerOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
+  const [isDragging, setIsDragging] = useState(false);
   const isResizing = useRef(false);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     isResizing.current = true;
+    setIsDragging(true);
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
   }, []);
@@ -32,15 +35,26 @@ export default function LayoutClient({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
-      const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, e.clientX));
+      const newWidth = Math.min(MAX_WIDTH, Math.max(0, e.clientX));
       setSidebarWidth(newWidth);
     };
 
     const handleMouseUp = () => {
       if (!isResizing.current) return;
       isResizing.current = false;
+      setIsDragging(false);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
+      setSidebarWidth((prev) => {
+        if (prev < CLOSE_THRESHOLD) {
+          setIsExplorerOpen(false);
+          return DEFAULT_WIDTH;
+        }
+        if (prev < MIN_WIDTH) {
+          return MIN_WIDTH;
+        }
+        return prev;
+      });
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -54,9 +68,11 @@ export default function LayoutClient({
   return (
     <div className="no-scrollbar relative flex h-full w-full overflow-hidden">
       <aside
-        className={`relative border-r border-slate-200 bg-gray-50 transition-all duration-300 ease-in-out ${
-          isExplorerOpen ? "translate-x-0" : "-translate-x-full opacity-0"
-        }`}
+        className={`relative border-r border-slate-200 bg-gray-50 ${
+          isDragging
+            ? ""
+            : "transition-all duration-300 ease-in-out"
+        } ${isExplorerOpen ? "translate-x-0" : "-translate-x-full opacity-0"}`}
         style={{
           width: isExplorerOpen ? `${sidebarWidth}px` : 0,
         }}
