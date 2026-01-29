@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { HiFolder, HiDocument, HiOutlineChevronRight } from "react-icons/hi";
 import { FileNode } from "@/utils/pathTree";
 import { useExplorerStore } from "@/stores/useExplorerStore";
-import { useVisualizationStore } from "@/stores/useVisualizationStore";
+import { useVisualizationStore } from "@/store/useVisualizationStore";
 
 interface FileItemProps {
   node: FileNode;

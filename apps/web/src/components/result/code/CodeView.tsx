@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useVisualizationStore } from "@/stores/useVisualizationStore";
+import { useVisualizationStore } from "@/store/useVisualizationStore";
 import { getCode } from "@/api/code";
 
 export default function CodeView() {
