@@ -10,6 +10,7 @@ import { VisualizationsModule } from './visualizations/visualizations.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { IntentionsModule } from './intentions/intentions.module';
 import { StorageModule } from './storage/storage.module';
+import { CodeModule } from './code/code.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { StorageModule } from './storage/storage.module';
     PrismaModule,
     SseModule,
     VisualizationsModule,
+    CodeModule,
   ],
 })
 export class AppModule {}
