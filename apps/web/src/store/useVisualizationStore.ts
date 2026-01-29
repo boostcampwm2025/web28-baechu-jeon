@@ -9,11 +9,13 @@ interface VisualizationState {
   selectedFilePath: string | null;
 
   // STEP 1 클릭으로 인한 하이라이트 상태
+  activeStep1Id: string | null;
   highlightNodeIds: string[];
 
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
   setSelectedNodeId: (id: string | null) => void;
   setSelectedFilePath: (path: string | null) => void;
+  setActiveStep1Id: (id: string | null) => void;
   setHighlights: (ids: string[]) => void;
 }
 
@@ -21,10 +23,12 @@ export const useVisualizationStore = create<VisualizationState>((set) => ({
   viewport: null,
   selectedNodeId: null,
   selectedFilePath: null,
+  activeStep1Id: null,
   highlightNodeIds: [],
 
   setViewport: (viewport) => set({ viewport }),
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
   setSelectedFilePath: (path) => set({ selectedFilePath: path }),
+  setActiveStep1Id: (id) => set({ activeStep1Id: id }),
   setHighlights: (ids) => set({ highlightNodeIds: ids }),
 }));

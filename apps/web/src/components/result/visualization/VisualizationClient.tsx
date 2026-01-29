@@ -9,6 +9,7 @@ import SaveButtons from "./SaveButtons";
 import VisualizationView from "./VisualizationView";
 import { NodeData, ProjectDetailsData } from "@/types/visualization";
 import { findInitialNode } from "@/utils/nodeHelpers";
+import { useVisualizationStore } from "@/store/useVisualizationStore";
 
 interface VisualizationClientProps {
   initialNodes?: Node<BaseNodeData>[];
@@ -23,6 +24,8 @@ export default function VisualizationClient({
   initialPurposes,
   visualizationId,
 }: VisualizationClientProps) {
+  const { setSelectedNodeId, setSelectedFilePath } = useVisualizationStore();
+
   const initialData = useMemo(
     () => findInitialNode(initialNodes),
     [initialNodes],
@@ -30,36 +33,35 @@ export default function VisualizationClient({
 
   // 패널에 보여줄 데이터
   const [panelNode, setPanelNode] = useState<NodeData | null>(initialData);
-
-  // 클릭한 노드 ID (STEP2/STEP3만)
-  const [visualSelectedId, setVisualSelectedId] = useState<string | undefined>(
-    initialData?.id,
-  );
-
   const [isProjectOpen, setIsProjectOpen] = useState(true);
   const [isNodeOpen, setIsNodeOpen] = useState(!!panelNode);
 
-  const handleNodeClick = useCallback((node: NodeData | null) => {
-    if (!node) return;
+  const handleNodeClick = useCallback(
+    (node: NodeData | null) => {
+      if (!node) return;
 
-    if (node.diagramType === "STEP1") {
-      setVisualSelectedId(undefined);
-      return;
-    }
-    setVisualSelectedId(node.id);
+      if (node.diagramType === "STEP1") {
+        setSelectedNodeId(null);
+        return;
+      }
+      setSelectedNodeId(node.id);
 
-    if (node.diagramType === "STEP2" && node.nodeType !== "FILE") {
-      setPanelNode(node);
-      setIsNodeOpen(true);
-    }
-  }, []);
+      if (node.diagramType === "STEP2" && node.nodeType !== "FILE") {
+        setPanelNode(node);
+        setIsNodeOpen(true);
+      }
+    },
+    [setSelectedNodeId],
+  );
 
   const handlePaneClick = useCallback(() => {
     // 배경 클릭 시 선택 해제 (STEP1 하이라이트와 패널은 유지)
-    setVisualSelectedId(undefined);
+    setSelectedNodeId(null);
+    setSelectedFilePath(null);
+
     setIsNodeOpen(false);
     setIsProjectOpen(false);
-  }, []);
+  }, [setSelectedNodeId, setSelectedFilePath]);
 
   return (
     <ReactFlowProvider>
@@ -70,7 +72,6 @@ export default function VisualizationClient({
           initialNodes={initialNodes}
           initialEdges={initialEdges}
           visualizationId={visualizationId}
-          selectedNodeId={visualSelectedId}
         />
 
         <aside className="pointer-events-none absolute top-6 right-6 bottom-6 z-50 flex w-96 flex-col gap-4">

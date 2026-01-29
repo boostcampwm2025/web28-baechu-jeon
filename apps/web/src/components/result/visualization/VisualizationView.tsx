@@ -19,7 +19,6 @@ import "@xyflow/react/dist/style.css";
 import { type BaseNodeData } from "@/utils/layouts/layoutSettings";
 import BaseNode from "@/components/result/visualization/nodes/BaseNode";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
-
 import resetIcon from "@/assets/reset.svg";
 import { NodeData } from "@/types/visualization";
 import { useNodeHighlight } from "@/hooks/useNodeHighlight";
@@ -43,7 +42,6 @@ export default function VisualizationView({
   onPaneClick,
   initialNodes = [],
   initialEdges = [],
-  selectedNodeId,
 }: VisualizationViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges] = useEdgesState(initialEdges);
@@ -60,42 +58,58 @@ export default function VisualizationView({
   const { getViewport } = useReactFlow();
   const setStoreViewport = useVisualizationStore((state) => state.setViewport);
 
-  const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
+  const {
+    selectedNodeId,
+    highlightNodeIds,
+    setSelectedNodeId,
+    setSelectedFilePath,
+  } = useVisualizationStore();
+  const { toggleHighlight } = useNodeHighlight(setNodes);
 
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => ({
         ...node,
         selected: node.id === selectedNodeId,
+        data: {
+          ...node.data,
+          highlightClass: highlightNodeIds.includes(node.id)
+            ? "highlight-fixed"
+            : "",
+        },
       })),
     );
-  }, [selectedNodeId, setNodes]);
+  }, [selectedNodeId, setNodes, highlightNodeIds]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<BaseNodeData>) => {
+      setSelectedNodeId(node.id);
       onNodeClick(convertToNodeData(node));
 
       if (node.data.nodeType === "FILE") {
+        if (node.data.path) {
+          setSelectedFilePath(node.data.path);
+        }
         router.push(`/result/${projectId}/${analysisId}/code`);
         return;
       }
 
       if (node.data.diagramType === "STEP1") {
-        if (node.data.relatedFolders && node.data.relatedFolders.length > 0) {
-          toggleHighlight(node.id, [node.id, ...node.data.relatedFolders]);
-        } else {
-          resetHighlights();
-        }
+        const targets = node.data.relatedFolders
+          ? [node.id, ...node.data.relatedFolders]
+          : [];
+        toggleHighlight(node.id, targets);
       }
     },
-    [onNodeClick, toggleHighlight, resetHighlights],
+    [onNodeClick, toggleHighlight, router, toggleHighlight],
   );
 
   const handlePaneClick = useCallback(() => {
+    setSelectedNodeId(null);
     if (onPaneClick) {
       onPaneClick();
     }
-  }, [onPaneClick]);
+  }, [setSelectedNodeId, onPaneClick]);
 
   const handleMoveEnd = useCallback(() => {
     const currentViewport = getViewport();
@@ -153,6 +167,7 @@ export default function VisualizationView({
       <button
         disabled={isReseting || !isInitialized}
         title="초기화"
+        // onClick={handleReset}
         className="absolute top-4 right-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Image src={resetIcon} alt="초기화" width={32} height={32} />
