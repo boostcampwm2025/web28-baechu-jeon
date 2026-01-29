@@ -101,7 +101,15 @@ export default function VisualizationView({
         toggleHighlight(node.id, targets);
       }
     },
-    [onNodeClick, toggleHighlight, router, toggleHighlight],
+    [
+      onNodeClick,
+      toggleHighlight,
+      router,
+      setSelectedNodeId,
+      setSelectedFilePath,
+      projectId,
+      analysisId,
+    ],
   );
 
   const handlePaneClick = useCallback(() => {

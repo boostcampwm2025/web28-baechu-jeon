@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { ReactFlowProvider, type Node, type Edge } from "@xyflow/react";
 import { BaseNodeData } from "@/utils/transformNodes";
 import NodeDetails from "./NodeDetails";
@@ -24,17 +24,30 @@ export default function VisualizationClient({
   initialPurposes,
   visualizationId,
 }: VisualizationClientProps) {
-  const { setSelectedNodeId, setSelectedFilePath } = useVisualizationStore();
+  const {
+    setSelectedNodeId,
+    setSelectedFilePath,
+    panelNode,
+    setPanelNode,
+    isNodeOpen,
+    setIsNodeOpen,
+    isProjectOpen,
+    setIsProjectOpen,
+  } = useVisualizationStore();
 
   const initialData = useMemo(
     () => findInitialNode(initialNodes),
     [initialNodes],
   );
 
-  // 패널에 보여줄 데이터
-  const [panelNode, setPanelNode] = useState<NodeData | null>(initialData);
-  const [isProjectOpen, setIsProjectOpen] = useState(true);
-  const [isNodeOpen, setIsNodeOpen] = useState(!!panelNode);
+  useEffect(() => {
+    if (initialData && !panelNode) {
+      setSelectedNodeId(initialData.id);
+      setPanelNode(initialData);
+      setIsNodeOpen(true);
+      setIsProjectOpen(true);
+    }
+  }, [initialData]);
 
   const handleNodeClick = useCallback(
     (node: NodeData | null) => {
@@ -51,17 +64,15 @@ export default function VisualizationClient({
         setIsNodeOpen(true);
       }
     },
-    [setSelectedNodeId],
+    [setSelectedNodeId, setPanelNode, setIsNodeOpen],
   );
 
   const handlePaneClick = useCallback(() => {
-    // 배경 클릭 시 선택 해제 (STEP1 하이라이트와 패널은 유지)
     setSelectedNodeId(null);
     setSelectedFilePath(null);
-
     setIsNodeOpen(false);
     setIsProjectOpen(false);
-  }, [setSelectedNodeId, setSelectedFilePath]);
+  }, [setSelectedNodeId, setSelectedFilePath, setIsNodeOpen, setIsProjectOpen]);
 
   return (
     <ReactFlowProvider>
@@ -75,30 +86,38 @@ export default function VisualizationClient({
         />
 
         <aside className="pointer-events-none absolute top-6 right-6 bottom-6 z-50 flex w-96 flex-col gap-4">
-          <div className="h-56">
-            {panelNode && isNodeOpen && (
-              <div className="pointer-events-auto h-full">
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+              panelNode && isNodeOpen
+                ? "h-80 translate-x-0 opacity-100"
+                : "h-0 translate-x-10 opacity-0"
+            }`}
+          >
+            <div className="pointer-events-auto h-full">
+              {panelNode && (
                 <NodeDetails
                   node={panelNode}
                   isOpen={isNodeOpen}
                   onClose={() => setIsNodeOpen(false)}
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {initialPurposes && (
             <div
-              className={`pointer-events-auto flex-1 overflow-hidden transition-all duration-300 ${
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
                 isProjectOpen
-                  ? "translate-x-0 opacity-100"
-                  : "invisible translate-x-10 opacity-0"
+                  ? "flex-1 translate-x-0 opacity-100"
+                  : "h-0 translate-x-10 opacity-0"
               }`}
             >
-              <ProjectDetails
-                data={initialPurposes}
-                onClose={() => setIsProjectOpen(false)}
-              />
+              <div className="pointer-events-auto h-full">
+                <ProjectDetails
+                  data={initialPurposes}
+                  onClose={() => setIsProjectOpen(false)}
+                />
+              </div>
             </div>
           )}
 
