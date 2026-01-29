@@ -1,0 +1,15 @@
+// Step4 결과: 분석별 파일별 코드 설명 (마크다운)
+
+model FileSummary {
+  id               String   @id @default(uuid()) @db.Uuid
+  analysisResultId String   @map("analysis_result_id") @db.Uuid
+  filePath         String   @map("file_path") @db.VarChar
+  markdownContent  String   @map("markdown_content") @db.Text
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  analysisResult AnalysisResult @relation(fields: [analysisResultId], references: [id], onDelete: Cascade)
+
+  @@unique([analysisResultId, filePath])
+  @@index([analysisResultId])
+  @@map("file_summaries")
+}
