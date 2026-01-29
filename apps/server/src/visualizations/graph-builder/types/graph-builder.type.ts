@@ -49,7 +49,7 @@ export type NodeInput = {
   relatedNodeIds?: string[];
   relatedPaths?: string[];
   type?: 'FOLDER' | 'FILE';
-  groups?: 'FE' | 'BE' | 'INFRA' | 'DB' | 'EXTRA';
+  groups?: 'FE' | 'BE' | 'INFRA' | 'DB';
 };
 
 export type NodeTemp = {
