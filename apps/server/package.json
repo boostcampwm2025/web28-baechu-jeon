@@ -41,6 +41,7 @@
     "bullmq": "^5.66.5",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
+    "express": "^4.21.2",
     "ioredis": "^5.9.2",
     "multer": "^2.0.2",
     "pg": "^8.16.3",
