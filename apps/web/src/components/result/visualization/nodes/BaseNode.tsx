@@ -46,7 +46,11 @@ export default function BaseNode({
 
   return (
     <div style={baseStyle} className={containerClasses}>
-      <Handle type="target" position={Position.Top} style={hiddenHandleStyle} />
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={hiddenHandleStyle}
+      />
       <div className="flex h-full w-full items-center justify-center overflow-hidden p-2 text-center">
         <span
           style={{
@@ -63,7 +67,7 @@ export default function BaseNode({
       </div>
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={Position.Right}
         style={hiddenHandleStyle}
       />
     </div>

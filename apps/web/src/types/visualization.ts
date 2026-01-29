@@ -6,6 +6,8 @@ export interface NodeData {
   contents: string;
   type?: string;
   diagramType?: "STEP1" | "STEP2" | "STEP3";
+  nodeType?: "FILE" | "FOLDER";
+  path?: string;
 }
 
 export interface ProjectDetailsData {

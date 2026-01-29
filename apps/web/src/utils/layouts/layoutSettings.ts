@@ -15,6 +15,8 @@ export interface BaseNodeData extends Record<string, unknown> {
   relatedFolders?: string[];
   relatedPaths?: string[];
   highlightClass?: string;
+  nodeType?: "FILE" | "FOLDER";
+  path?: string;
 }
 
 /*
@@ -49,7 +51,7 @@ export const LAYOUT_SETTINGS = {
   diagram2: {
     w: 250,
     h: 100,
-    nSep: 80,
+    nSep: 100,
     rSep: 200,
     theme: {
       borderColor: "#a855f7",

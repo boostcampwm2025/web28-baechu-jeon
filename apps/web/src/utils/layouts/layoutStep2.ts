@@ -17,7 +17,7 @@ export function layoutStep2(
 
   const g = new dagre.graphlib.Graph();
   g.setGraph({
-    rankdir: "TB",
+    rankdir: "LR",
     nodesep: settings.nSep,
     ranksep: settings.rSep,
   });
