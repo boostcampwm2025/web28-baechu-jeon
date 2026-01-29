@@ -36,7 +36,7 @@ export class GeminiClient {
         temperature: 0.2,
         topK: 40,
         topP: 0.85,
-        maxOutputTokens: 16384, // step2/step4 마크다운 길이 대비 여유
+        maxOutputTokens: 32768, // step4 다수 파일 시 마크다운 길이 대비 (잘림 방지)
       },
     });
     return response;
