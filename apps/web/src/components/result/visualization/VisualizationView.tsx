@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import {
   ReactFlow,
@@ -47,6 +48,11 @@ export default function VisualizationView({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges] = useEdgesState(initialEdges);
 
+  const router = useRouter();
+  const params = useParams();
+  const projectId = params.projectId as string;
+  const analysisId = params.analysisId as string;
+
   // 해결: 사용하지 않는 setter와 변수 정리 (lint error 대응)
   const [isReseting] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -76,6 +82,11 @@ export default function VisualizationView({
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<BaseNodeData>) => {
       onNodeClick(convertToNodeData(node));
+
+      if (node.data.nodeType === "FILE") {
+        router.push(`/result/${projectId}/${analysisId}/code`);
+        return;
+      }
 
       if (node.data.diagramType === "STEP1") {
         if (node.data.relatedFolders && node.data.relatedFolders.length > 0) {

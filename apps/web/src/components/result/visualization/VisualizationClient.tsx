@@ -48,7 +48,7 @@ export default function VisualizationClient({
     }
     setVisualSelectedId(node.id);
 
-    if (node.diagramType === "STEP2") {
+    if (node.diagramType === "STEP2" && node.nodeType !== "FILE") {
       setPanelNode(node);
       setIsNodeOpen(true);
     }
