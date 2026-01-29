@@ -103,7 +103,7 @@ export class AnalysesService {
           step1: context.step1 || {},
           step2: context.step2 || {},
           step3: context.step3 || {},
-          step4: {},
+          step4: context.step4 || {},
         },
       });
       this.logger.log(`[${analysisId}] DB 저장 완료`);

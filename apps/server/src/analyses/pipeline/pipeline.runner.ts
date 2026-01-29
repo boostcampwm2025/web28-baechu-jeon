@@ -88,6 +88,7 @@ export class PipelineRunner {
           projectId,
           context.step1 as Step1Result,
         );
+        context.mainFileContents = additionalFileContents;
 
         const step2 = await this.geminiService.getResult({
           projectId,
@@ -126,8 +127,45 @@ export class PipelineRunner {
         analysisId,
         'STEP3_INTENT',
         'COMPLETED',
-        90,
+        80,
         context.step3,
+      );
+
+      // STEP 4 (주요 파일 코드 설명)
+      if (!context.mainFileContents && context.step1) {
+        context.mainFileContents = await this.projectsService.extractMainFiles(
+          projectId,
+          context.step1 as Step1Result,
+        );
+      }
+
+      await this.emitStep(analysisId, 'STEP4_CODE_SUMMARY', 'STARTED', 85);
+
+      if (!context.step1 || !context.step2 || !context.step3)
+        throw new Error('Previous results missing');
+      if (!context.mainFileContents)
+        throw new Error('주요 파일 소스코드를 찾을 수 없습니다.');
+
+      const step4 = await this.geminiService.getResult({
+        projectId,
+        step: 4,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        analysisResult: {
+          step1: context.step1,
+          step2: context.step2,
+          step3: context.step3,
+        } as any,
+        fileContents: context.mainFileContents,
+      });
+
+      context.step4 = step4.result;
+
+      await this.emitStep(
+        analysisId,
+        'STEP4_CODE_SUMMARY',
+        'COMPLETED',
+        95,
+        context.step4,
       );
 
       // 전체 완료
