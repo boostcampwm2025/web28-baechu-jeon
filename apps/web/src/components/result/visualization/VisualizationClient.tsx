@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import type { Node, Edge } from "@xyflow/react";
+import { ReactFlowProvider, type Node, type Edge } from "@xyflow/react";
 import { BaseNodeData } from "@/utils/transformNodes";
 import NodeDetails from "./NodeDetails";
 import ProjectDetails from "./ProjectDetails";
@@ -60,51 +60,53 @@ export default function VisualizationClient({
   }, []);
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-slate-900">
-      <VisualizationView
-        onNodeClick={handleNodeClick}
-        onPaneClick={handlePaneClick}
-        initialNodes={initialNodes}
-        initialEdges={initialEdges}
-        visualizationId={visualizationId}
-        selectedNodeId={visualSelectedId}
-      />
+    <ReactFlowProvider>
+      <div className="relative h-full w-full overflow-hidden bg-slate-900">
+        <VisualizationView
+          onNodeClick={handleNodeClick}
+          onPaneClick={handlePaneClick}
+          initialNodes={initialNodes}
+          initialEdges={initialEdges}
+          visualizationId={visualizationId}
+          selectedNodeId={visualSelectedId}
+        />
 
-      <aside className="pointer-events-none absolute top-6 right-6 bottom-6 z-50 flex w-96 flex-col gap-4">
-        <div className="h-56">
-          {panelNode && isNodeOpen && (
-            <div className="pointer-events-auto h-full">
-              <NodeDetails
-                node={panelNode}
-                isOpen={isNodeOpen}
-                onClose={() => setIsNodeOpen(false)}
+        <aside className="pointer-events-none absolute top-6 right-6 bottom-6 z-50 flex w-96 flex-col gap-4">
+          <div className="h-56">
+            {panelNode && isNodeOpen && (
+              <div className="pointer-events-auto h-full">
+                <NodeDetails
+                  node={panelNode}
+                  isOpen={isNodeOpen}
+                  onClose={() => setIsNodeOpen(false)}
+                />
+              </div>
+            )}
+          </div>
+
+          {initialPurposes && (
+            <div
+              className={`pointer-events-auto flex-1 overflow-hidden transition-all duration-300 ${
+                isProjectOpen
+                  ? "translate-x-0 opacity-100"
+                  : "invisible translate-x-10 opacity-0"
+              }`}
+            >
+              <ProjectDetails
+                data={initialPurposes}
+                onClose={() => setIsProjectOpen(false)}
               />
             </div>
           )}
-        </div>
 
-        {initialPurposes && (
-          <div
-            className={`pointer-events-auto flex-1 overflow-hidden transition-all duration-300 ${
-              isProjectOpen
-                ? "translate-x-0 opacity-100"
-                : "invisible translate-x-10 opacity-0"
-            }`}
-          >
-            <ProjectDetails
-              data={initialPurposes}
-              onClose={() => setIsProjectOpen(false)}
+          <div className="pointer-events-auto mt-auto">
+            <SaveButtons
+              isProjectOpen={isProjectOpen}
+              onReopen={() => setIsProjectOpen(true)}
             />
           </div>
-        )}
-
-        <div className="pointer-events-auto mt-auto">
-          <SaveButtons
-            isProjectOpen={isProjectOpen}
-            onReopen={() => setIsProjectOpen(true)}
-          />
-        </div>
-      </aside>
-    </div>
+        </aside>
+      </div>
+    </ReactFlowProvider>
   );
 }

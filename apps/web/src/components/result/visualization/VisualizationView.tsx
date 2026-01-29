@@ -9,6 +9,7 @@ import {
   useNodesState,
   useEdgesState,
   MarkerType,
+  useReactFlow,
   type Node,
   type Edge,
   type NodeTypes,
@@ -16,6 +17,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { type BaseNodeData } from "@/utils/layouts/layoutSettings";
 import BaseNode from "@/components/result/visualization/nodes/BaseNode";
+import { useVisualizationStore } from "@/store/useVisualizationStore";
 
 import resetIcon from "@/assets/reset.svg";
 import { NodeData } from "@/types/visualization";
@@ -49,7 +51,18 @@ export default function VisualizationView({
   const [isReseting] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  const { getViewport, setViewport } = useReactFlow();
+  const savedViewport = useVisualizationStore((state) => state.viewport);
+  const setStoreViewport = useVisualizationStore((state) => state.setViewport);
+
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
+
+  // 저장된 뷰포트가 있다면 초기화 직후 적용
+  useEffect(() => {
+    if (isInitialized && savedViewport) {
+      setViewport(savedViewport);
+    }
+  }, [isInitialized, savedViewport, setViewport]);
 
   useEffect(() => {
     setNodes((nds) =>
@@ -90,16 +103,21 @@ export default function VisualizationView({
         onNodesChange={onNodesChange}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
+        onMoveEnd={() => {
+          const currentViewport = getViewport();
+          setStoreViewport(currentViewport);
+        }}
         onInit={(instance) => {
-          // 해결: isInitialized() 호출이 아닌 setIsInitialized(true)로 상태 업데이트
           setIsInitialized(true);
-          const step1Group = nodes.find((n) => n.id === "group-STEP1");
-          if (step1Group) {
-            instance.setViewport({
-              x: -step1Group.position.x + 50,
-              y: -step1Group.position.y + 150,
-              zoom: 0.6,
-            });
+          if (!savedViewport) {
+            const step1Group = nodes.find((n) => n.id === "group-STEP1");
+            if (step1Group) {
+              instance.setViewport({
+                x: -step1Group.position.x + 50,
+                y: -step1Group.position.y + 150,
+                zoom: 0.6,
+              });
+            }
           }
         }}
         nodesConnectable={false}
