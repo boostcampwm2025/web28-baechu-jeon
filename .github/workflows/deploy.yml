@@ -66,16 +66,30 @@ jobs:
             # GHCR 로그인
             echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
-            # 배포 실행
+            # 최신 이미지 가져오기
             docker compose pull
+
+            # DB 마이그레이션을 서버 시작 전에 실행 (일회성 컨테이너)
+            echo "🔄 Running database migrations..."
+            docker compose run --rm -T server npx prisma migrate deploy
+
+            # 배포 실행
             docker compose up -d --remove-orphans
 
-            # 컨테이너가 준비될 때까지 대기
-            sleep 5
-
-            # DB 마이그레이션 실행
-            echo "🔄 Running database migrations..."
-            docker compose exec -T server npx prisma migrate deploy
+            # 서버 정상 기동 확인
+            echo "⏳ Waiting for server to be ready..."
+            for i in $(seq 1 30); do
+              if docker compose ps server | grep -q "running"; then
+                echo "✅ Server is running"
+                break
+              fi
+              if [ $i -eq 30 ]; then
+                echo "❌ Server failed to start"
+                docker compose logs server
+                exit 1
+              fi
+              sleep 2
+            done
 
             # nginx 설정 리로드
             docker compose exec -T nginx nginx -s reload || true
