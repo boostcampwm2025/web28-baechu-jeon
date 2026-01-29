@@ -17,19 +17,22 @@ export interface Step3Analysis {
   user_stories: [
     {
       story: string; // node
-      related_folders: string[];
+      related_paths: string[];
+      related_folders?: string[]; // 호환성을 위해 유지
       rationale: string;
     },
   ];
 }
 
 export interface Step2Analysis {
-  responsibility_hypotheses: Array<{
-    path: string;
-    hypothesis: string;
-    evidence: string;
-    confidence: 'low' | 'medium' | 'high';
-  }>;
+  responsibility_hypotheses: [
+    {
+      path: string;
+      hypothesis: string;
+      evidence: string;
+      confidence: 'low' | 'medium' | 'high';
+    },
+  ];
 }
 
 // export type NodeInput = Omit<Node, 'id' | 'visualizationId' | 'groups'>;

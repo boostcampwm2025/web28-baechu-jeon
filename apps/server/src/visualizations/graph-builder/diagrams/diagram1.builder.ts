@@ -15,7 +15,7 @@ export const buildDiagram1 = (
   const stories = step3AnalysisResult.user_stories;
   stories.forEach((story) => {
     const relatedPaths = new Set(
-      story.related_folders?.map((path) => normalize(path, maxDepth)) ?? [],
+      story.related_paths?.map((path) => normalize(path, maxDepth)) ?? [],
     );
 
     nodes.push({
