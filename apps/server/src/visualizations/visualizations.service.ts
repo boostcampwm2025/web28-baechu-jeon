@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/database/prisma.service';
-import { AnalysisResult, Prisma } from '@prisma/client';
+import { AnalysisResult, Prisma, EdgeType, Type } from '@prisma/client';
 import { GraphBuilderService } from './graph-builder/graph-builder.service';
 import { GraphBuildResult } from './graph-builder/types/graph-builder.type';
 
@@ -48,7 +48,10 @@ export class VisualizationsService {
     const { step1, step2, step3 } = result;
 
     // node, edge row 만들고
-    const step2NodeIdMap = new Map<string | number, bigint>();
+    const step2NodeMap = new Map<
+      string | number,
+      { id: bigint; type: Type | null }
+    >();
 
     // step2- 폴더 가설
     for (const node of step2.nodes) {
@@ -60,26 +63,36 @@ export class VisualizationsService {
           y: 0,
           label: node.label,
           contents: node.contents,
-          type: node.type,
+          type: node.type || null,
         },
       });
-      step2NodeIdMap.set(node.path, created.id);
+      step2NodeMap.set(node.path, {
+        id: created.id,
+        type: node.type || null,
+      });
       console.log(`✅ Step2 Node 생성: ${node.path} -> ${created.id}`);
     }
 
     const step2EdgesData = step2.edges.map((edge) => {
-      const sourceNodeId = step2NodeIdMap.get(edge.sourcePath);
-      const targetNodeId = step2NodeIdMap.get(edge.targetPath);
+      const sourceNode = step2NodeMap.get(edge.sourcePath);
+      const targetNode = step2NodeMap.get(edge.targetPath);
 
-      if (!sourceNodeId || !targetNodeId)
+      if (!sourceNode || !targetNode)
         throw new Error(
           `Edge 생성 실패: 노드를 찾을 수 없습니다. (${edge.sourcePath} -> ${edge.targetPath})`,
         );
 
+      // FOLDER -> FILE 관계면 DASHED, 아니면 SOLID
+      const edgeType =
+        sourceNode.type === Type.FOLDER && targetNode.type === Type.FILE
+          ? EdgeType.DASHED
+          : EdgeType.SOLID;
+
       return {
         visualizationId: visualization.id,
-        sourceNodeId,
-        targetNodeId,
+        sourceNodeId: sourceNode.id,
+        targetNodeId: targetNode.id,
+        type: edgeType,
       };
     });
 
@@ -94,8 +107,8 @@ export class VisualizationsService {
         (
           await Promise.all(
             node.relatedPaths?.map(async (folderPath) => {
-              const existingNodeId = step2NodeIdMap.get(folderPath);
-              if (existingNodeId) return existingNodeId;
+              const existingNode = step2NodeMap.get(folderPath);
+              if (existingNode) return existingNode.id;
 
               const segmentLabel = folderPath.split('/').filter(Boolean).pop();
               if (!segmentLabel) {
@@ -113,11 +126,14 @@ export class VisualizationsService {
                   y: 0,
                   label: segmentLabel,
                   contents: folderPath,
-                  type: 'FOLDER',
+                  type: Type.FOLDER,
                 },
               });
 
-              step2NodeIdMap.set(folderPath, created.id);
+              step2NodeMap.set(folderPath, {
+                id: created.id,
+                type: Type.FOLDER,
+              });
               console.log(
                 `✅ Step2 Node 추가 생성: ${folderPath} -> ${created.id}`,
               );
