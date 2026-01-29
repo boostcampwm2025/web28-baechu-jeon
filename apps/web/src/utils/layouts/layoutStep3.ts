@@ -1,4 +1,4 @@
-import { Node, Edge, MarkerType } from "@xyflow/react";
+import { Node, Edge } from "@xyflow/react";
 import { ApiNode } from "@/api/visualization";
 import { BaseNodeData, LAYOUT_SETTINGS } from "./layoutSettings";
 
@@ -118,15 +118,15 @@ export function layoutStep3(
       style: { zIndex: 5 },
     });
 
-    // 헤더 -> 컨테이너 엣지
-    generatedEdges.push({
-      id: `edge-${catName}-container`,
-      source: headId,
-      target: containerId,
-      type: "default",
-      style: { stroke: "#64748b", strokeWidth: 2 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: "#64748b" },
-    });
+    // // 헤더 -> 컨테이너 엣지
+    // generatedEdges.push({
+    //   id: `edge-${catName}-container`,
+    //   source: headId,
+    //   target: containerId,
+    //   type: "default",
+    //   style: { stroke: "#64748b", strokeWidth: 2 },
+    //   markerEnd: { type: MarkerType.ArrowClosed, color: "#64748b" },
+    // });
 
     // 자식 노드들
     children.forEach((child, idx) => {

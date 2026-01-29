@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import FolderExplorer from "@/components/layout/FolderExplorer";
 import { FileNode } from "@/utils/pathTree";
 import { HiFolderOpen } from "react-icons/hi";
@@ -10,20 +10,72 @@ interface LayoutClientProps {
   treeData: FileNode[];
 }
 
+const CLOSE_THRESHOLD = 100;
+const MIN_WIDTH = 250;
+const MAX_WIDTH = 350;
+const DEFAULT_WIDTH = 288;
+
 export default function LayoutClient({
   children,
   treeData,
 }: LayoutClientProps) {
   const [isExplorerOpen, setIsExplorerOpen] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
+  const [isDragging, setIsDragging] = useState(false);
+  const isResizing = useRef(false);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    setIsDragging(true);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current) return;
+      const newWidth = Math.min(MAX_WIDTH, Math.max(0, e.clientX));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      if (!isResizing.current) return;
+      isResizing.current = false;
+      setIsDragging(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      setSidebarWidth((prev) => {
+        if (prev < CLOSE_THRESHOLD) {
+          setIsExplorerOpen(false);
+          return DEFAULT_WIDTH;
+        }
+        if (prev < MIN_WIDTH) {
+          return MIN_WIDTH;
+        }
+        return prev;
+      });
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
 
   return (
     <div className="no-scrollbar relative flex h-full w-full overflow-hidden">
       <aside
-        className={`relative border-r bg-gray-50 transition-all duration-300 ease-in-out ${
-          isExplorerOpen
-            ? "w-72 translate-x-0"
-            : "w-0 -translate-x-full opacity-0"
-        }`}
+        className={`relative border-r border-slate-200 bg-gray-50 ${
+          isDragging
+            ? ""
+            : "transition-all duration-300 ease-in-out"
+        } ${isExplorerOpen ? "translate-x-0" : "-translate-x-full opacity-0"}`}
+        style={{
+          width: isExplorerOpen ? `${sidebarWidth}px` : 0,
+        }}
       >
         <div className="h-full overflow-y-auto">
           <FolderExplorer
@@ -31,6 +83,11 @@ export default function LayoutClient({
             onClose={() => setIsExplorerOpen(false)}
           />
         </div>
+
+        <div
+          onMouseDown={handleMouseDown}
+          className="absolute top-0 -right-1 z-10 h-full w-2.5 cursor-col-resize transition-colors hover:bg-slate-300 active:bg-slate-400"
+        />
       </aside>
 
       <section className="relative flex min-w-0 flex-1 flex-col bg-white">
