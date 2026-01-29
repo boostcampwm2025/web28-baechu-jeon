@@ -7,10 +7,8 @@ enum EdgeType {
 model Edge {
   id              BigInt @id @default(autoincrement())
   visualizationId String @map("visualization_id") @db.Uuid
-  diagramType     String // "STEP1" | "STEP2"
   sourceNodeId    BigInt @map("source_node")
   targetNodeId    BigInt @map("target_node")
-  label           String? @db.VarChar
   type            EdgeType @default(SOLID)
 
   visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)

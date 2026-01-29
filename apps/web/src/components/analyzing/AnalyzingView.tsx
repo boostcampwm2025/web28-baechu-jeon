@@ -12,14 +12,14 @@ type AnalysisStep =
   | "STEP1_FEATURE_ANALYSIS"
   | "STEP2_HYPOTHESIS"
   | "STEP3_INTENT"
-  | "STEP4_NLP";
+  | "STEP4_CODE_SUMMARY";
 
 // 단계별 메시지 매핑
 const STEP_MESSAGES: Record<AnalysisStep, string> = {
   STEP1_FEATURE_ANALYSIS: "프로젝트 기능 분석 중...",
-  STEP2_HYPOTHESIS: "폴더별 가설 생성 중...",
+  STEP2_HYPOTHESIS: "폴더·파일별 가설 생성 중...",
   STEP3_INTENT: "프로젝트 의도 분석 중...",
-  STEP4_NLP: "자연어 처리 중...",
+  STEP4_CODE_SUMMARY: "코드 설명 생성 중...",
 };
 
 // 각 단계별 예상 소요 시간 (초)
@@ -27,7 +27,7 @@ const STEP_DURATIONS: Record<AnalysisStep, number> = {
   STEP1_FEATURE_ANALYSIS: 30,
   STEP2_HYPOTHESIS: 30,
   STEP3_INTENT: 30,
-  STEP4_NLP: 30,
+  STEP4_CODE_SUMMARY: 30,
 };
 
 interface AnalyzingViewProps {

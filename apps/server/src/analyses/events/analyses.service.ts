@@ -7,6 +7,7 @@ import {
   analysisStatusKey,
 } from '../infra/analysis.redis.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { Step4Result } from '../../ai/types/ai.types.js';
 
 // TODO: 최종 결과를 DB(Prisma)에 저장하기
 // TODO: retry 로직 검토 및 추가
@@ -103,9 +104,24 @@ export class AnalysesService {
           step1: context.step1 || {},
           step2: context.step2 || {},
           step3: context.step3 || {},
-          step4: {},
+          step4: context.step4 || {},
         },
       });
+
+      const step4 = context.step4 as Step4Result | undefined;
+      if (step4?.file_summaries?.length) {
+        await this.prisma.fileSummary.createMany({
+          data: step4.file_summaries.map((s) => ({
+            analysisResultId: analysisId,
+            filePath: s.file_path,
+            markdownContent: s.markdown_content,
+          })),
+        });
+        this.logger.log(
+          `[${analysisId}] FileSummary ${step4.file_summaries.length}건 저장`,
+        );
+      }
+
       this.logger.log(`[${analysisId}] DB 저장 완료`);
     } catch (error: unknown) {
       const errorMessage =

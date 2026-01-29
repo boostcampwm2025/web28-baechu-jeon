@@ -10,6 +10,7 @@ import { PromptResponse } from '../types/ai.types';
 import { buildStep1Prompts } from '../prompts/step1.prompt';
 import { buildStep2Prompts } from '../prompts/step2.prompt';
 import { buildStep3Prompts } from '../prompts/step3.prompt';
+import { buildStep4Prompts } from '../prompts/step4.prompt';
 import { parseAiJson } from '../utils/parse-ai-json.util';
 
 // TODO: 단계별로 systemPrompt, userPrompt 넣기
@@ -35,6 +36,7 @@ export class GeminiService implements AiProvider {
         return buildStep2Prompts({
           project,
           analysisResult: input.analysisResult,
+          additionalFileContents: input.additionalFileContents,
         });
       case 3:
         if (!input.analysisResult)
@@ -42,6 +44,16 @@ export class GeminiService implements AiProvider {
         return buildStep3Prompts({
           project,
           analysisResult: input.analysisResult,
+        });
+      case 4:
+        if (!input.analysisResult)
+          throw new Error('분석 결과를 찾을 수 없습니다.');
+        if (!input.fileContents)
+          throw new Error('주요 파일 소스코드를 찾을 수 없습니다.');
+        return buildStep4Prompts({
+          project,
+          analysisResult: input.analysisResult,
+          fileContents: input.fileContents,
         });
       default:
         throw new Error('유효하지 않은 단계입니다.');

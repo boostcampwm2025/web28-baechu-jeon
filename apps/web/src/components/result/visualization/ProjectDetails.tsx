@@ -1,7 +1,8 @@
 "use client";
 
 import { IoClose } from "react-icons/io5";
-import { ProjectDetailsData } from "./VisualizationClient";
+// Fix: Import from types file instead of VisualizationClient
+import { ProjectDetailsData } from "@/types/visualization";
 
 interface ProjectDetailsProps {
   data: ProjectDetailsData;
@@ -45,7 +46,7 @@ export default function ProjectDetails({ data, onClose }: ProjectDetailsProps) {
             주요 기능 (KEY FEATURES)
           </h3>
           <ul className="space-y-2">
-            {data.keyFeatures.map((feature, idx) => (
+            {data.keyFeatures.map((feature: string, idx: number) => (
               <li
                 key={idx}
                 className="rounded-md border border-slate-700/30 bg-slate-800/50 p-3 text-sm text-slate-300"
@@ -67,7 +68,7 @@ export default function ProjectDetails({ data, onClose }: ProjectDetailsProps) {
                   {key}
                 </span>
                 <div className="mt-1 flex flex-wrap gap-2">
-                  {stacks.map((stack) => (
+                  {(stacks as string[]).map((stack: string) => (
                     <span
                       key={stack}
                       className="rounded border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-xs text-blue-400"

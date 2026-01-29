@@ -1,33 +1,40 @@
-export interface Step1Json {
-  project_overview: {
-    description: string;
+export interface Step3Analysis {
+  project_intent: {
+    overview: string;
     purpose: string;
-  };
-  project_features: Array<{
-    feature_name: string;
-    feature_description: string;
-    feature_detailed_description: string;
-    related_folders: string[];
-    depends_on_features: string[];
-  }>;
-  technology_stack: {
-    frontend: string[];
-    backend: string[];
-    database: string[];
-    infrastructure: string[];
-  };
-}
-
-export interface Step2Json {
-  responsibility_hypotheses: Array<{
-    folder_path: string;
-    hypothesis: string;
-    evidence: string;
+    architectural_tendencies: string;
+    key_features: string[];
+    technology_stack: {
+      frontend: string[];
+      backend: string[];
+      infrastructure: string[];
+      database: string[];
+      extra: string[];
+    };
+    evidence: string[];
     confidence: 'low' | 'medium' | 'high';
-  }>;
+  };
+  user_stories: [
+    {
+      story: string; // node
+      related_paths: string[];
+      related_folders?: string[]; // 호환성을 위해 유지
+      rationale: string;
+    },
+  ];
 }
 
-// types/graph-builder.type.ts
+export interface Step2Analysis {
+  responsibility_hypotheses: [
+    {
+      path: string;
+      hypothesis: string;
+      evidence: string;
+      confidence: 'low' | 'medium' | 'high';
+    },
+  ];
+}
+
 // export type NodeInput = Omit<Node, 'id' | 'visualizationId' | 'groups'>;
 // export type EdgeInput = Omit<Edge, 'id' | 'visualizationId' | 'label' | 'type'>;
 
@@ -38,13 +45,20 @@ export type EdgeInput = {
 
 export type NodeInput = {
   label: string;
-  contents: string;
+  contents?: string;
+  relatedNodeIds?: string[];
+  relatedPaths?: string[];
+  type?: 'FOLDER' | 'FILE';
+  groups?: 'FE' | 'BE' | 'INFRA' | 'DB';
 };
 
 export type NodeTemp = {
   path: string; // 임시 node id
   label: string;
   contents: string;
+  relatedNodeIds?: string[];
+  relatedPaths?: string[];
+  type?: 'FOLDER' | 'FILE';
 };
 
 export type GraphBuildResult = {
@@ -54,6 +68,10 @@ export type GraphBuildResult = {
   };
   step2: {
     nodes: NodeTemp[];
+    edges: EdgeInput[];
+  };
+  step3: {
+    nodes: NodeInput[];
     edges: EdgeInput[];
   };
 };

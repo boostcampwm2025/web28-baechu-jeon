@@ -1,5 +1,6 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Put, Body } from '@nestjs/common';
 import { VisualizationsService } from './visualizations.service';
+import { Prisma } from '@prisma/client';
 
 @Controller('visualizations')
 export class VisualizationsController {
@@ -8,5 +9,21 @@ export class VisualizationsController {
   @Get(':analysisId')
   async getVisualization(@Param('analysisId') analysisId: string) {
     return await this.visualizationsService.getGraph(analysisId);
+  }
+
+  @Put(':visualizationId')
+  async updateVisualization(
+    @Param('visualizationId') visualizationId: string,
+    @Body() body: { formattedData: Prisma.JsonObject },
+  ) {
+    return await this.visualizationsService.updateGraph(
+      visualizationId,
+      body.formattedData,
+    );
+  }
+
+  @Get(':visualizationId/reset')
+  async resetVisualization(@Param('visualizationId') visualizationId: string) {
+    return await this.visualizationsService.resetGraph(visualizationId);
   }
 }

@@ -12,6 +12,7 @@ model AnalysisResult {
   project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   purposes       Purpose[]
   visualizations Visualization[]
+  fileSummaries  FileSummary[]
 
   @@map("analysis_results")
 }

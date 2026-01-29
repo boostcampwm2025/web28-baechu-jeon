@@ -33,7 +33,7 @@ export type AnalysisStep =
   | 'STEP1_FEATURE_ANALYSIS'
   | 'STEP2_HYPOTHESIS'
   | 'STEP3_INTENT'
-  | 'STEP4_NLP';
+  | 'STEP4_CODE_SUMMARY';
 
 export interface AnalysisStepEventPayload {
   analysisId: string;

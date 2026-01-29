@@ -17,8 +17,7 @@ export default function ResultTabs() {
       label: "Visual Graph",
       href: `${basePath}/visualization`,
     },
-    { id: "json", label: "JSON Mode", href: `${basePath}/json` },
-    { id: "ai", label: "AI Analysis", href: `${basePath}/ai` },
+    { id: "code", label: "Code", href: `${basePath}/code` },
   ];
 
   return (
