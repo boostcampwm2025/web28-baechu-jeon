@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Put, Body } from '@nestjs/common';
 import { VisualizationsService } from './visualizations.service';
+import { Prisma } from '@prisma/client';
 
 @Controller('visualizations')
 export class VisualizationsController {
@@ -13,7 +14,7 @@ export class VisualizationsController {
   @Put(':visualizationId')
   async updateVisualization(
     @Param('visualizationId') visualizationId: string,
-    @Body() body: { formattedData: any },
+    @Body() body: { formattedData: Prisma.JsonObject },
   ) {
     return await this.visualizationsService.updateGraph(
       visualizationId,

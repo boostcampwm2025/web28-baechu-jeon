@@ -105,12 +105,10 @@ export class VisualizationsService {
       // relatedFolders의 경로를 노드 ID로 변환 (없으면 스킵)
       const relatedNodeIds =
         (
-          await Promise.all(
-            node.relatedPaths?.map(async (folderPath) => {
-              const existingNode = step2NodeMap.get(folderPath);
-              return existingNode ? existingNode.id : null;
-            }) ?? [],
-          )
+          node.relatedPaths?.map((folderPath) => {
+            const existingNode = step2NodeMap.get(folderPath);
+            return existingNode ? existingNode.id : null;
+          }) ?? []
         ).filter((id): id is bigint => id !== null) ?? [];
 
       await this.prismaService.node.create({

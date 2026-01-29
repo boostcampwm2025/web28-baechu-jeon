@@ -84,10 +84,11 @@ export class PipelineRunner {
         await this.emitStep(analysisId, 'STEP2_HYPOTHESIS', 'STARTED', 40);
         if (!context.step1) throw new Error('Step 1 result missing');
 
-        const additionalFileContents = await this.projectsService.extractMainFiles(
-          projectId,
-          context.step1 as Step1Result,
-        );
+        const additionalFileContents =
+          await this.projectsService.extractMainFiles(
+            projectId,
+            context.step1 as Step1Result,
+          );
         context.mainFileContents = additionalFileContents;
 
         const step2 = await this.geminiService.getResult({
