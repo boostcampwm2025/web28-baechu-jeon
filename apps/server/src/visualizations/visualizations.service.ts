@@ -86,11 +86,11 @@ export class VisualizationsService {
     });
 
     // step1- 유저 시나리오
-    console.log('🔍 Step1 노드들의 관련 폴더:');
+    console.log('🔍 Step1 노드들의 관련 경로 (폴더·파일):');
     for (const node of step1.nodes) {
-      // relatedFolders의 경로를 노드 ID로 변환 (존재하는 경로만 필터링)
+      // relatedPaths의 경로를 노드 ID로 변환 (존재하는 경로만 필터링)
       const relatedNodeIds =
-        node.relatedFolders
+        node.relatedPaths
           ?.map((folderPath) => {
             const nodeId = step2NodeIdMap.get(folderPath);
             if (!nodeId) {

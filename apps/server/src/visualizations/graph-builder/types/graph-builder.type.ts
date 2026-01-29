@@ -14,18 +14,16 @@ export interface Step3Analysis {
     evidence: string[];
     confidence: 'low' | 'medium' | 'high';
   };
-  user_stories: [
-    {
-      story: string; // node
-      related_folders: string[];
-      rationale: string;
-    },
-  ];
+  user_stories: Array<{
+    story: string;
+    related_paths: string[];
+    rationale: string;
+  }>;
 }
 
 export interface Step2Analysis {
   responsibility_hypotheses: Array<{
-    folder_path: string;
+    path: string;
     hypothesis: string;
     evidence: string;
     confidence: 'low' | 'medium' | 'high';
@@ -45,14 +43,14 @@ export type NodeInput = {
   label: string;
   contents?: string;
   groups?: 'FE' | 'BE' | 'INFRA' | 'DB' | 'EXTRA';
-  relatedFolders?: string[];
+  relatedPaths?: string[];
 };
 
 export type NodeTemp = {
-  path: string; // 임시 node id
+  path: string; // 임시 node id (폴더 또는 파일 경로)
   label: string;
   contents: string;
-  relatedFolders?: string[];
+  relatedPaths?: string[];
 };
 
 export type GraphBuildResult = {

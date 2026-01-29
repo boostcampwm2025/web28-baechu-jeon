@@ -10,29 +10,12 @@ export const buildDiagram1 = (step3AnalysisResult: Step3Analysis) => {
 
   const stories = step3AnalysisResult.user_stories;
   stories.forEach((story) => {
-    // 파일 경로는 디렉토리 경로로 변환하고 중복 제거
-    const relatedFolders = [
-      ...new Set(
-        story.related_folders.map((path) => {
-          // 경로의 마지막 부분이 파일인지 확인 (확장자가 있는지)
-          const parts = path.split('/');
-          const lastPart = parts[parts.length - 1];
-
-          // 마지막 부분에 확장자가 있으면 파일이므로 제거
-          if (lastPart.includes('.')) {
-            return parts.slice(0, -1).join('/');
-          }
-
-          return path;
-        }),
-      ),
-    ];
+    // 폴더·파일 경로 그대로 사용 (중복 제거)
+    const relatedPaths = [...new Set(story.related_paths)];
 
     nodes.push({
       label: story.story,
-      // TODO: 고민해보기 max-depth로 잘린 폴더가 있다면?
-      // TODO: 근데 지금 max-depth가 의미가 있나?
-      relatedFolders,
+      relatedPaths,
     });
   });
 
