@@ -11,6 +11,7 @@ export interface ApiNode {
   groups?: "FE" | "BE" | "INFRA" | "DB" | "EXTRA";
   contents: string | null;
   relatedFolders?: string[];
+  relatedPaths?: string[];
 }
 
 export interface ApiEdge {

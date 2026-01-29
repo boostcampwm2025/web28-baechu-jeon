@@ -136,6 +136,7 @@ export function layoutStep1(
         theme: LAYOUT_SETTINGS.diagram1.theme,
         diagramType: "STEP1",
         relatedFolders: node.relatedFolders || [],
+        relatedPaths: node.relatedPaths || [],
       },
       position: { x: relativeX, y: relativeY },
     });
