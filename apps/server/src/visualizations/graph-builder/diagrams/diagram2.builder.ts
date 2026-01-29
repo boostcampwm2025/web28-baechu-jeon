@@ -13,9 +13,9 @@ export function buildDiagram2(
 
   const map = new Map<string, NodeTemp>();
 
-  // 1. path -> node (중복 제거, 폴더·파일 경로)
+  // 1. folder_path -> node (중복 제거)
   for (const item of step2AnalysisResult.responsibility_hypotheses) {
-    const path = normalize(item.path, maxDepth);
+    const path = normalize(item.folder_path, maxDepth);
 
     if (!map.has(path)) {
       map.set(path, {
