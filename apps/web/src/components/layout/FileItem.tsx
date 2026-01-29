@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { HiFolder, HiDocument, HiOutlineChevronRight } from "react-icons/hi";
 import { FileNode } from "@/utils/pathTree";
 import { useExplorerStore } from "@/stores/useExplorerStore";
+import { useVisualizationStore } from "@/stores/useVisualizationStore";
 
 interface FileItemProps {
   node: FileNode;
@@ -16,12 +18,16 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
   const itemRef = useRef<HTMLDivElement>(null);
   const isFolder = node.type === "folder";
 
+  const router = useRouter();
+  const params = useParams<{ projectId: string; analysisId: string }>();
   const highlightedPaths = useExplorerStore((s) => s.highlightedPaths);
+  const setSelectedFilePath = useVisualizationStore(
+    (s) => s.setSelectedFilePath,
+  );
 
   const isHighlighted = highlightedPaths.includes(node.path);
   const shouldExpand =
-    isFolder &&
-    highlightedPaths.some((hp) => hp.startsWith(node.path + "/"));
+    isFolder && highlightedPaths.some((hp) => hp.startsWith(node.path + "/"));
 
   useEffect(() => {
     if (shouldExpand) {
@@ -36,13 +42,21 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
   useEffect(() => {
     if (isHighlighted && highlightedPaths[0] === node.path) {
       requestAnimationFrame(() => {
-        itemRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        itemRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       });
     }
   }, [isHighlighted, highlightedPaths, node.path]);
 
   const handleClick = () => {
-    if (isFolder) setIsOpen(!isOpen);
+    if (isFolder) {
+      setIsOpen(!isOpen);
+      return;
+    }
+    setSelectedFilePath(node.path);
+    router.push(`/result/${params.projectId}/${params.analysisId}/code`);
   };
 
   return (
