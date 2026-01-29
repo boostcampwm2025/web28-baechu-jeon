@@ -79,7 +79,7 @@ jobs:
             # 서버 정상 기동 확인
             echo "⏳ Waiting for server to be ready..."
             for i in $(seq 1 30); do
-              if docker compose ps server | grep -q "running"; then
+              if docker compose ps server | grep -qi "up\|running"; then
                 echo "✅ Server is running"
                 break
               fi
