@@ -2,7 +2,7 @@ import { Node, Edge } from "@xyflow/react";
 import { ApiNode } from "@/api/visualization";
 import { BaseNodeData, LAYOUT_SETTINGS } from "./layoutSettings";
 
-const FIXED_CATEGORIES = ["FE", "BE", "INFRA", "DB", "EXTRA"];
+const FIXED_CATEGORIES = ["FE", "BE", "INFRA", "DB"];
 
 export function layoutStep3(
   apiNodes: ApiNode[],
@@ -19,17 +19,14 @@ export function layoutStep3(
   FIXED_CATEGORIES.forEach((cat) => groupMap.set(cat, []));
 
   apiNodes.forEach((node) => {
-    const groupName = node.groups ? node.groups.toUpperCase() : "EXTRA";
+    const groupName = node.groups ? node.groups.toUpperCase() : "";
     if (groupMap.has(groupName)) {
       groupMap.get(groupName)!.push(node);
-    } else {
-      groupMap.get("EXTRA")!.push(node);
     }
   });
 
   const HEAD_W = LAYOUT_SETTINGS.diagram3CategoryNode.w;
   const HEAD_H = LAYOUT_SETTINGS.diagram3CategoryNode.h;
-
   const CHILD_W = LAYOUT_SETTINGS.diagram3Child.w;
   const CHILD_H = LAYOUT_SETTINGS.diagram3Child.h;
 
@@ -38,11 +35,10 @@ export function layoutStep3(
 
   const COL_GAP = 150; // 그룹 간 간격
   const HEAD_TO_BOX_GAP = 50;
-
   const ROOT_PADDING = 60;
 
+  // 최대 높이 계산 (데이터가 있는 카테고리 기준)
   let maxChildrenContentHeight = 0;
-
   FIXED_CATEGORIES.forEach((catName) => {
     const children = groupMap.get(catName) || [];
     if (children.length > 0) {
@@ -117,16 +113,6 @@ export function layoutStep3(
       position: { x: containerX, y: containerY },
       style: { zIndex: 5 },
     });
-
-    // // 헤더 -> 컨테이너 엣지
-    // generatedEdges.push({
-    //   id: `edge-${catName}-container`,
-    //   source: headId,
-    //   target: containerId,
-    //   type: "default",
-    //   style: { stroke: "#64748b", strokeWidth: 2 },
-    //   markerEnd: { type: MarkerType.ArrowClosed, color: "#64748b" },
-    // });
 
     // 자식 노드들
     children.forEach((child, idx) => {
