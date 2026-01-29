@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { HiFolder, HiDocument, HiOutlineChevronRight } from "react-icons/hi";
 import { FileNode } from "@/utils/pathTree";
+import { useExplorerStore } from "@/stores/useExplorerStore";
 
 interface FileItemProps {
   node: FileNode;
@@ -11,7 +12,34 @@ interface FileItemProps {
 
 export const FileItem = ({ node, depth }: FileItemProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const autoExpanded = useRef(false);
+  const itemRef = useRef<HTMLDivElement>(null);
   const isFolder = node.type === "folder";
+
+  const highlightedPaths = useExplorerStore((s) => s.highlightedPaths);
+
+  const isHighlighted = highlightedPaths.includes(node.path);
+  const shouldExpand =
+    isFolder &&
+    highlightedPaths.some((hp) => hp.startsWith(node.path + "/"));
+
+  useEffect(() => {
+    if (shouldExpand) {
+      setIsOpen(true);
+      autoExpanded.current = true;
+    } else if (autoExpanded.current) {
+      setIsOpen(false);
+      autoExpanded.current = false;
+    }
+  }, [shouldExpand]);
+
+  useEffect(() => {
+    if (isHighlighted && highlightedPaths[0] === node.path) {
+      requestAnimationFrame(() => {
+        itemRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+  }, [isHighlighted, highlightedPaths, node.path]);
 
   const handleClick = () => {
     if (isFolder) setIsOpen(!isOpen);
@@ -20,12 +48,15 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
   return (
     <div>
       <div
+        ref={itemRef}
         onClick={handleClick}
         title={node.path}
         className={`group flex items-center gap-1 px-2 py-1 pr-4 text-sm transition-colors select-none ${
-          isFolder
-            ? "cursor-pointer font-medium text-slate-700 hover:bg-slate-100"
-            : "text-slate-600 hover:bg-slate-50"
+          isHighlighted
+            ? "rounded-sm bg-amber-50 font-semibold text-amber-700"
+            : isFolder
+              ? "cursor-pointer font-medium text-slate-700 hover:bg-slate-100"
+              : "text-slate-600 hover:bg-slate-50"
         } `}
         style={{ paddingLeft: `${depth * 10 + 5}px` }}
       >
@@ -41,9 +72,13 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
 
         <span className="flex shrink-0 items-center justify-center text-lg">
           {isFolder ? (
-            <HiFolder className="text-amber-300" />
+            <HiFolder
+              className={isHighlighted ? "text-amber-400" : "text-amber-300"}
+            />
           ) : (
-            <HiDocument className="text-blue-200" />
+            <HiDocument
+              className={isHighlighted ? "text-amber-400" : "text-blue-200"}
+            />
           )}
         </span>
 

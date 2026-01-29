@@ -21,6 +21,7 @@ import resetIcon from "@/assets/reset.svg";
 import { NodeData } from "@/types/visualization";
 import { useNodeHighlight } from "@/hooks/useNodeHighlight";
 import { convertToNodeData } from "@/utils/nodeHelpers";
+import { useExplorerStore } from "@/stores/useExplorerStore";
 
 const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
@@ -50,6 +51,12 @@ export default function VisualizationView({
   const [isInitialized, setIsInitialized] = useState(false);
 
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
+  const setHighlightedPaths = useExplorerStore(
+    (s) => s.setHighlightedPaths,
+  );
+  const clearHighlightedPaths = useExplorerStore(
+    (s) => s.clearHighlightedPaths,
+  );
 
   useEffect(() => {
     setNodes((nds) =>
@@ -67,12 +74,14 @@ export default function VisualizationView({
       if (node.data.diagramType === "STEP1") {
         if (node.data.relatedFolders && node.data.relatedFolders.length > 0) {
           toggleHighlight(node.id, [node.id, ...node.data.relatedFolders]);
+          setHighlightedPaths(node.data.relatedPaths || []);
         } else {
           resetHighlights();
+          clearHighlightedPaths();
         }
       }
     },
-    [onNodeClick, toggleHighlight, resetHighlights],
+    [onNodeClick, toggleHighlight, resetHighlights, setHighlightedPaths, clearHighlightedPaths],
   );
 
   const handlePaneClick = useCallback(() => {
