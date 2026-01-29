@@ -1,6 +1,13 @@
 ## 🥬 web28-baechu-jeon
 
-[기획서](https://jungle-song-477.notion.site/2c6dcc5dbaeb80ed8792ee036c266df9)
+## 프로젝트 소개
+
+안녕하세요 저희는 SHOW ME THE 구조~!  
+프로젝트 업로드를 통한 AI 분석 및 시각화를 제공하여 프로젝트를 쉽게 파악할 수 있도록 도움을 주는 서비스입니다!
+
+## 배포 주소
+
+https://showmethegujo.site
 
 ## 팀원 소개
 
