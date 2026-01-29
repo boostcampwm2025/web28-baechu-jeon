@@ -57,18 +57,10 @@ export default function VisualizationView({
   const [isReseting] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const { getViewport, setViewport } = useReactFlow();
-  const savedViewport = useVisualizationStore((state) => state.viewport);
+  const { getViewport } = useReactFlow();
   const setStoreViewport = useVisualizationStore((state) => state.setViewport);
 
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
-
-  // 저장된 뷰포트가 있다면 초기화 직후 적용
-  useEffect(() => {
-    if (isInitialized && savedViewport) {
-      setViewport(savedViewport);
-    }
-  }, [isInitialized, savedViewport, setViewport]);
 
   useEffect(() => {
     setNodes((nds) =>
@@ -105,6 +97,11 @@ export default function VisualizationView({
     }
   }, [onPaneClick]);
 
+  const handleMoveEnd = useCallback(() => {
+    const currentViewport = getViewport();
+    setStoreViewport(currentViewport);
+  }, [getViewport, setStoreViewport]);
+
   return (
     <div className="relative h-full w-full">
       <ReactFlow
@@ -114,19 +111,19 @@ export default function VisualizationView({
         onNodesChange={onNodesChange}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
-        onMoveEnd={() => {
-          const currentViewport = getViewport();
-          setStoreViewport(currentViewport);
-        }}
+        onMoveEnd={handleMoveEnd}
         onInit={(instance) => {
           setIsInitialized(true);
-          if (!savedViewport) {
+          const state = useVisualizationStore.getState();
+          if (state.viewport) {
+            instance.setViewport(state.viewport);
+          } else {
             const step1Group = nodes.find((n) => n.id === "group-STEP1");
             if (step1Group) {
               instance.setViewport({
                 x: -step1Group.position.x + 50,
                 y: -step1Group.position.y + 150,
-                zoom: 0.6,
+                zoom: 0.5,
               });
             }
           }
