@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import {
   ReactFlow,
@@ -9,6 +10,7 @@ import {
   useNodesState,
   useEdgesState,
   MarkerType,
+  useReactFlow,
   type Node,
   type Edge,
   type NodeTypes,
@@ -16,7 +18,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { type BaseNodeData } from "@/utils/layouts/layoutSettings";
 import BaseNode from "@/components/result/visualization/nodes/BaseNode";
-
+import { useVisualizationStore } from "@/store/useVisualizationStore";
 import resetIcon from "@/assets/reset.svg";
 import { NodeData } from "@/types/visualization";
 import { useNodeHighlight } from "@/hooks/useNodeHighlight";
@@ -40,46 +42,87 @@ export default function VisualizationView({
   onPaneClick,
   initialNodes = [],
   initialEdges = [],
-  selectedNodeId,
 }: VisualizationViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges] = useEdgesState(initialEdges);
+
+  const router = useRouter();
+  const params = useParams();
+  const projectId = params.projectId as string;
+  const analysisId = params.analysisId as string;
 
   // 해결: 사용하지 않는 setter와 변수 정리 (lint error 대응)
   const [isReseting] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
+  const { getViewport } = useReactFlow();
+  const setStoreViewport = useVisualizationStore((state) => state.setViewport);
+
+  const {
+    selectedNodeId,
+    highlightNodeIds,
+    setSelectedNodeId,
+    setSelectedFilePath,
+  } = useVisualizationStore();
+  const { toggleHighlight } = useNodeHighlight(setNodes);
 
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => ({
         ...node,
         selected: node.id === selectedNodeId,
+        data: {
+          ...node.data,
+          highlightClass: highlightNodeIds.includes(node.id)
+            ? "highlight-fixed"
+            : "",
+        },
       })),
     );
-  }, [selectedNodeId, setNodes]);
+  }, [selectedNodeId, setNodes, highlightNodeIds]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<BaseNodeData>) => {
+      setSelectedNodeId(node.id);
       onNodeClick(convertToNodeData(node));
 
-      if (node.data.diagramType === "STEP1") {
-        if (node.data.relatedFolders && node.data.relatedFolders.length > 0) {
-          toggleHighlight(node.id, [node.id, ...node.data.relatedFolders]);
-        } else {
-          resetHighlights();
+      if (node.data.nodeType === "FILE") {
+        if (node.data.path) {
+          setSelectedFilePath(node.data.path);
         }
+        router.push(`/result/${projectId}/${analysisId}/code`);
+        return;
+      }
+
+      if (node.data.diagramType === "STEP1") {
+        const targets = node.data.relatedFolders
+          ? [node.id, ...node.data.relatedFolders]
+          : [];
+        toggleHighlight(node.id, targets);
       }
     },
-    [onNodeClick, toggleHighlight, resetHighlights],
+    [
+      onNodeClick,
+      toggleHighlight,
+      router,
+      setSelectedNodeId,
+      setSelectedFilePath,
+      projectId,
+      analysisId,
+    ],
   );
 
   const handlePaneClick = useCallback(() => {
+    setSelectedNodeId(null);
     if (onPaneClick) {
       onPaneClick();
     }
-  }, [onPaneClick]);
+  }, [setSelectedNodeId, onPaneClick]);
+
+  const handleMoveEnd = useCallback(() => {
+    const currentViewport = getViewport();
+    setStoreViewport(currentViewport);
+  }, [getViewport, setStoreViewport]);
 
   return (
     <div className="relative h-full w-full">
@@ -90,16 +133,21 @@ export default function VisualizationView({
         onNodesChange={onNodesChange}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
+        onMoveEnd={handleMoveEnd}
         onInit={(instance) => {
-          // 해결: isInitialized() 호출이 아닌 setIsInitialized(true)로 상태 업데이트
           setIsInitialized(true);
-          const step1Group = nodes.find((n) => n.id === "group-STEP1");
-          if (step1Group) {
-            instance.setViewport({
-              x: -step1Group.position.x + 50,
-              y: -step1Group.position.y + 150,
-              zoom: 0.6,
-            });
+          const state = useVisualizationStore.getState();
+          if (state.viewport) {
+            instance.setViewport(state.viewport);
+          } else {
+            const step1Group = nodes.find((n) => n.id === "group-STEP1");
+            if (step1Group) {
+              instance.setViewport({
+                x: -step1Group.position.x + 50,
+                y: -step1Group.position.y + 150,
+                zoom: 0.5,
+              });
+            }
           }
         }}
         nodesConnectable={false}
@@ -127,6 +175,7 @@ export default function VisualizationView({
       <button
         disabled={isReseting || !isInitialized}
         title="초기화"
+        // onClick={handleReset}
         className="absolute top-4 right-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Image src={resetIcon} alt="초기화" width={32} height={32} />
