@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
 import { ConfigService } from '@nestjs/config';
 import { AiClientRequest } from '../types/ai.types';
@@ -10,8 +10,12 @@ import { AiClientRequest } from '../types/ai.types';
 
 @Injectable()
 export class GeminiClient {
+  private readonly logger = new Logger(GeminiClient.name);
   private readonly ai: GoogleGenAI;
   private readonly modelName: string;
+  private readonly maxRetries: number;
+  private readonly baseDelay: number;
+  private readonly retryableStatusCodes: number[];
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
@@ -20,6 +24,10 @@ export class GeminiClient {
 
     this.modelName =
       this.configService.get<string>('GEMINI_MODEL_NAME') || 'gemini-2.5-flash';
+    this.maxRetries = this.configService.get<number>('GEMINI_MAX_RETRIES') || 5;
+    this.baseDelay =
+      this.configService.get<number>('GEMINI_BASE_DELAY') || 1000;
+    this.retryableStatusCodes = [429, 500, 502, 503, 504];
     this.ai = new GoogleGenAI({ apiKey });
   }
 
@@ -27,21 +35,83 @@ export class GeminiClient {
     input: AiClientRequest,
   ): Promise<GenerateContentResponse> {
     const { userPrompt, systemPrompt } = input;
-    const response = await this.ai.models.generateContent({
-      model: this.modelName,
-      contents: userPrompt,
-      config: {
-        systemInstruction: systemPrompt,
-        // thinkingConfig: {
-        //   thinkingBudget: 0, // Turn thinking OFF
-        //   // thinkingBudget: 1024 // Turn thinking ON with specific token budget
-        // },
-        // temperature: 0.2,
-        // maxOutputTokens: 512,
-        // topK: 40,
-        // topP: 0.8,
-      },
-    });
-    return response;
+
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        const response = await this.ai.models.generateContent({
+          model: this.modelName,
+          contents: userPrompt,
+          config: {
+            systemInstruction: systemPrompt,
+            // thinkingConfig: {
+            //   thinkingBudget: 0, // Turn thinking OFF
+            //   // thinkingBudget: 1024 // Turn thinking ON with specific token budget
+            // },
+            // temperature: 0.2,
+            // maxOutputTokens: 512,
+            // topK: 40,
+            // topP: 0.8,
+          },
+        });
+
+        // 성공하면 응답 반환
+        if (attempt > 0) {
+          this.logger.log(`Gemini API 호출 성공 (${attempt + 1}번째 시도)`);
+        }
+        return response;
+      } catch (error: any) {
+        const isLastAttempt = attempt === this.maxRetries;
+        const shouldRetry = this.shouldRetry(error);
+
+        if (isLastAttempt || !shouldRetry) {
+          this.logger.error(
+            `Gemini API 호출 실패 (최종 실패, ${attempt + 1}/${this.maxRetries + 1}번째 시도)`,
+            error?.message || error,
+          );
+          throw error;
+        }
+
+        const delay = this.calculateDelay(attempt);
+        this.logger.warn(
+          `Gemini API 호출 실패, ${delay}ms 후 재시도 (${attempt + 1}/${this.maxRetries + 1}번째 시도): ${error?.message || error}`,
+        );
+
+        await this.sleep(delay);
+      }
+    }
+
+    throw new Error('모든 재시도 실패');
+  }
+
+  private shouldRetry(error: any): boolean {
+    // HTTP 상태 코드 확인
+    if (error?.status && this.retryableStatusCodes.includes(error.status)) {
+      return true;
+    }
+
+    // 네트워크 에러나 타임아웃 등
+    if (
+      error?.code === 'ECONNRESET' ||
+      error?.code === 'ETIMEDOUT' ||
+      error?.code === 'ENOTFOUND' ||
+      error?.message?.includes('timeout') ||
+      error?.message?.includes('network') ||
+      error?.message?.includes('connection')
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private calculateDelay(attempt: number): number {
+    // Exponential backoff with jitter
+    const exponentialDelay = this.baseDelay * Math.pow(2, attempt);
+    const jitter = Math.random() * this.baseDelay;
+    return Math.min(exponentialDelay + jitter, 30000); // 최대 30초
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
