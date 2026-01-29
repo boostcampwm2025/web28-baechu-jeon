@@ -31,8 +31,7 @@ export const buildStep3Prompts = ({ analysisResult, project }: Step3Input) => {
       "frontend": ["기술 스택"],
       "backend": ["기술 스택"],
       "infrastructure": ["기술 스택"],
-      "database": ["기술 스택"],
-      "extra": ["기술 스택"]
+      "database": ["기술 스택"]
     },
     "evidence": ["근거 1 (README)", "근거 2 (구조적 특징)"],
     "confidence": "low" | "medium" | "high"
