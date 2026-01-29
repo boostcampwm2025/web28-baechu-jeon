@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/database/prisma.service';
-import { AnalysisResult, Prisma, EdgeType, Type } from '@prisma/client';
+import { AnalysisResult, Prisma, EdgeType, NodeType } from '@prisma/client';
 import { GraphBuilderService } from './graph-builder/graph-builder.service';
 import { GraphBuildResult } from './graph-builder/types/graph-builder.type';
 
@@ -50,7 +50,7 @@ export class VisualizationsService {
     // node, edge row 만들고
     const step2NodeMap = new Map<
       string | number,
-      { id: bigint; type: Type | null }
+      { id: bigint; type: NodeType | null }
     >();
 
     // step2- 폴더 가설
@@ -84,7 +84,7 @@ export class VisualizationsService {
 
       // FOLDER -> FILE 관계면 DASHED, 아니면 SOLID
       const edgeType =
-        sourceNode.type === Type.FOLDER && targetNode.type === Type.FILE
+        sourceNode.type === NodeType.FOLDER && targetNode.type === NodeType.FILE
           ? EdgeType.DASHED
           : EdgeType.SOLID;
 
@@ -126,13 +126,13 @@ export class VisualizationsService {
                   y: 0,
                   label: segmentLabel,
                   contents: folderPath,
-                  type: Type.FOLDER,
+                  type: NodeType.FOLDER,
                 },
               });
 
               step2NodeMap.set(folderPath, {
                 id: created.id,
-                type: Type.FOLDER,
+                type: NodeType.FOLDER,
               });
               console.log(
                 `✅ Step2 Node 추가 생성: ${folderPath} -> ${created.id}`,
