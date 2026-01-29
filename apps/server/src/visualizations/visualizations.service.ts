@@ -64,6 +64,7 @@ export class VisualizationsService {
           label: node.label,
           contents: node.contents,
           type: node.type || null,
+          path: node.path,
         },
       });
       step2NodeMap.set(node.path, {

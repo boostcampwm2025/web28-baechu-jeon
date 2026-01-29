@@ -29,6 +29,7 @@ model Node {
   relatedPaths    String[] @default([]) @map("related_paths")
   type            NodeType?
   groups          NodeGroup?
+  path            String? @db.VarChar
 
   visualization Visualization @relation(fields: [visualizationId], references: [id], onDelete: Cascade)
 
