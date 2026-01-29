@@ -25,7 +25,7 @@ export interface Step3Analysis {
 
 export interface Step2Analysis {
   responsibility_hypotheses: Array<{
-    folder_path: string;
+    path: string;
     hypothesis: string;
     evidence: string;
     confidence: 'low' | 'medium' | 'high';
@@ -47,7 +47,6 @@ export type NodeInput = {
   relatedPaths?: string[];
   type?: 'FOLDER' | 'FILE';
   groups?: 'FE' | 'BE' | 'INFRA' | 'DB' | 'EXTRA';
-  relatedFolders?: string[];
 };
 
 export type NodeTemp = {
@@ -57,7 +56,6 @@ export type NodeTemp = {
   relatedNodeIds?: string[];
   relatedPaths?: string[];
   type?: 'FOLDER' | 'FILE';
-  relatedFolders?: string[];
 };
 
 export type GraphBuildResult = {
