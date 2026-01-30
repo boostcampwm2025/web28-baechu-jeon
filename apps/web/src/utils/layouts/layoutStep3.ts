@@ -3,7 +3,7 @@ import { ApiNode } from "@/api/visualization";
 import { BaseNodeData, LAYOUT_SETTINGS } from "./layoutSettings";
 import { calculateTextDimensions, createReactFlowNode } from "./layoutUtils";
 
-const FIXED_CATEGORIES = ["FE", "BE", "INFRA", "DB"];
+const FIXED_CATEGORIES = ["FE", "BE", "DB", "INFRA"];
 
 export function layoutStep3(
   apiNodes: ApiNode[],
