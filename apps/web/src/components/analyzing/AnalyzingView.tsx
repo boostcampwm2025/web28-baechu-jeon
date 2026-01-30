@@ -83,7 +83,9 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
               setCompletedSteps(totalSteps);
               setEstimatedTime(0);
               eventSource?.close();
-              router.replace(`/result/${projectId}/${result.analysisId}`);
+              router.replace(
+                `/result/${projectId}/${result.analysisId}/visualization`,
+              );
             } else if (data.type === "failed") {
               setCurrentStep("분석 실패");
               setError(data.reason || "분석 중 오류가 발생했습니다.");

@@ -19,7 +19,8 @@ export default function BaseNode({
 
   const baseStyle: React.CSSProperties = {
     width: `${width}px`,
-    height: `${height}px`,
+    minHeight: `${height}px`,
+    height: "auto",
     borderColor: isHighlighted ? undefined : theme.borderColor,
     backgroundColor: isHighlighted ? undefined : theme.bgColor,
     color: theme.textColor,
@@ -33,10 +34,9 @@ export default function BaseNode({
     baseStyle.borderWidth = "4px";
     baseStyle.boxShadow = `0 0 25px ${theme.borderColor}`;
     baseStyle.fontWeight = "bold";
-    baseStyle.zIndex = 50;
   }
 
-  let containerClasses = `flex flex-col items-center justify-center rounded-xl px-6 py-4 shadow-lg`;
+  let containerClasses = `flex flex-col items-center justify-center rounded-xl shadow-lg`;
   if (highlightClass) containerClasses += ` ${highlightClass}`;
 
   const hiddenHandleStyle: React.CSSProperties = {
@@ -51,7 +51,7 @@ export default function BaseNode({
         position={Position.Left}
         style={hiddenHandleStyle}
       />
-      <div className="flex h-full w-full items-center justify-center overflow-hidden p-2 text-center">
+      <div className="flex w-full flex-1 items-center justify-center p-4 text-center">
         <span
           style={{
             color: theme.textColor,
@@ -60,6 +60,8 @@ export default function BaseNode({
             fontSize: getFontSize(),
             fontWeight: diagramType === "STEP1" ? 800 : 600,
             whiteSpace: "pre-wrap",
+            display: "block",
+            width: "100%",
           }}
         >
           {label}

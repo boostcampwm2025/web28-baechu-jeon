@@ -14,13 +14,13 @@ export function layoutStep1(
   // 1. 텍스트 길이에 맞춰 박스 크기 계산
   let calculatedMaxWidth = maxWidth;
   let calculatedMaxHeight = maxHeight;
-
   apiNodes.forEach((node) => {
-    const dims = calculateTextDimensions(node.label);
-    calculatedMaxWidth = Math.max(calculatedMaxWidth, dims.width + 50);
+    // 글자 수에 따라 타겟 너비를 먼저 결정
+    const targetW = Math.max(600, Math.min(node.label.length * 15, 800));
+    const dims = calculateTextDimensions(node.label, targetW, 24);
+    calculatedMaxWidth = Math.max(calculatedMaxWidth, dims.width);
     calculatedMaxHeight = Math.max(calculatedMaxHeight, dims.height);
   });
-
   const NODE_W = calculatedMaxWidth;
   const NODE_H = calculatedMaxHeight;
 
