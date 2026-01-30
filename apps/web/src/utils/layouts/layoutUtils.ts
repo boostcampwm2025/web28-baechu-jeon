@@ -29,25 +29,25 @@ export function createReactFlowNode(
   };
 }
 
-export function getFolderName(path: string): string {
-  if (!path) return "";
-  const parts = path.split("/");
-  return parts[parts.length - 1];
-}
-
-export function calculateTextDimensions(text: string) {
-  let totalWidth = 0;
+export function calculateTextDimensions(
+  text: string,
+  targetWidth: number = 300,
+  fontSize: number = 20,
+) {
+  let estimatedTotalLength = 0;
   for (const char of text) {
-    if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(char)) {
-      totalWidth += 11;
-    } else {
-      totalWidth += 7;
-    }
+    estimatedTotalLength += /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(char)
+      ? fontSize
+      : fontSize * 0.7; // 영문 비율 조정
   }
-  const width = Math.max(600, Math.min(totalWidth + 120, 900));
-  const charsPerLine = Math.floor(width / 10);
-  const lines = Math.ceil(text.length / charsPerLine);
-  const height = Math.max(100, lines * 35 + 30);
 
-  return { width, height };
+  const availableWidth = targetWidth - 50;
+  const lines = Math.ceil(estimatedTotalLength / availableWidth);
+
+  const lineHeight = fontSize * 1.6;
+  const verticalPadding = 70;
+
+  const height = Math.max(90, lines * lineHeight + verticalPadding);
+
+  return { width: targetWidth, height };
 }
