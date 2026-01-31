@@ -23,6 +23,7 @@ import { NodeData } from "@/types/visualization";
 import { useNodeHighlight } from "@/hooks/useNodeHighlight";
 import { convertToNodeData } from "@/utils/nodeHelpers";
 import { useExplorerStore } from "@/stores/useExplorerStore";
+import { maybeDecode } from "@/utils/url";
 
 const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
@@ -83,11 +84,10 @@ export default function VisualizationView({
 
       if (node.data.type === "FILE") {
         if (node.data.path) {
-          setSelectedFilePath(node.data.path);
-        }
-        if (node.data.path) {
+          const decoded = maybeDecode(node.data.path) ?? node.data.path;
+          setSelectedFilePath(decoded);
           router.push(
-            `/result/${projectId}/${analysisId}/code?filePath=${encodeURIComponent(node.data.path)}`,
+            `/result/${projectId}/${analysisId}/code?filePath=${encodeURIComponent(decoded)}`,
           );
         } else {
           router.push(`/result/${projectId}/${analysisId}/code`);

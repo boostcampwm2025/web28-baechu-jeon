@@ -1,5 +1,6 @@
 import CodeView from "@/components/result/code/CodeView";
 import { getCode } from "@/api/code";
+import { maybeDecode } from "@/utils/url";
 
 interface Props {
   params: { projectId: string; analysisId: string };
@@ -7,7 +8,8 @@ interface Props {
 }
 
 export default async function CodePage({ params, searchParams }: Props) {
-  const filePath = searchParams?.filePath;
+  const rawFilePath = searchParams?.filePath;
+  const filePath = rawFilePath ? maybeDecode(rawFilePath) : undefined;
   let initialContent: string | undefined = undefined;
 
   if (filePath) {

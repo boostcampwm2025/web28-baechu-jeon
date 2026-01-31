@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
+import { maybeDecode } from "@/utils/url";
 
 export default function ResultTabs() {
   const params = useParams();
@@ -15,7 +16,7 @@ export default function ResultTabs() {
 
   const selectedFilePath = useVisualizationStore((s) => s.selectedFilePath);
   const codeHref = selectedFilePath
-    ? `${basePath}/code?filePath=${encodeURIComponent(selectedFilePath)}`
+    ? `${basePath}/code?filePath=${encodeURIComponent(maybeDecode(selectedFilePath) ?? selectedFilePath)}`
     : `${basePath}/code`;
 
   const tabs = [

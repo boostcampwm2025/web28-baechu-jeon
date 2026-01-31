@@ -6,6 +6,7 @@ import { HiFolder, HiDocument, HiOutlineChevronRight } from "react-icons/hi";
 import { FileNode } from "@/utils/pathTree";
 import { useExplorerStore } from "@/stores/useExplorerStore";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
+import { maybeDecode } from "@/utils/url";
 
 interface FileItemProps {
   node: FileNode;
@@ -68,9 +69,12 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
       timeoutRef.current = setTimeout(() => setShowTooltip(false), 2000);
       return;
     }
-    setSelectedFilePath(node.path);
+    const decoded = maybeDecode(node.path) ?? node.path;
+    setSelectedFilePath(decoded);
     router.push(
-      `/result/${params.projectId}/${params.analysisId}/code?filePath=${encodeURIComponent(node.path)}`,
+      `/result/${params.projectId}/${params.analysisId}/code?filePath=${encodeURIComponent(
+        decoded,
+      )}`,
     );
   };
 

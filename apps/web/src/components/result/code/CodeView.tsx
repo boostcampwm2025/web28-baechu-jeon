@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
 import { getCode } from "@/api/code";
+import { maybeDecode } from "@/utils/url";
 
 type Props = {
   initialFilePath?: string | null;
@@ -24,22 +25,27 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initialFilePath && selectedFilePath !== initialFilePath) {
-      setSelectedFilePath(initialFilePath);
+    if (!initialFilePath) return;
+    const decodedInitial = maybeDecode(initialFilePath) ?? initialFilePath;
+    if (selectedFilePath !== decodedInitial) {
+      setSelectedFilePath(decodedInitial);
     }
   }, [initialFilePath, selectedFilePath, setSelectedFilePath]);
 
   useEffect(() => {
-    const file = selectedFilePath ?? initialFilePath;
+    const initialNormalized = initialFilePath
+      ? maybeDecode(initialFilePath)
+      : undefined;
+    const file = selectedFilePath ?? initialNormalized ?? initialFilePath;
     if (!file || !params.analysisId) return;
 
     // 서버에서 이미 받아온 내용이면 재요청하지 않음
-    if (initialContent && initialFilePath === file) return;
+    if (initialContent && initialNormalized === file) return;
 
     const controller = new AbortController();
     setLoading(true);
     setError(null);
-    // 일시적 네트워크/서버 오류로 인해 서버에서 못 받아온 겨웅 사용자 경험 개선을 위한 1회 재시도
+    // 일시적 네트워크/서버 오류로 인해 서버에서 못 받아온 경우 사용자 경험 개선을 위한 1회 재시도
     getCode(params.analysisId, file, controller.signal)
       .then((res) => setContent(res.markdownContent))
       .catch((err) => {
