@@ -1,5 +1,5 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { AnalysesService } from '../events/analyses.service';
+import { AnalysesService } from '../analyses.service';
 import { Job } from 'bullmq';
 
 @Processor('analyses', { concurrency: 15 })

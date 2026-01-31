@@ -1,14 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
-import { PipelineRunner } from '../pipeline/pipeline.runner.js';
-import { PipelineContext } from '../pipeline/pipeline.context.js';
+import { PipelineRunner } from './pipeline/pipeline.runner.js';
+import { PipelineContext } from './pipeline/pipeline.context.js';
 import {
   analysisResultsKey,
   analysisStatusKey,
-} from '../infra/analysis.redis.js';
+} from './infra/analysis.redis.js';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { Step3CodeSummaryResult } from '../../ai/types/ai.types.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { Step3CodeSummaryResult } from '../ai/types/ai.types.js';
 
 // TODO: 최종 결과를 DB(Prisma)에 저장하기
 // TODO: retry 로직 검토 및 추가
@@ -58,8 +58,14 @@ export class AnalysesService {
           cachedResults['STEP2_HYPOTHESIS'] &&
           cachedResults['STEP3_INTENT']
         ) {
-          const step2 = JSON.parse(cachedResults['STEP2_HYPOTHESIS']) as Record<string, unknown>;
-          const step3 = JSON.parse(cachedResults['STEP3_INTENT']) as Record<string, unknown>;
+          const step2 = JSON.parse(cachedResults['STEP2_HYPOTHESIS']) as Record<
+            string,
+            unknown
+          >;
+          const step3 = JSON.parse(cachedResults['STEP3_INTENT']) as Record<
+            string,
+            unknown
+          >;
           context.step2 = { ...step2, ...step3 };
           this.logger.log(`[${analysisId}] Step 2 결과 복구 완료 (이전 형식)`);
         }

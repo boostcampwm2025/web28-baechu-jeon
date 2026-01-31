@@ -6,7 +6,7 @@ import {
   AnalysisEvent,
   AnalysisFailedPayload,
   AnalysisStepEventPayload,
-} from '../analysis.events';
+} from './analysis.events.js';
 import {
   analysisResultsKey,
   analysisStatusKey,

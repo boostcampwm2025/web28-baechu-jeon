@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { GeminiService } from 'src/ai/gemini/gemini.service';
 import { PipelineContext } from './pipeline.context';
 import { AnalysisEmitter } from '../events/analysis.emitter';
-import { AnalysisStep } from '../analysis.events';
+import { AnalysisStep } from '../events/analysis.events';
 import { ProjectsService } from 'src/projects/projects.service';
 import { Step1Result } from 'src/ai/types/ai.types';
 
@@ -72,7 +72,10 @@ export class PipelineRunner {
 
       // STEP 2 (가설 + 의도·스토리 통합)
       const step2Merged = context.step2 as Record<string, unknown> | undefined;
-      if (step2Merged?.project_intent != null || step2Merged?.user_stories != null) {
+      if (
+        step2Merged?.project_intent != null ||
+        step2Merged?.user_stories != null
+      ) {
         this.logger.log(
           `[${analysisId}] Step 2 (가설+의도) 이미 완료됨. 스킵.`,
         );
