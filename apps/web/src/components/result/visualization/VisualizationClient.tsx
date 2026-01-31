@@ -193,6 +193,24 @@ export default function VisualizationClient({
   return (
     <ReactFlowProvider>
       <div className="bg-page relative h-full w-full overflow-hidden">
+        {/* 모바일/작은 화면 경고 메시지 */}
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm md:hidden">
+          <div className="mx-4 max-w-md rounded-lg bg-surface p-8 text-center shadow-2xl">
+            <div className="mb-4 text-5xl">💻</div>
+            <h2 className="text-heading mb-3 text-xl font-bold">
+              데스크톱 환경 권장
+            </h2>
+            <p className="text-body mb-2 text-sm leading-relaxed">
+              이 서비스는 <strong>데스크톱 환경</strong>에 최적화되어
+              있습니다.
+            </p>
+            <p className="text-muted text-xs">
+              더 나은 사용 경험을 위해 PC 또는 태블릿의 가로 모드를
+              이용해주세요.
+            </p>
+          </div>
+        </div>
+
         <VisualizationView
           initialNodes={nodes}
           initialEdges={edges}
