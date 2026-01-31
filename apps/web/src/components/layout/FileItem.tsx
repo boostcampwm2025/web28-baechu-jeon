@@ -81,10 +81,10 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
           title={node.path}
           className={`group flex items-center gap-1 px-2 py-1 pr-4 text-sm transition-colors select-none ${
             isHighlighted
-              ? "cursor-pointer rounded-sm bg-amber-50 font-semibold text-amber-700"
+              ? "cursor-pointer rounded-sm bg-amber-500/15 font-semibold text-amber-400"
               : isFolder
-                ? "cursor-pointer font-medium text-slate-700 hover:bg-slate-100"
-                : "cursor-default text-slate-600 hover:bg-slate-50"
+                ? "cursor-pointer font-medium text-body hover:bg-hover"
+                : "cursor-default text-subtle hover:bg-hover/50"
           } `}
           style={{ paddingLeft: `${depth * 10 + 5}px` }}
         >
@@ -94,7 +94,7 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
             }`}
           >
             {isFolder && (
-              <HiOutlineChevronRight className="h-3 w-3 text-slate-400" />
+              <HiOutlineChevronRight className="h-3 w-3 text-muted" />
             )}
           </span>
 
@@ -114,7 +114,7 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
         </div>
 
         {showTooltip && (
-          <div className="absolute -top-8 left-1/2 z-50 -translate-x-1/2 rounded bg-slate-700 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg">
+          <div className="absolute -top-8 left-1/2 z-50 -translate-x-1/2 rounded bg-hover px-2 py-1 text-xs whitespace-nowrap text-heading shadow-lg">
             코드 요약을 제공하지 않는 파일입니다
           </div>
         )}

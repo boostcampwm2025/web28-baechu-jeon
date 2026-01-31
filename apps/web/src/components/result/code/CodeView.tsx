@@ -35,7 +35,7 @@ export default function CodeView() {
 
   if (!selectedFilePath) {
     return (
-      <div className="flex h-full items-center justify-center text-slate-400">
+      <div className="flex h-full items-center justify-center text-muted">
         왼쪽 파일 탐색기에서 파일을 선택하세요.
       </div>
     );
@@ -43,14 +43,14 @@ export default function CodeView() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex shrink-0 items-center border-b border-slate-200 bg-slate-50 px-4 py-2">
-        <span className="text-sm font-medium text-slate-700">
+      <div className="flex shrink-0 items-center border-b border-line bg-surface px-4 py-2">
+        <span className="text-sm font-medium text-body">
           {selectedFilePath}
         </span>
       </div>
 
       {loading && (
-        <div className="flex flex-1 items-center justify-center text-slate-400">
+        <div className="flex flex-1 items-center justify-center text-muted">
           불러오는 중...
         </div>
       )}

@@ -82,7 +82,7 @@ export default function VisualizationClient({
 
   return (
     <ReactFlowProvider>
-      <div className="relative h-full w-full overflow-hidden bg-slate-900">
+      <div className="relative h-full w-full overflow-hidden bg-page">
         <VisualizationView
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}

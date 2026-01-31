@@ -6,6 +6,7 @@ import { useParams, usePathname } from "next/navigation";
 export default function ResultTabs() {
   const params = useParams();
   const pathname = usePathname();
+
   const projectId = params?.projectId;
   const analysisId = params?.analysisId;
 
@@ -21,7 +22,7 @@ export default function ResultTabs() {
   ];
 
   return (
-    <nav className="flex items-center gap-1 rounded-lg border-2 border-sky-100 bg-sky-50 p-1 shadow-sm">
+    <nav className="flex items-center gap-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-hover)] p-1 shadow-sm">
       {tabs.map((tab) => (
         <TabLink
           key={tab.id}
@@ -43,17 +44,24 @@ function TabLink({
   label: string;
   isActive: boolean;
 }) {
-  const baseStyles =
-    "rounded-lg px-5 py-1.5 text-sm font-semibold transition-all";
-  const activeStyles = "border border-sky-200 bg-white text-sky-500 shadow-sm";
-  const inactiveStyles =
-    "text-slate-500 hover:bg-slate-50 hover:text-slate-900";
+  const base = "rounded-lg px-5 py-1.5 text-sm font-semibold transition-colors";
+
+  const active = `
+      bg-[var(--color-surface)]
+      text-[var(--color-accent)]
+      border
+      border-[var(--color-line)]
+      shadow-sm
+    `;
+
+  const inactive = `
+      text-[var(--color-muted)]
+      hover:bg-[var(--color-hover)]
+      hover:text-[var(--color-heading)]
+    `;
 
   return (
-    <Link
-      href={href}
-      className={`${baseStyles} ${isActive ? activeStyles : inactiveStyles}`}
-    >
+    <Link href={href} className={`${base} ${isActive ? active : inactive}`}>
       {label}
     </Link>
   );

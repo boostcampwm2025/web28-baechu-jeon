@@ -19,10 +19,10 @@ export default function ActionButtons({
       {!isNodeOpen && (
         <button
           onClick={onFolderDetails}
-          className={`flex cursor-pointer items-center justify-center rounded-lg border border-slate-700 p-3 shadow-lg transition-all hover:bg-slate-700 hover:text-white ${
+          className={`flex cursor-pointer items-center justify-center rounded-lg border border-line p-3 shadow-lg transition-all hover:bg-hover hover:text-heading ${
             isNodeOpen
-              ? "bg-slate-600 text-white"
-              : "bg-slate-800 text-slate-400"
+              ? "bg-hover text-heading"
+              : "bg-surface text-subtle"
           }`}
           title="폴더 상세 정보 보기"
         >
@@ -33,7 +33,7 @@ export default function ActionButtons({
       {!isProjectOpen && (
         <button
           onClick={onProjectDetails}
-          className="flex cursor-pointer items-center justify-center rounded-lg border border-slate-700 bg-slate-800 p-3 text-slate-400 shadow-lg transition-all hover:bg-slate-700 hover:text-white"
+          className="flex cursor-pointer items-center justify-center rounded-lg border border-line bg-surface p-3 text-subtle shadow-lg transition-all hover:bg-hover hover:text-heading"
           title="프로젝트 상세 열기"
         >
           <HiOutlineDocumentText size={24} />

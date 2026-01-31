@@ -129,26 +129,26 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
   };
 
   return (
-    <div className="flex h-full flex-col items-center justify-center bg-gray-50">
+    <div className="flex h-full flex-col items-center justify-center bg-page">
       <div className="w-full max-w-2xl px-6">
         {/* 제목 영역 */}
         <div className="mb-8 text-center">
-          <h1 className="mb-2 text-3xl font-bold text-gray-900">
+          <h1 className="mb-2 text-3xl font-bold text-heading">
             AI 분석 중...
           </h1>
-          <p className="text-gray-600">프로젝트 구조를 분석하고 있습니다.</p>
+          <p className="text-subtle">프로젝트 구조를 분석하고 있습니다.</p>
         </div>
 
         {/* 프로그레스 바 영역 */}
-        <div className="rounded-lg bg-white p-8 shadow-md">
+        <div className="rounded-lg bg-surface p-8 shadow-md">
           {/* 현재 분석 단계 표시 */}
-          <p className="mb-4 text-center text-sm font-medium text-gray-700">
+          <p className="mb-4 text-center text-sm font-medium text-body">
             {currentStep}
           </p>
 
           {/* 에러 표시 */}
           {error && (
-            <div className="mb-4 rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">
+            <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-center text-sm text-red-400">
               {error}
             </div>
           )}
@@ -157,9 +157,9 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
           <ProgressBar />
 
           {/* 단계 완료 및 예상 소요 시간 표시 */}
-          <div className="mt-3 flex flex-col items-center gap-1 text-xs text-gray-500">
+          <div className="mt-3 flex flex-col items-center gap-1 text-xs text-muted">
             {completedSteps > 0 && (
-              <span className="font-medium text-gray-700">
+              <span className="font-medium text-body">
                 {completedSteps}/{totalSteps} 단계 완료
               </span>
             )}

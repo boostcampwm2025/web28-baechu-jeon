@@ -2,17 +2,17 @@ import Uploader from "@/components/upload/Uploader";
 
 export default function Home() {
   return (
-    <main className="bg-sky-50">
+    <main className="bg-page">
       <section className="mx-auto max-w-5xl px-6 pt-24 pb-20 text-center">
-        <h2 className="mb-6 text-5xl leading-tight font-black text-slate-900 md:text-6xl">
+        <h2 className="mb-6 text-5xl leading-tight font-black text-heading md:text-6xl">
           프로젝트 구조를
           <br />
-          <span className="bg-linear-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-accent-dim to-primary bg-clip-text text-transparent">
             한눈에 파악하세요
           </span>
         </h2>
 
-        <p className="mx-auto max-w-2xl text-lg leading-relaxed font-medium text-slate-500 md:text-xl">
+        <p className="mx-auto max-w-2xl text-lg leading-relaxed font-medium text-muted md:text-xl">
           복잡한 구조를 시각화하여 더 빠르고 정확하게 이해합니다.
         </p>
       </section>
@@ -20,12 +20,12 @@ export default function Home() {
       <Uploader />
 
       <section className="mx-auto max-w-5xl px-6 pb-24">
-        <div className="relative overflow-hidden rounded-3xl border border-sky-100 bg-white p-12 shadow-sm md:p-16">
-          <div className="absolute top-0 left-0 h-2 w-full bg-linear-to-r from-sky-500/30 via-sky-500 to-sky-500/30"></div>
+        <div className="relative overflow-hidden rounded-3xl border border-line bg-surface p-12 shadow-sm md:p-16">
+          <div className="absolute top-0 left-0 h-2 w-full bg-linear-to-r from-accent/30 via-accent to-accent/30"></div>
 
           <div className="mb-12 text-center">
-            <h3 className="mb-4 text-3xl font-bold">서비스 이용 가이드</h3>
-            <p className="text-lg text-slate-500">
+            <h3 className="mb-4 text-3xl font-bold text-heading">서비스 이용 가이드</h3>
+            <p className="text-lg text-muted">
               누구나 쉽게 프로젝트 구조를 시각화할 수 있습니다.
             </p>
           </div>
@@ -70,7 +70,7 @@ function StepCard({
 }) {
   return (
     <div className="group flex flex-col items-center text-center">
-      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-sky-500 shadow-sm transition-transform group-hover:scale-110">
+      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-page text-accent shadow-sm transition-transform group-hover:scale-110">
         <svg
           className="h-8 w-8"
           fill="none"
@@ -85,15 +85,15 @@ function StepCard({
           />
         </svg>
       </div>
-      <h4 className="mb-3 text-lg font-bold text-slate-800">{title}</h4>
-      <p className="px-4 text-sm leading-relaxed text-slate-500">{desc}</p>
+      <h4 className="mb-3 text-lg font-bold text-heading">{title}</h4>
+      <p className="px-4 text-sm leading-relaxed text-muted">{desc}</p>
     </div>
   );
 }
 
 function ArrowIcon({ className }: { className?: string }) {
   return (
-    <div className={`hidden text-sky-200 md:block ${className}`}>
+    <div className={`hidden text-accent/30 md:block ${className}`}>
       <svg
         className="h-10 w-10"
         fill="none"

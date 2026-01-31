@@ -68,7 +68,7 @@ export default function LayoutClient({
   return (
     <div className="no-scrollbar relative flex h-full w-full overflow-hidden">
       <aside
-        className={`relative border-r border-slate-200 bg-gray-50 ${
+        className={`relative border-r border-line bg-surface ${
           isDragging
             ? ""
             : "transition-all duration-300 ease-in-out"
@@ -86,11 +86,11 @@ export default function LayoutClient({
 
         <div
           onMouseDown={handleMouseDown}
-          className="absolute top-0 -right-1 z-10 h-full w-2.5 cursor-col-resize transition-colors hover:bg-slate-300 active:bg-slate-400"
+          className="absolute top-0 -right-1 z-10 h-full w-2.5 cursor-col-resize transition-colors hover:bg-hover active:bg-subtle"
         />
       </aside>
 
-      <section className="relative flex min-w-0 flex-1 flex-col bg-white">
+      <section className="relative flex min-w-0 flex-1 flex-col bg-page">
         <div
           className={`absolute top-4 left-4 z-20 transition-opacity duration-200 ${
             !isExplorerOpen
@@ -100,7 +100,7 @@ export default function LayoutClient({
         >
           <button
             onClick={() => setIsExplorerOpen(true)}
-            className="cursor-pointer rounded-md border border-slate-200 bg-white p-2 text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-700"
+            className="cursor-pointer rounded-md border border-line bg-surface p-2 text-muted shadow-sm hover:bg-hover hover:text-body"
           >
             <HiFolderOpen className="h-5 w-5" />
           </button>
