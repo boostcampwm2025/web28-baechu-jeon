@@ -48,7 +48,7 @@ export default function LayoutClient({
       setSidebarWidth((prev) => {
         if (prev < CLOSE_THRESHOLD) {
           setIsExplorerOpen(false);
-          return DEFAULT_WIDTH;
+          return prev; // 현재 위치에서 트랜지션으로 자연스럽게 닫힘
         }
         if (prev < MIN_WIDTH) {
           return MIN_WIDTH;
@@ -68,13 +68,17 @@ export default function LayoutClient({
   return (
     <div className="no-scrollbar relative flex h-full w-full overflow-hidden">
       <aside
-        className={`relative border-r border-line bg-surface ${
-          isDragging
-            ? ""
-            : "transition-all duration-300 ease-in-out"
-        } ${isExplorerOpen ? "translate-x-0" : "-translate-x-full opacity-0"}`}
+        className={`relative overflow-hidden border-r border-line bg-surface ${
+          isDragging ? "" : "transition-all duration-300 ease-in-out"
+        }`}
         style={{
           width: isExplorerOpen ? `${sidebarWidth}px` : 0,
+          opacity:
+            !isExplorerOpen
+              ? 0
+              : isDragging && sidebarWidth < CLOSE_THRESHOLD
+                ? Math.max(0.3, sidebarWidth / CLOSE_THRESHOLD)
+                : 1,
         }}
       >
         <div className="h-full overflow-y-auto">
@@ -99,7 +103,10 @@ export default function LayoutClient({
           }`}
         >
           <button
-            onClick={() => setIsExplorerOpen(true)}
+            onClick={() => {
+              setSidebarWidth(DEFAULT_WIDTH);
+              setIsExplorerOpen(true);
+            }}
             className="cursor-pointer rounded-md border border-line bg-surface p-2 text-muted shadow-sm hover:bg-hover hover:text-body"
           >
             <HiFolderOpen className="h-5 w-5" />

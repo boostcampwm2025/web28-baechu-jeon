@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useCallback, useEffect, useRef } from "react";
 import {
   ReactFlow,
   Background,
@@ -35,7 +34,6 @@ interface VisualizationViewProps {
   initialEdges: Edge[];
   onNodeClick: (node: NodeData) => void;
   onPaneClick?: () => void;
-  selectedNodeId?: string;
 }
 
 export default function VisualizationView({
@@ -45,14 +43,21 @@ export default function VisualizationView({
   initialEdges = [],
 }: VisualizationViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges] = useEdgesState(initialEdges);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  const router = useRouter();
-  const params = useParams();
-  const projectId = params.projectId as string;
-  const analysisId = params.analysisId as string;
+  // 데이터 도착 시 1회만 동기화 (빈 배열 → 데이터 로드 완료)
+  const hasSynced = useRef(initialNodes.length > 0);
+  useEffect(() => {
+    if (!hasSynced.current && initialNodes.length > 0) {
+      hasSynced.current = true;
+      setNodes(initialNodes);
+      setEdges(initialEdges);
+    }
+  }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
+
+  const setActiveTab = useVisualizationStore((s) => s.setActiveTab);
 
   const setHighlightedPaths = useExplorerStore((s) => s.setHighlightedPaths);
   const clearHighlightedPaths = useExplorerStore(
@@ -86,11 +91,9 @@ export default function VisualizationView({
         if (node.data.path) {
           const decoded = maybeDecode(node.data.path) ?? node.data.path;
           setSelectedFilePath(decoded);
-          router.push(
-            `/result/${projectId}/${analysisId}/code?filePath=${encodeURIComponent(decoded)}`,
-          );
+          setActiveTab("code");
         } else {
-          router.push(`/result/${projectId}/${analysisId}/code`);
+          setActiveTab("code");
         }
       }
     },
@@ -102,9 +105,7 @@ export default function VisualizationView({
       setHighlightedPaths,
       setSelectedNodeId,
       setSelectedFilePath,
-      router,
-      projectId,
-      analysisId,
+      setActiveTab,
     ],
   );
 
@@ -131,6 +132,7 @@ export default function VisualizationView({
         edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         onMoveEnd={handleMoveEnd}

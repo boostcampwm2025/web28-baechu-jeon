@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { HiFolder, HiDocument, HiOutlineChevronRight } from "react-icons/hi";
 import { FileNode } from "@/utils/pathTree";
 import { useExplorerStore } from "@/stores/useExplorerStore";
@@ -21,16 +21,36 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFolder = node.type === "folder";
 
-  const router = useRouter();
-  const params = useParams<{ projectId: string; analysisId: string }>();
+  const params = useParams<{ analysisId: string }>();
   const highlightedPaths = useExplorerStore((s) => s.highlightedPaths);
   const setSelectedFilePath = useVisualizationStore(
     (s) => s.setSelectedFilePath,
   );
+  const setActiveTab = useVisualizationStore((s) => s.setActiveTab);
+  const setCachedCode = useVisualizationStore((s) => s.setCachedCode);
 
   const isHighlighted = highlightedPaths.includes(node.path);
   const shouldExpand =
     isFolder && highlightedPaths.some((hp) => hp.startsWith(node.path + "/"));
+
+  const handleMouseEnter = useCallback(() => {
+    if (!isHighlighted || isFolder || !node.path || !params.analysisId) return;
+    const decoded = maybeDecode(node.path) ?? node.path;
+    if (
+      useVisualizationStore.getState().getCachedCode(params.analysisId, decoded)
+    )
+      return;
+
+    (async () => {
+      try {
+        const { getCode } = await import("@/api/code");
+        const result = await getCode(params.analysisId, decoded);
+        setCachedCode(params.analysisId, decoded, result.markdownContent);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [isHighlighted, isFolder, node.path, params.analysisId, setCachedCode]);
 
   useEffect(() => {
     if (shouldExpand) {
@@ -71,11 +91,8 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
     }
     const decoded = maybeDecode(node.path) ?? node.path;
     setSelectedFilePath(decoded);
-    router.push(
-      `/result/${params.projectId}/${params.analysisId}/code?filePath=${encodeURIComponent(
-        decoded,
-      )}`,
-    );
+    // URL 이동 없이 내부 탭으로 전환
+    setActiveTab("code");
   };
 
   return (
@@ -84,6 +101,7 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
         <div
           ref={itemRef}
           onClick={handleClick}
+          onMouseEnter={handleMouseEnter}
           title={node.path}
           className={`group flex items-center gap-1 px-2 py-1 pr-4 text-sm transition-colors select-none ${
             isHighlighted

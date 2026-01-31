@@ -39,13 +39,29 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
     const file = selectedFilePath ?? initialNormalized ?? initialFilePath;
     if (!file || !params.analysisId) return;
 
-    // 서버에서 이미 받아온 내용이면 재요청하지 않음
-    if (initialContent && initialNormalized === file) return;
+    // 프리패치 캐시 확인
+    const cached = useVisualizationStore
+      .getState()
+      .getCachedCode(params.analysisId, file);
+    if (cached) {
+      setContent(cached);
+      setLoading(false);
+      setError(null);
+      return;
+    }
 
+    // initialContent가 있고 현재 파일과 일치하면 사용
+    if (initialContent && initialNormalized === file) {
+      setContent(initialContent);
+      setLoading(false);
+      return;
+    }
+
+    // 네트워크에서 가져옵니다
     const controller = new AbortController();
     setLoading(true);
     setError(null);
-    // 일시적 네트워크/서버 오류로 인해 서버에서 못 받아온 경우 사용자 경험 개선을 위한 1회 재시도
+
     getCode(params.analysisId, file, controller.signal)
       .then((res) => setContent(res.markdownContent))
       .catch((err) => {
@@ -57,6 +73,20 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
 
     return () => controller.abort();
   }, [selectedFilePath, params.analysisId, initialFilePath, initialContent]);
+
+  // 첫 탭(코드) 렌더 직후 백그라운드로 시각화 데이터를 프리패치합니다
+  useEffect(() => {
+    if (!params.analysisId) return;
+    // 비동기 프리패치, 실패해도 무시
+    (async () => {
+      try {
+        const { getVisualization } = await import("@/api/visualization");
+        await getVisualization(params.analysisId);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [params.analysisId]);
 
   const fileToShow = selectedFilePath ?? initialFilePath;
 
