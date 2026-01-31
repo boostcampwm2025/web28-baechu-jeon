@@ -1,5 +1,7 @@
 import { IoClose } from "react-icons/io5";
 import { NodeData } from "@/types/visualization";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export interface NodeDetailsProps {
   node: NodeData | null;
@@ -30,7 +32,13 @@ export default function NodeDetails({
           </h3>
         </div>
         <div className="text-sm leading-relaxed text-slate-300">
-          {node.contents}
+          <div className="prose prose-invert max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {
+                node.contents.replace(/\*\*(.*?)\*\*/g, " **$1** ") // **내용** 앞뒤에 공백 추가
+              }
+            </ReactMarkdown>
+          </div>
         </div>
       </div>
     </div>
