@@ -7,21 +7,40 @@ import remarkGfm from "remark-gfm";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
 import { getCode } from "@/api/code";
 
-export default function CodeView() {
+type Props = {
+  initialFilePath?: string | null;
+  initialContent?: string | null;
+};
+
+export default function CodeView({ initialFilePath, initialContent }: Props) {
   const params = useParams<{ analysisId: string }>();
   const selectedFilePath = useVisualizationStore((s) => s.selectedFilePath);
-  const [content, setContent] = useState("");
+  const setSelectedFilePath = useVisualizationStore(
+    (s) => s.setSelectedFilePath,
+  );
+
+  const [content, setContent] = useState(initialContent ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!selectedFilePath || !params.analysisId) return;
+    if (initialFilePath && selectedFilePath !== initialFilePath) {
+      setSelectedFilePath(initialFilePath);
+    }
+  }, [initialFilePath, selectedFilePath, setSelectedFilePath]);
+
+  useEffect(() => {
+    const file = selectedFilePath ?? initialFilePath;
+    if (!file || !params.analysisId) return;
+
+    // 서버에서 이미 받아온 내용이면 재요청하지 않음
+    if (initialContent && initialFilePath === file) return;
 
     const controller = new AbortController();
     setLoading(true);
     setError(null);
-
-    getCode(params.analysisId, selectedFilePath, controller.signal)
+    // 일시적 네트워크/서버 오류로 인해 서버에서 못 받아온 겨웅 사용자 경험 개선을 위한 1회 재시도
+    getCode(params.analysisId, file, controller.signal)
       .then((res) => setContent(res.markdownContent))
       .catch((err) => {
         if (err.name !== "AbortError") {
@@ -31,11 +50,13 @@ export default function CodeView() {
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, [selectedFilePath, params.analysisId]);
+  }, [selectedFilePath, params.analysisId, initialFilePath, initialContent]);
 
-  if (!selectedFilePath) {
+  const fileToShow = selectedFilePath ?? initialFilePath;
+
+  if (!fileToShow) {
     return (
-      <div className="flex h-full items-center justify-center text-muted">
+      <div className="text-muted flex h-full items-center justify-center">
         왼쪽 파일 탐색기에서 파일을 선택하세요.
       </div>
     );
@@ -43,14 +64,12 @@ export default function CodeView() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex shrink-0 items-center border-b border-line bg-surface px-4 py-2">
-        <span className="text-sm font-medium text-body">
-          {selectedFilePath}
-        </span>
+      <div className="border-line bg-surface flex shrink-0 items-center border-b px-4 py-2">
+        <span className="text-body text-sm font-medium">{fileToShow}</span>
       </div>
 
       {loading && (
-        <div className="flex flex-1 items-center justify-center text-muted">
+        <div className="text-muted flex flex-1 items-center justify-center">
           불러오는 중...
         </div>
       )}

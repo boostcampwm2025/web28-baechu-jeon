@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   ReactFlow,
@@ -61,12 +61,7 @@ export default function VisualizationView({
   const { getViewport } = useReactFlow();
   const setStoreViewport = useVisualizationStore((state) => state.setViewport);
 
-  const {
-    selectedNodeId,
-    highlightNodeIds,
-    setSelectedNodeId,
-    setSelectedFilePath,
-  } = useVisualizationStore();
+  const { setSelectedNodeId, setSelectedFilePath } = useVisualizationStore();
 
   /**
    * 노드 클릭 핸들러
@@ -90,7 +85,13 @@ export default function VisualizationView({
         if (node.data.path) {
           setSelectedFilePath(node.data.path);
         }
-        router.push(`/result/${projectId}/${analysisId}/code`);
+        if (node.data.path) {
+          router.push(
+            `/result/${projectId}/${analysisId}/code?filePath=${encodeURIComponent(node.data.path)}`,
+          );
+        } else {
+          router.push(`/result/${projectId}/${analysisId}/code`);
+        }
       }
     },
     [

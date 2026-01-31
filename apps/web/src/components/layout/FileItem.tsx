@@ -69,7 +69,9 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
       return;
     }
     setSelectedFilePath(node.path);
-    router.push(`/result/${params.projectId}/${params.analysisId}/code`);
+    router.push(
+      `/result/${params.projectId}/${params.analysisId}/code?filePath=${encodeURIComponent(node.path)}`,
+    );
   };
 
   return (
@@ -83,8 +85,8 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
             isHighlighted
               ? "cursor-pointer rounded-sm bg-amber-500/15 font-semibold text-amber-400"
               : isFolder
-                ? "cursor-pointer font-medium text-body hover:bg-hover"
-                : "cursor-default text-subtle hover:bg-hover/50"
+                ? "text-body hover:bg-hover cursor-pointer font-medium"
+                : "text-subtle hover:bg-hover/50 cursor-default"
           } `}
           style={{ paddingLeft: `${depth * 10 + 5}px` }}
         >
@@ -94,7 +96,7 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
             }`}
           >
             {isFolder && (
-              <HiOutlineChevronRight className="h-3 w-3 text-muted" />
+              <HiOutlineChevronRight className="text-muted h-3 w-3" />
             )}
           </span>
 
@@ -114,7 +116,7 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
         </div>
 
         {showTooltip && (
-          <div className="absolute -top-8 left-1/2 z-50 -translate-x-1/2 rounded bg-hover px-2 py-1 text-xs whitespace-nowrap text-heading shadow-lg">
+          <div className="bg-hover text-heading absolute -top-8 left-1/2 z-50 -translate-x-1/2 rounded px-2 py-1 text-xs whitespace-nowrap shadow-lg">
             코드 요약을 제공하지 않는 파일입니다
           </div>
         )}

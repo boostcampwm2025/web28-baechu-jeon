@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
+import { useVisualizationStore } from "@/store/useVisualizationStore";
 
 export default function ResultTabs() {
   const params = useParams();
@@ -12,13 +13,18 @@ export default function ResultTabs() {
 
   const basePath = `/result/${projectId}/${analysisId}`;
 
+  const selectedFilePath = useVisualizationStore((s) => s.selectedFilePath);
+  const codeHref = selectedFilePath
+    ? `${basePath}/code?filePath=${encodeURIComponent(selectedFilePath)}`
+    : `${basePath}/code`;
+
   const tabs = [
     {
       id: "visualization",
       label: "Visual Graph",
       href: `${basePath}/visualization`,
     },
-    { id: "code", label: "Code", href: `${basePath}/code` },
+    { id: "code", label: "Code", href: codeHref },
   ];
 
   return (
