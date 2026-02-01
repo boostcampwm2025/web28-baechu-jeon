@@ -71,7 +71,8 @@ export class PipelineRunner {
       }
 
       // STEP 2 (가설 + 의도·스토리 통합)
-      if (context.step2 && context.step3) {
+      const step2Merged = context.step2 as Record<string, unknown> | undefined;
+      if (step2Merged?.project_intent != null || step2Merged?.user_stories != null) {
         this.logger.log(
           `[${analysisId}] Step 2 (가설+의도) 이미 완료됨. 스킵.`,
         );
@@ -80,7 +81,7 @@ export class PipelineRunner {
           'STEP2_HYPOTHESIS_AND_INTENT',
           'COMPLETED',
           66,
-          { step2: context.step2, step3: context.step3 },
+          context.step2,
         );
       } else {
         await this.emitStep(
@@ -106,20 +107,21 @@ export class PipelineRunner {
           additionalFileContents,
         });
 
-        // 통합 응답에서 step2/step3 분리
         const mergedResult = merged.result as {
           step2: { responsibility_hypotheses: unknown[] };
           step3: { project_intent: unknown; user_stories: unknown[] };
         };
-        context.step2 = mergedResult.step2;
-        context.step3 = mergedResult.step3;
+        context.step2 = {
+          ...mergedResult.step2,
+          ...mergedResult.step3,
+        };
 
         await this.emitStep(
           analysisId,
           'STEP2_HYPOTHESIS_AND_INTENT',
           'COMPLETED',
           66,
-          { step2: context.step2, step3: context.step3 },
+          context.step2,
         );
       }
 
@@ -133,31 +135,30 @@ export class PipelineRunner {
 
       await this.emitStep(analysisId, 'STEP3_CODE_SUMMARY', 'STARTED', 66);
 
-      if (!context.step1 || !context.step2 || !context.step3)
+      if (!context.step1 || !context.step2)
         throw new Error('Previous results missing');
       if (!context.mainFileContents)
         throw new Error('주요 파일 소스코드를 찾을 수 없습니다.');
 
-      const step4 = await this.geminiService.getResult({
+      const step3Result = await this.geminiService.getResult({
         projectId,
-        step: 4,
+        step: 3,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         analysisResult: {
           step1: context.step1,
           step2: context.step2,
-          step3: context.step3,
         } as any,
         fileContents: context.mainFileContents,
       });
 
-      context.step4 = step4.result;
+      context.step3 = step3Result.result;
 
       await this.emitStep(
         analysisId,
         'STEP3_CODE_SUMMARY',
         'COMPLETED',
         100,
-        context.step4,
+        context.step3,
       );
 
       // 전체 완료

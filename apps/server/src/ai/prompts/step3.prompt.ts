@@ -1,10 +1,10 @@
-import { Step4Input } from '../types/ai.types';
+import { Step3CodeSummaryInput } from '../types/ai.types';
 
-export const buildStep4Prompts = ({
+export const buildStep3Prompts = ({
   analysisResult,
   project,
   fileContents,
-}: Step4Input) => {
+}: Step3CodeSummaryInput) => {
   const systemPrompt = `당신은 전문 소프트웨어 아키텍트입니다.
 1단계에서 추천된 **주요 파일**의 소스코드를 보고, 각 파일마다 **코드 설명 문서**를 **마크다운**으로 작성해야 합니다. 이 문서는 "코드 설명" 탭에서 그대로 보여질 예정입니다.
 

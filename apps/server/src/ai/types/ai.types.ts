@@ -54,15 +54,16 @@ export interface Step3Result {
   }>;
 }
 
-export type Step4Input = {
+/** Step3(코드요약) 입력 */
+export type Step3CodeSummaryInput = {
   project: Project;
   analysisResult: AnalysisResult;
   /** Step1 주요 파일 경로 -> 소스코드 내용 */
   fileContents: Record<string, string>;
 };
 
-/** Step4 AI 응답: 파일별 코드 설명 (마크다운) */
-export interface Step4Result {
+/** Step3(코드요약) AI 응답: 파일별 코드 설명 (마크다운) */
+export interface Step3CodeSummaryResult {
   file_summaries: Array<{
     file_path: string;
     markdown_content: string;

@@ -8,7 +8,7 @@ import {
 } from '../infra/analysis.redis.js';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { Step4Result } from '../../ai/types/ai.types.js';
+import { Step3CodeSummaryResult } from '../../ai/types/ai.types.js';
 
 // TODO: 최종 결과를 DB(Prisma)에 저장하기
 // TODO: retry 로직 검토 및 추가
@@ -44,26 +44,30 @@ export class AnalysesService {
           ) as unknown;
           this.logger.log(`[${analysisId}] Step 1 결과 복구 완료`);
         }
-        // Step 2+3 통합 키 (3단계 UI)
+        // Step 2+3 통합 키 (가설+의도 한 덩어리)
         if (cachedResults['STEP2_HYPOTHESIS_AND_INTENT']) {
           const parsed = JSON.parse(
             cachedResults['STEP2_HYPOTHESIS_AND_INTENT'],
-          ) as { step2: unknown; step3: unknown };
-          context.step2 = parsed.step2;
-          context.step3 = parsed.step3;
+          ) as { step2?: unknown; step3?: unknown } | Record<string, unknown>;
+          context.step2 =
+            parsed?.step2 != null && parsed?.step3 != null
+              ? { ...parsed.step2, ...parsed.step3 }
+              : (parsed as Record<string, unknown>);
           this.logger.log(`[${analysisId}] Step 2 (가설+의도) 결과 복구 완료`);
         } else if (
           cachedResults['STEP2_HYPOTHESIS'] &&
           cachedResults['STEP3_INTENT']
         ) {
-          // 이전 4단계 형식 호환
-          context.step2 = JSON.parse(
-            cachedResults['STEP2_HYPOTHESIS'],
-          ) as unknown;
+          const step2 = JSON.parse(cachedResults['STEP2_HYPOTHESIS']) as Record<string, unknown>;
+          const step3 = JSON.parse(cachedResults['STEP3_INTENT']) as Record<string, unknown>;
+          context.step2 = { ...step2, ...step3 };
+          this.logger.log(`[${analysisId}] Step 2 결과 복구 완료 (이전 형식)`);
+        }
+        if (cachedResults['STEP3_CODE_SUMMARY']) {
           context.step3 = JSON.parse(
-            cachedResults['STEP3_INTENT'],
+            cachedResults['STEP3_CODE_SUMMARY'],
           ) as unknown;
-          this.logger.log(`[${analysisId}] Step 2·3 결과 복구 완료 (이전 형식)`);
+          this.logger.log(`[${analysisId}] Step 3 (코드요약) 결과 복구 완료`);
         }
       }
 
@@ -113,26 +117,18 @@ export class AnalysesService {
     context: PipelineContext,
   ): Promise<void> {
     try {
-      // step2 = 가설+의도 통합, step3 = 코드요약(기존 step4)
-      const step2Merged =
-        context.step2 && context.step3
-          ? {
-              ...(context.step2 as Record<string, unknown>),
-              ...(context.step3 as Record<string, unknown>),
-            }
-          : {};
-
+      // step2 = 가설+의도 통합, step3 = 코드요약
       await this.prisma.analysisResult.create({
         data: {
           id: analysisId,
           projectId,
           step1: (context.step1 || {}) as Prisma.InputJsonValue,
-          step2: step2Merged as Prisma.InputJsonValue,
-          step3: (context.step4 || {}) as Prisma.InputJsonValue,
+          step2: (context.step2 || {}) as Prisma.InputJsonValue,
+          step3: (context.step3 || {}) as Prisma.InputJsonValue,
         },
       });
 
-      const codeSummary = context.step4 as Step4Result | undefined;
+      const codeSummary = context.step3 as Step3CodeSummaryResult | undefined;
       if (codeSummary?.file_summaries?.length) {
         await this.prisma.fileSummary.createMany({
           data: codeSummary.file_summaries.map((s) => ({

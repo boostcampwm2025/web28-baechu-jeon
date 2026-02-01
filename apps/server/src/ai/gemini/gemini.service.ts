@@ -9,7 +9,7 @@ import {
 import { PromptResponse } from '../types/ai.types';
 import { buildStep1Prompts } from '../prompts/step1.prompt';
 import { buildStep2Prompts } from '../prompts/step2.prompt';
-import { buildStep4Prompts } from '../prompts/step4.prompt';
+import { buildStep3Prompts } from '../prompts/step3.prompt';
 import { parseAiJson } from '../utils/parse-ai-json.util';
 import { Step2And3CombinedResult } from '../types/ai.types';
 
@@ -38,12 +38,12 @@ export class GeminiService implements AiProvider {
           analysisResult: input.analysisResult,
           additionalFileContents: input.additionalFileContents,
         });
-      case 4:
+      case 3:
         if (!input.analysisResult)
           throw new Error('분석 결과를 찾을 수 없습니다.');
         if (!input.fileContents)
           throw new Error('주요 파일 소스코드를 찾을 수 없습니다.');
-        return buildStep4Prompts({
+        return buildStep3Prompts({
           project,
           analysisResult: input.analysisResult,
           fileContents: input.fileContents,
