@@ -87,13 +87,14 @@ function ThemeToggle() {
   useEffect(() => {
     setMounted(true);
     const localTheme = getCookie("theme") as "dark" | "light";
-    if (localTheme && localTheme !== theme) {
+    if (localTheme) {
       setTheme(localTheme);
     }
-  }, [setTheme, theme]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!mounted) {
-    return <div className="h-10 w-10" />; // Placeholder to prevent layout shift but avoid hydration mismatch
+    return <div className="h-10 w-10" />;
   }
 
   return (
