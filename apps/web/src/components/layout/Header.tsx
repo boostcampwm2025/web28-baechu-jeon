@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ResultTabs from "@/components/layout/ResultTabs";
 import Toast from "@/components/result/visualization/Toast";
+import { HiOutlineBookOpen } from "react-icons/hi";
 
 export default function Header() {
   const pathname = usePathname();
@@ -42,6 +43,12 @@ export default function Header() {
         <div className="flex items-center gap-4">
           {isResultPage && (
             <>
+              <button title="사용법 보기">
+                <HiOutlineBookOpen
+                  size={32}
+                  className="cursor-pointer hover:scale-105 active:scale-95"
+                />
+              </button>
               <ExportButton onClick={handleExport} />
               <div className="mx-2 h-8 w-0.5 bg-slate-200" />
             </>
@@ -57,6 +64,7 @@ function ExportButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
+      title="공유 링크 추출"
       className="flex cursor-pointer items-center gap-2 rounded-lg bg-blue-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-600"
     >
       <svg
