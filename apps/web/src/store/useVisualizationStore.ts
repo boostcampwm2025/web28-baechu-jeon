@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { NodeData } from "@/types/visualization";
+import { Viewport } from "@xyflow/react";
 
 interface VisualizationState {
   // 뷰포트 상태 (좌표 및 줌)
@@ -18,6 +19,16 @@ interface VisualizationState {
   isNodeOpen: boolean;
   isProjectOpen: boolean;
 
+  isSidebarOpen: boolean;
+  focusTargetType: "ALL" | "STEP1" | "STEP2" | "STEP3" | null;
+
+  preGuideState: {
+    viewport: Viewport;
+    isSidebarOpen: boolean;
+    isNodeOpen: boolean;
+    isProjectOpen: boolean;
+  } | null;
+
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
   setSelectedNodeId: (id: string | null) => void;
   setSelectedFilePath: (path: string | null) => void;
@@ -26,6 +37,13 @@ interface VisualizationState {
   setPanelNode: (node: NodeData | null) => void;
   setIsNodeOpen: (isOpen: boolean) => void;
   setIsProjectOpen: (isOpen: boolean) => void;
+
+  setIsSidebarOpen: (isOpen: boolean) => void;
+  setFocusTargetType: (
+    type: "ALL" | "STEP1" | "STEP2" | "STEP3" | null,
+  ) => void;
+
+  setPreGuideState: (state: VisualizationState["preGuideState"]) => void; // ✅ 추가
 }
 
 export const useVisualizationStore = create<VisualizationState>((set) => ({
@@ -37,6 +55,9 @@ export const useVisualizationStore = create<VisualizationState>((set) => ({
   panelNode: null,
   isNodeOpen: false,
   isProjectOpen: true,
+  isSidebarOpen: true,
+  focusTargetType: "STEP1",
+  preGuideState: null,
 
   setViewport: (viewport) => set({ viewport }),
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
@@ -46,4 +67,7 @@ export const useVisualizationStore = create<VisualizationState>((set) => ({
   setPanelNode: (node) => set({ panelNode: node }),
   setIsNodeOpen: (isOpen) => set({ isNodeOpen: isOpen }),
   setIsProjectOpen: (isOpen) => set({ isProjectOpen: isOpen }),
+  setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+  setFocusTargetType: (type) => set({ focusTargetType: type }),
+  setPreGuideState: (state) => set({ preGuideState: state }),
 }));
