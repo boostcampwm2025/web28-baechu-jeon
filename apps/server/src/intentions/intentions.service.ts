@@ -29,8 +29,9 @@ export class IntentionsService {
 
     if (!analysis) throw new NotFoundException('Analysis not found');
 
-    const step3 = analysis.step3 as unknown as Step3Response | null;
-    return this.formatResponse(analysis.id, step3);
+    // step2 = 가설+의도 통합 (project_intent, user_stories 포함)
+    const step2Merged = analysis.step2 as unknown as Step3Response | null;
+    return this.formatResponse(analysis.id, step2Merged);
   }
 
   // 의도 초기화 - 최초 데이터로 복구 및 purposes 테이블 동기화
@@ -54,7 +55,7 @@ export class IntentionsService {
 
     const formattedData = this.formatResponse(
       firstAnalysis.id,
-      firstAnalysis.step3 as unknown as Step3Response | null,
+      firstAnalysis.step2 as unknown as Step3Response | null,
     );
 
     await this.prisma.$transaction([
@@ -74,8 +75,8 @@ export class IntentionsService {
     return formattedData;
   }
 
-  private formatResponse(id: string, step3: Step3Response | null) {
-    const intent = step3?.project_intent;
+  private formatResponse(id: string, step2Merged: Step3Response | null) {
+    const intent = step2Merged?.project_intent;
 
     if (!intent) {
       throw new NotFoundException('Intent data not found');
