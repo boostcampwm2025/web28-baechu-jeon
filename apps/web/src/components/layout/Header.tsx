@@ -6,12 +6,14 @@ import { usePathname } from "next/navigation";
 import ResultTabs from "@/components/layout/ResultTabs";
 import Toast from "@/components/result/visualization/Toast";
 import { HiOutlineBookOpen } from "react-icons/hi";
+import { useGuideStore } from "@/stores/useGuideStore";
 
 export default function Header() {
   const pathname = usePathname();
   const isResultPage = pathname?.startsWith("/result/");
   const [toastMessage, setToastMessage] = useState("");
   const [showToast, setShowToast] = useState(false);
+  const { startGuide } = useGuideStore();
 
   const handleExport = async () => {
     try {
@@ -43,7 +45,11 @@ export default function Header() {
         <div className="flex items-center gap-4">
           {isResultPage && (
             <>
-              <button title="사용법 보기">
+              <button
+                id="header-help-btn"
+                title="사용법 보기"
+                onClick={startGuide}
+              >
                 <HiOutlineBookOpen
                   size={32}
                   className="cursor-pointer hover:scale-105 active:scale-95"
