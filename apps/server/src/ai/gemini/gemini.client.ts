@@ -47,7 +47,8 @@ export class GeminiClient {
             temperature: 0.2,
             topK: 40,
             topP: 0.85,
-            maxOutputTokens: 100000, // step3(코드요약) 다수 파일 시 마크다운 길이 대비 (잘림 방지)
+            responseMimeType: 'application/json',
+            maxOutputTokens: 60000, // step3(코드요약) 다수 파일 시 마크다운 길이 대비 (잘림 방지)
           },
         });
 
