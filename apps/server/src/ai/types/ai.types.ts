@@ -22,7 +22,6 @@ export interface Step2Result {
   responsibility_hypotheses: Array<{
     path: string;
     hypothesis: string;
-    evidence: string;
     confidence: 'low' | 'medium' | 'high';
   }>;
 }
@@ -44,7 +43,6 @@ export interface Step3Result {
     architectural_tendencies: string;
     key_features: string[];
     technology_stack: Record<string, string[]>;
-    evidence: string[];
     confidence: 'low' | 'medium' | 'high';
   };
   user_stories: Array<{
