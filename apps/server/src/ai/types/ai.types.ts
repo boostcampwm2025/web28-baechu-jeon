@@ -27,6 +27,13 @@ export interface Step2Result {
   }>;
 }
 
+/** Step2+3 통합 AI 응답: 한 번의 호출로 responsibility_hypotheses + project_intent + user_stories 반환 */
+export interface Step2And3CombinedResult {
+  responsibility_hypotheses: Step2Result['responsibility_hypotheses'];
+  project_intent: Step3Result['project_intent'];
+  user_stories: Step3Result['user_stories'];
+}
+
 export type Step3Input = { project: Project; analysisResult: AnalysisResult };
 
 /** Step3 AI 응답: 프로젝트 의도 + 사용자 스토리(related_paths = 폴더·파일 경로) */

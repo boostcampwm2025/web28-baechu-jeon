@@ -43,11 +43,26 @@ export class AnalysesService {
           ) as unknown;
           this.logger.log(`[${analysisId}] Step 1 결과 복구 완료`);
         }
-        if (cachedResults['STEP2_HYPOTHESIS']) {
+        // Step 2+3 통합 키 (3단계 UI)
+        if (cachedResults['STEP2_HYPOTHESIS_AND_INTENT']) {
+          const parsed = JSON.parse(
+            cachedResults['STEP2_HYPOTHESIS_AND_INTENT'],
+          ) as { step2: unknown; step3: unknown };
+          context.step2 = parsed.step2;
+          context.step3 = parsed.step3;
+          this.logger.log(`[${analysisId}] Step 2 (가설+의도) 결과 복구 완료`);
+        } else if (
+          cachedResults['STEP2_HYPOTHESIS'] &&
+          cachedResults['STEP3_INTENT']
+        ) {
+          // 이전 4단계 형식 호환
           context.step2 = JSON.parse(
             cachedResults['STEP2_HYPOTHESIS'],
           ) as unknown;
-          this.logger.log(`[${analysisId}] Step 2 결과 복구 완료`);
+          context.step3 = JSON.parse(
+            cachedResults['STEP3_INTENT'],
+          ) as unknown;
+          this.logger.log(`[${analysisId}] Step 2·3 결과 복구 완료 (이전 형식)`);
         }
       }
 

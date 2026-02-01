@@ -9,9 +9,9 @@ import {
 import { PromptResponse } from '../types/ai.types';
 import { buildStep1Prompts } from '../prompts/step1.prompt';
 import { buildStep2Prompts } from '../prompts/step2.prompt';
-import { buildStep3Prompts } from '../prompts/step3.prompt';
 import { buildStep4Prompts } from '../prompts/step4.prompt';
 import { parseAiJson } from '../utils/parse-ai-json.util';
+import { Step2And3CombinedResult } from '../types/ai.types';
 
 // TODO: 단계별로 systemPrompt, userPrompt 넣기
 
@@ -38,13 +38,6 @@ export class GeminiService implements AiProvider {
           analysisResult: input.analysisResult,
           additionalFileContents: input.additionalFileContents,
         });
-      case 3:
-        if (!input.analysisResult)
-          throw new Error('분석 결과를 찾을 수 없습니다.');
-        return buildStep3Prompts({
-          project,
-          analysisResult: input.analysisResult,
-        });
       case 4:
         if (!input.analysisResult)
           throw new Error('분석 결과를 찾을 수 없습니다.');
@@ -69,6 +62,25 @@ export class GeminiService implements AiProvider {
 
     const content = analysisResult.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!content) throw new Error('AI 응답을 생성하지 못했습니다.');
+
+    // Step 2: 2·3 통합 응답 파싱 후 step2/step3 형태로 분리
+    if (input.step === 2) {
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+      const parsed = parseAiJson<Step2And3CombinedResult>(content);
+      return {
+        result: {
+          step2: {
+            responsibility_hypotheses: parsed.responsibility_hypotheses,
+          },
+          step3: {
+            project_intent: parsed.project_intent,
+            user_stories: parsed.user_stories,
+          },
+        },
+      };
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+    }
+
     const result = parseAiJson<AnalysisResponse>(content);
     return { result };
   }
