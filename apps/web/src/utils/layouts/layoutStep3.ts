@@ -1,8 +1,9 @@
 import { Node, Edge } from "@xyflow/react";
 import { ApiNode } from "@/api/visualization";
 import { BaseNodeData, LAYOUT_SETTINGS } from "./layoutSettings";
+import { calculateTextDimensions, createReactFlowNode } from "./layoutUtils";
 
-const FIXED_CATEGORIES = ["FE", "BE", "INFRA", "DB"];
+const FIXED_CATEGORIES = ["FE", "BE", "DB", "INFRA"];
 
 export function layoutStep3(
   apiNodes: ApiNode[],
@@ -25,10 +26,10 @@ export function layoutStep3(
     }
   });
 
+  const ROOT_ID = "group-STEP3-ROOT";
   const HEAD_W = LAYOUT_SETTINGS.diagram3CategoryNode.w;
   const HEAD_H = LAYOUT_SETTINGS.diagram3CategoryNode.h;
-  const CHILD_W = LAYOUT_SETTINGS.diagram3Child.w;
-  const CHILD_H = LAYOUT_SETTINGS.diagram3Child.h;
+  const CHILD_W = 240;
 
   const CONTAINER_PADDING = 30;
   const ITEM_GAP = 15;
@@ -37,127 +38,113 @@ export function layoutStep3(
   const HEAD_TO_BOX_GAP = 50;
   const ROOT_PADDING = 60;
 
-  // 최대 높이 계산 (데이터가 있는 카테고리 기준)
-  let maxChildrenContentHeight = 0;
+  const columnHeights = new Map<string, number>();
+  let maxColumnHeight = 200;
+
   FIXED_CATEGORIES.forEach((catName) => {
     const children = groupMap.get(catName) || [];
-    if (children.length > 0) {
-      const currentHeight =
-        children.length * CHILD_H + (children.length - 1) * ITEM_GAP;
-      maxChildrenContentHeight = Math.max(
-        maxChildrenContentHeight,
-        currentHeight,
-      );
-    }
+    let neededHeight = CONTAINER_PADDING;
+
+    children.forEach((child) => {
+      const { height } = calculateTextDimensions(child.label, CHILD_W, 16);
+      neededHeight += height + ITEM_GAP;
+    });
+
+    neededHeight += CONTAINER_PADDING; // 하단 패딩 추가
+    columnHeights.set(catName, neededHeight);
+
+    // 가장 높은 컬럼의 높이를 전체 높이로 결정
+    if (neededHeight > maxColumnHeight) maxColumnHeight = neededHeight;
   });
 
-  const uniformContainerHeight = Math.max(
-    200,
-    maxChildrenContentHeight + CONTAINER_PADDING * 2,
-  );
-
+  // --- [2단계: 결정된 maxColumnHeight로 모든 노드 배치] ---
   let currentX = ROOT_PADDING;
-  const rootId = "group-STEP3-ROOT";
 
-  // 카테고리별 배치
   FIXED_CATEGORIES.forEach((catName) => {
     const children = groupMap.get(catName) || [];
+    const containerId = `container-${catName}`;
+    const headerId = `header-${catName}`;
 
-    // 컨테이너 너비
-    const containerWidth = CHILD_W + CONTAINER_PADDING * 2;
+    let currentChildY = CONTAINER_PADDING;
 
-    // 전체 열의 중심축 X
-    const centerX = currentX + containerWidth / 2;
+    children.forEach((child) => {
+      const { height: dynamicH } = calculateTextDimensions(
+        child.label,
+        CHILD_W,
+        16,
+      );
 
-    // 헤더 노드
-    const headId = `header-${catName}`;
-    const headX = centerX - HEAD_W / 2;
-    const headY = ROOT_PADDING;
+      const childNode = createReactFlowNode(
+        child,
+        CONTAINER_PADDING,
+        currentChildY,
+        {
+          w: CHILD_W,
+          h: dynamicH,
+          theme: LAYOUT_SETTINGS.diagram3Child.theme,
+        },
+      );
+      childNode.parentId = containerId;
+      childNode.extent = "parent";
+      childNodes.push(childNode);
 
+      updatedApiNodes.push({
+        ...child,
+        x: Math.round(xOffset + currentX + CONTAINER_PADDING),
+        y: Math.round(
+          yOffset + ROOT_PADDING + HEAD_H + HEAD_TO_BOX_GAP + currentChildY,
+        ),
+      });
+
+      currentChildY += dynamicH + ITEM_GAP;
+    });
+
+    const centerX = currentX + (CHILD_W + CONTAINER_PADDING * 2) / 2;
+
+    // 헤더 배치
     groupNodes.push({
-      id: headId,
+      id: headerId,
       type: "baseNode",
-      parentId: rootId,
+      parentId: ROOT_ID,
       extent: "parent",
       data: {
         label: catName,
-        contents: `${children.length}`, // 개수 표시
+        contents: `${children.length}`,
         groups: "CATEGORY_HEADER",
         width: HEAD_W,
         height: HEAD_H,
         theme: LAYOUT_SETTINGS.diagram3CategoryNode.theme,
         diagramType: "STEP3",
       },
-      position: { x: headX, y: headY },
-      style: { zIndex: 10, fontWeight: "bold", fontSize: "1.2rem" },
+      position: { x: centerX - HEAD_W / 2, y: ROOT_PADDING },
     });
-
-    const containerId = `container-${catName}`;
-    const containerX = currentX;
-    const containerY = headY + HEAD_H + HEAD_TO_BOX_GAP;
 
     groupNodes.push({
       id: containerId,
       type: "baseNode",
-      parentId: rootId,
+      parentId: ROOT_ID,
       extent: "parent",
       data: {
         label: "",
         contents: "",
         groups: "ITEM_CONTAINER",
-        width: containerWidth,
-        height: uniformContainerHeight,
+        width: CHILD_W + CONTAINER_PADDING * 2,
+        height: maxColumnHeight,
         theme: LAYOUT_SETTINGS.diagram3Container.theme,
         diagramType: "STEP3",
       },
-      position: { x: containerX, y: containerY },
-      style: { zIndex: 5 },
+      position: { x: currentX, y: ROOT_PADDING + HEAD_H + HEAD_TO_BOX_GAP },
     });
 
-    // 자식 노드들
-    children.forEach((child, idx) => {
-      const childRelX = CONTAINER_PADDING;
-      const childRelY = CONTAINER_PADDING + idx * (CHILD_H + ITEM_GAP);
-
-      childNodes.push({
-        id: child.id,
-        type: "baseNode",
-        parentId: containerId,
-        extent: "parent",
-        data: {
-          label: child.label,
-          contents: child.contents || "",
-          groups: child.groups || "",
-          width: CHILD_W,
-          height: CHILD_H,
-          theme: LAYOUT_SETTINGS.diagram3Child.theme,
-          diagramType: "STEP3",
-        },
-        position: { x: childRelX, y: childRelY },
-      });
-
-      updatedApiNodes.push({
-        ...child,
-        x: Math.round(xOffset + containerX + childRelX),
-        y: Math.round(yOffset + containerY + childRelY),
-      });
-    });
-
-    currentX += containerWidth + COL_GAP;
+    currentX += CHILD_W + CONTAINER_PADDING * 2 + COL_GAP;
   });
 
-  // Root 노드 생성
   const totalRootWidth = currentX - COL_GAP + ROOT_PADDING;
-  // 전체 높이 = 상단 여백 + 헤더 + 갭 + 통일된 박스 높이 + 하단 여백
   const totalRootHeight =
-    ROOT_PADDING +
-    HEAD_H +
-    HEAD_TO_BOX_GAP +
-    uniformContainerHeight +
-    ROOT_PADDING;
+    ROOT_PADDING + HEAD_H + HEAD_TO_BOX_GAP + maxColumnHeight + ROOT_PADDING;
 
-  const rootNode: Node<BaseNodeData> = {
-    id: rootId,
+  groupNodes.unshift({
+    id: ROOT_ID,
     type: "baseNode",
     data: {
       label: "",
@@ -169,10 +156,7 @@ export function layoutStep3(
       diagramType: "STEP3",
     },
     position: { x: xOffset, y: yOffset },
-    style: { zIndex: -1 },
-  };
-
-  groupNodes.unshift(rootNode);
+  });
 
   return {
     groupNodes,

@@ -27,9 +27,9 @@ const STEP_MESSAGES: Record<AnalysisStep, string> = {
 // 각 단계별 예상 소요 시간 (초)
 const STEP_DURATIONS: Record<AnalysisStep, number> = {
   STEP1_FEATURE_ANALYSIS: 30,
-  STEP2_HYPOTHESIS: 30,
+  STEP2_HYPOTHESIS: 60,
   STEP3_INTENT: 30,
-  STEP4_CODE_SUMMARY: 30,
+  STEP4_CODE_SUMMARY: 60,
 };
 
 interface AnalyzingViewProps {
@@ -40,7 +40,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<string>("분석 시작 중...");
   const [completedSteps, setCompletedSteps] = useState<number>(0);
-  const [estimatedTime, setEstimatedTime] = useState<number>(120); // 총 예상 시간 (초)
+  const [estimatedTime, setEstimatedTime] = useState<number>(240); // 총 예상 시간 (초)
   const [error, setError] = useState<string | null>(null);
   const [isNotiGranted, setIsNotiGranted] = useState(false);
   const totalSteps = 4;
