@@ -71,6 +71,8 @@ jobs:
 
             # DB 마이그레이션을 서버 시작 전에 실행 (일회성 컨테이너)
             echo "🔄 Running database migrations..."
+            # Fix stuck migration (temporary - remove after successful deployment)
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260112114603_add_project_status_enum || true
             docker compose run --rm -T server npx prisma migrate deploy
 
             # 배포 실행
