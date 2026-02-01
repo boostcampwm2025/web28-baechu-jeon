@@ -2,16 +2,10 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import { PipelineRunner } from './pipeline/pipeline.runner.js';
 import { PipelineContext } from './pipeline/pipeline.context.js';
-import {
-  analysisResultsKey,
-  analysisStatusKey,
-} from './infra/analysis.redis.js';
 import { Prisma } from '@prisma/client';
+import { analysisResultsKey } from './infra/analysis.redis.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Step3CodeSummaryResult } from '../ai/types/ai.types.js';
-
-// TODO: 최종 결과를 DB(Prisma)에 저장하기
-// TODO: retry 로직 검토 및 추가
 
 @Injectable()
 export class AnalysesService {
@@ -27,8 +21,10 @@ export class AnalysesService {
   async processJob(jobData: { analysisId: string; projectId: string }) {
     const { analysisId, projectId } = jobData;
     const context = new PipelineContext(analysisId, projectId);
+    const startMemory = process.memoryUsage();
 
     this.logger.log(`[${analysisId}] 분석 작업 시작 (프로젝트: ${projectId})`);
+    this.logMemory(`[${analysisId}] 메모리 시작`, startMemory);
 
     try {
       // Redis에 저장된 중간 결과가 있는지 확인
@@ -92,29 +88,53 @@ export class AnalysesService {
         error instanceof Error ? error.message : String(error);
       this.logger.error(`[${analysisId}] 처리 중 치명적 오류: ${errorMessage}`);
       throw error;
+    } finally {
+      const endMemory = process.memoryUsage();
+      this.logMemory(`[${analysisId}] 메모리 종료`, endMemory);
+      this.logMemoryDelta(
+        `[${analysisId}] 메모리 변화`,
+        startMemory,
+        endMemory,
+      );
     }
   }
-  async getStatus(analysisId: string) {
-    const status = await this.redis.get(analysisStatusKey(analysisId));
-    if (!status) {
-      return { status: 'not_found' };
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return JSON.parse(status);
+
+  private logMemory(label: string, usage: NodeJS.MemoryUsage): void {
+    this.logger.log(
+      `${label} rss=${this.formatBytes(usage.rss)} ` +
+        `heapUsed=${this.formatBytes(usage.heapUsed)} ` +
+        `heapTotal=${this.formatBytes(usage.heapTotal)} ` +
+        `external=${this.formatBytes(usage.external)} ` +
+        `arrayBuffers=${this.formatBytes(usage.arrayBuffers)}`,
+    );
   }
 
-  async getResult(analysisId: string): Promise<Record<string, unknown>> {
-    const results = await this.redis.hgetall(analysisResultsKey(analysisId));
-    if (!results || Object.keys(results).length === 0) {
-      return { error: '분석 결과를 찾을 수 없습니다.' };
-    }
+  private logMemoryDelta(
+    label: string,
+    start: NodeJS.MemoryUsage,
+    end: NodeJS.MemoryUsage,
+  ): void {
+    const diff = {
+      rss: end.rss - start.rss,
+      heapUsed: end.heapUsed - start.heapUsed,
+      heapTotal: end.heapTotal - start.heapTotal,
+      external: end.external - start.external,
+      arrayBuffers: end.arrayBuffers - start.arrayBuffers,
+    };
 
-    const parsedResults: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(results)) {
-      parsedResults[key] = JSON.parse(value) as unknown;
-    }
+    this.logger.log(
+      `${label} rss=${this.formatBytes(diff.rss)} ` +
+        `heapUsed=${this.formatBytes(diff.heapUsed)} ` +
+        `heapTotal=${this.formatBytes(diff.heapTotal)} ` +
+        `external=${this.formatBytes(diff.external)} ` +
+        `arrayBuffers=${this.formatBytes(diff.arrayBuffers)}`,
+    );
+  }
 
-    return parsedResults;
+  private formatBytes(bytes: number): string {
+    const mb = bytes / 1024 / 1024;
+    const sign = mb >= 0 ? '' : '-';
+    return `${sign}${Math.abs(mb).toFixed(2)}MB`;
   }
 
   private async saveResultToDatabase(
