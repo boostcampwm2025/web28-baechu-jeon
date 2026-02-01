@@ -65,23 +65,31 @@ export class PipelineRunner {
           analysisId,
           'STEP1_FEATURE_ANALYSIS',
           'COMPLETED',
-          30,
+          33,
           context.step1,
         );
       }
 
-      // STEP 2
-      if (context.step2) {
-        this.logger.log(`[${analysisId}] Step 2 이미 완료됨. 스킵.`);
+      // STEP 2 (가설 + 의도·스토리 통합)
+      const step2Merged = context.step2 as Record<string, unknown> | undefined;
+      if (step2Merged?.project_intent != null || step2Merged?.user_stories != null) {
+        this.logger.log(
+          `[${analysisId}] Step 2 (가설+의도) 이미 완료됨. 스킵.`,
+        );
         await this.emitStep(
           analysisId,
-          'STEP2_HYPOTHESIS',
+          'STEP2_HYPOTHESIS_AND_INTENT',
           'COMPLETED',
-          60,
+          66,
           context.step2,
         );
       } else {
-        await this.emitStep(analysisId, 'STEP2_HYPOTHESIS', 'STARTED', 40);
+        await this.emitStep(
+          analysisId,
+          'STEP2_HYPOTHESIS_AND_INTENT',
+          'STARTED',
+          33,
+        );
         if (!context.step1) throw new Error('Step 1 result missing');
 
         const additionalFileContents =
@@ -91,7 +99,7 @@ export class PipelineRunner {
           );
         context.mainFileContents = additionalFileContents;
 
-        const step2 = await this.geminiService.getResult({
+        const merged = await this.geminiService.getResult({
           projectId,
           step: 2,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -99,40 +107,25 @@ export class PipelineRunner {
           additionalFileContents,
         });
 
-        context.step2 = step2.result;
+        const mergedResult = merged.result as {
+          step2: { responsibility_hypotheses: unknown[] };
+          step3: { project_intent: unknown; user_stories: unknown[] };
+        };
+        context.step2 = {
+          ...mergedResult.step2,
+          ...mergedResult.step3,
+        };
+
         await this.emitStep(
           analysisId,
-          'STEP2_HYPOTHESIS',
+          'STEP2_HYPOTHESIS_AND_INTENT',
           'COMPLETED',
-          60,
+          66,
           context.step2,
         );
       }
 
-      // STEP 3
-      await this.emitStep(analysisId, 'STEP3_INTENT', 'STARTED', 70);
-
-      if (!context.step1 || !context.step2)
-        throw new Error('Previous results missing');
-
-      const step3 = await this.geminiService.getResult({
-        projectId,
-        step: 3,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        analysisResult: { step1: context.step1, step2: context.step2 } as any,
-      });
-
-      context.step3 = step3.result;
-
-      await this.emitStep(
-        analysisId,
-        'STEP3_INTENT',
-        'COMPLETED',
-        80,
-        context.step3,
-      );
-
-      // STEP 4 (주요 파일 코드 설명)
+      // STEP 3 (주요 파일 코드 설명)
       if (!context.mainFileContents && context.step1) {
         context.mainFileContents = await this.projectsService.extractMainFiles(
           projectId,
@@ -140,33 +133,32 @@ export class PipelineRunner {
         );
       }
 
-      await this.emitStep(analysisId, 'STEP4_CODE_SUMMARY', 'STARTED', 85);
+      await this.emitStep(analysisId, 'STEP3_CODE_SUMMARY', 'STARTED', 66);
 
-      if (!context.step1 || !context.step2 || !context.step3)
+      if (!context.step1 || !context.step2)
         throw new Error('Previous results missing');
       if (!context.mainFileContents)
         throw new Error('주요 파일 소스코드를 찾을 수 없습니다.');
 
-      const step4 = await this.geminiService.getResult({
+      const step3Result = await this.geminiService.getResult({
         projectId,
-        step: 4,
+        step: 3,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         analysisResult: {
           step1: context.step1,
           step2: context.step2,
-          step3: context.step3,
         } as any,
         fileContents: context.mainFileContents,
       });
 
-      context.step4 = step4.result;
+      context.step3 = step3Result.result;
 
       await this.emitStep(
         analysisId,
-        'STEP4_CODE_SUMMARY',
+        'STEP3_CODE_SUMMARY',
         'COMPLETED',
-        95,
-        context.step4,
+        100,
+        context.step3,
       );
 
       // 전체 완료

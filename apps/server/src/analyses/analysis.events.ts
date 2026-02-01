@@ -31,9 +31,8 @@ export const AnalysisEvent = {
 
 export type AnalysisStep =
   | 'STEP1_FEATURE_ANALYSIS'
-  | 'STEP2_HYPOTHESIS'
-  | 'STEP3_INTENT'
-  | 'STEP4_CODE_SUMMARY';
+  | 'STEP2_HYPOTHESIS_AND_INTENT'
+  | 'STEP3_CODE_SUMMARY';
 
 export interface AnalysisStepEventPayload {
   analysisId: string;

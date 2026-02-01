@@ -6,8 +6,9 @@ import {
   analysisResultsKey,
   analysisStatusKey,
 } from '../infra/analysis.redis.js';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { Step4Result } from '../../ai/types/ai.types.js';
+import { Step3CodeSummaryResult } from '../../ai/types/ai.types.js';
 
 // TODO: 최종 결과를 DB(Prisma)에 저장하기
 // TODO: retry 로직 검토 및 추가
@@ -43,11 +44,30 @@ export class AnalysesService {
           ) as unknown;
           this.logger.log(`[${analysisId}] Step 1 결과 복구 완료`);
         }
-        if (cachedResults['STEP2_HYPOTHESIS']) {
-          context.step2 = JSON.parse(
-            cachedResults['STEP2_HYPOTHESIS'],
+        // Step 2+3 통합 키 (가설+의도 한 덩어리)
+        if (cachedResults['STEP2_HYPOTHESIS_AND_INTENT']) {
+          const parsed = JSON.parse(
+            cachedResults['STEP2_HYPOTHESIS_AND_INTENT'],
+          ) as { step2?: unknown; step3?: unknown } | Record<string, unknown>;
+          context.step2 =
+            parsed?.step2 != null && parsed?.step3 != null
+              ? { ...parsed.step2, ...parsed.step3 }
+              : (parsed as Record<string, unknown>);
+          this.logger.log(`[${analysisId}] Step 2 (가설+의도) 결과 복구 완료`);
+        } else if (
+          cachedResults['STEP2_HYPOTHESIS'] &&
+          cachedResults['STEP3_INTENT']
+        ) {
+          const step2 = JSON.parse(cachedResults['STEP2_HYPOTHESIS']) as Record<string, unknown>;
+          const step3 = JSON.parse(cachedResults['STEP3_INTENT']) as Record<string, unknown>;
+          context.step2 = { ...step2, ...step3 };
+          this.logger.log(`[${analysisId}] Step 2 결과 복구 완료 (이전 형식)`);
+        }
+        if (cachedResults['STEP3_CODE_SUMMARY']) {
+          context.step3 = JSON.parse(
+            cachedResults['STEP3_CODE_SUMMARY'],
           ) as unknown;
-          this.logger.log(`[${analysisId}] Step 2 결과 복구 완료`);
+          this.logger.log(`[${analysisId}] Step 3 (코드요약) 결과 복구 완료`);
         }
       }
 
@@ -97,28 +117,28 @@ export class AnalysesService {
     context: PipelineContext,
   ): Promise<void> {
     try {
+      // step2 = 가설+의도 통합, step3 = 코드요약
       await this.prisma.analysisResult.create({
         data: {
           id: analysisId,
           projectId,
-          step1: context.step1 || {},
-          step2: context.step2 || {},
-          step3: context.step3 || {},
-          step4: context.step4 || {},
+          step1: (context.step1 || {}) as Prisma.InputJsonValue,
+          step2: (context.step2 || {}) as Prisma.InputJsonValue,
+          step3: (context.step3 || {}) as Prisma.InputJsonValue,
         },
       });
 
-      const step4 = context.step4 as Step4Result | undefined;
-      if (step4?.file_summaries?.length) {
+      const codeSummary = context.step3 as Step3CodeSummaryResult | undefined;
+      if (codeSummary?.file_summaries?.length) {
         await this.prisma.fileSummary.createMany({
-          data: step4.file_summaries.map((s) => ({
+          data: codeSummary.file_summaries.map((s) => ({
             analysisResultId: analysisId,
             filePath: s.file_path,
             markdownContent: s.markdown_content,
           })),
         });
         this.logger.log(
-          `[${analysisId}] FileSummary ${step4.file_summaries.length}건 저장`,
+          `[${analysisId}] FileSummary ${codeSummary.file_summaries.length}건 저장`,
         );
       }
 

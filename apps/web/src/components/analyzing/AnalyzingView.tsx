@@ -9,27 +9,25 @@ import MemeSlider from "@/components/analyzing/MemeSlider";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-// 분석 단계 타입
+// 분석 단계 타입 (3단계: 1=기능분석, 2=가설+의도, 3=코드설명)
 type AnalysisStep =
   | "STEP1_FEATURE_ANALYSIS"
-  | "STEP2_HYPOTHESIS"
-  | "STEP3_INTENT"
-  | "STEP4_CODE_SUMMARY";
+  | "STEP2_HYPOTHESIS_AND_INTENT"
+  | "STEP3_CODE_SUMMARY";
 
 // 단계별 메시지 매핑
 const STEP_MESSAGES: Record<AnalysisStep, string> = {
   STEP1_FEATURE_ANALYSIS: "프로젝트 기능 분석 중...",
-  STEP2_HYPOTHESIS: "폴더·파일별 가설 생성 중...",
-  STEP3_INTENT: "프로젝트 의도 분석 중...",
-  STEP4_CODE_SUMMARY: "코드 설명 생성 중...",
+  STEP2_HYPOTHESIS_AND_INTENT:
+    "폴더·파일 가설 및 프로젝트 의도 분석 중...",
+  STEP3_CODE_SUMMARY: "코드 설명 생성 중...",
 };
 
 // 각 단계별 예상 소요 시간 (초)
 const STEP_DURATIONS: Record<AnalysisStep, number> = {
   STEP1_FEATURE_ANALYSIS: 30,
-  STEP2_HYPOTHESIS: 60,
-  STEP3_INTENT: 30,
-  STEP4_CODE_SUMMARY: 60,
+  STEP2_HYPOTHESIS_AND_INTENT: 90,
+  STEP3_CODE_SUMMARY: 60,
 };
 
 interface AnalyzingViewProps {
@@ -40,11 +38,11 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<string>("분석 시작 중...");
   const [completedSteps, setCompletedSteps] = useState<number>(0);
-  const [estimatedTime, setEstimatedTime] = useState<number>(240); // 총 예상 시간 (초)
+  const [estimatedTime, setEstimatedTime] = useState<number>(180); // 총 예상 시간 (초, 3단계)
   const [error, setError] = useState<string | null>(null);
   const [isNotiGranted, setIsNotiGranted] = useState(false);
-  const totalSteps = 4;
-
+  const totalSteps = 3;
+  
   // 알림 권한 확인
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {

@@ -22,9 +22,15 @@ export interface Step2Result {
   responsibility_hypotheses: Array<{
     path: string;
     hypothesis: string;
-    evidence: string;
     confidence: 'low' | 'medium' | 'high';
   }>;
+}
+
+/** Step2+3 통합 AI 응답: 한 번의 호출로 responsibility_hypotheses + project_intent + user_stories 반환 */
+export interface Step2And3CombinedResult {
+  responsibility_hypotheses: Step2Result['responsibility_hypotheses'];
+  project_intent: Step3Result['project_intent'];
+  user_stories: Step3Result['user_stories'];
 }
 
 export type Step3Input = { project: Project; analysisResult: AnalysisResult };
@@ -37,7 +43,6 @@ export interface Step3Result {
     architectural_tendencies: string;
     key_features: string[];
     technology_stack: Record<string, string[]>;
-    evidence: string[];
     confidence: 'low' | 'medium' | 'high';
   };
   user_stories: Array<{
@@ -47,15 +52,16 @@ export interface Step3Result {
   }>;
 }
 
-export type Step4Input = {
+/** Step3(코드요약) 입력 */
+export type Step3CodeSummaryInput = {
   project: Project;
   analysisResult: AnalysisResult;
   /** Step1 주요 파일 경로 -> 소스코드 내용 */
   fileContents: Record<string, string>;
 };
 
-/** Step4 AI 응답: 파일별 코드 설명 (마크다운) */
-export interface Step4Result {
+/** Step3(코드요약) AI 응답: 파일별 코드 설명 (마크다운) */
+export interface Step3CodeSummaryResult {
   file_summaries: Array<{
     file_path: string;
     markdown_content: string;

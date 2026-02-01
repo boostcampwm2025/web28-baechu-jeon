@@ -23,29 +23,60 @@ export const buildStep2Prompts = ({
 # path 필드
 - \`path\`는 **폴더 경로** 또는 **파일 경로**입니다. 폴더일 때는 확장자 없음, 파일일 때는 예: src/app/page.tsx 형태입니다.
 
-
-# hypothesis 작성 (마크다운 형식)
-- \`hypothesis\`는 **해당 폴더 또는 파일에 대한 자세한 설명**을 **마크다운**으로 작성하세요. 코드 스니펫 위주가 아니라, **역할·목적·내용을 설명하는 문장**이 중심이 되도록 하세요.
-- 읽기 쉽게 제목(\`## 역할\`, \`## 요약\` 등), 리스트(\`-\`), 강조(\`**볼드**\`, 인라인 코드 \`파일명\`)를 활용하세요.
-- 이 폴더나 파일이 프로젝트에서 맡는 역할, 어떤 기능/도메인을 담당하는지, 대표 파일이나 다른 부분과의 관계를 2~4문장으로 서술. 너무 길지 않게.
-
-- 개발 경험이 적은 사람도 이해할 수 있게 작성하세요.
+# hypothesis 작성
+- **폴더 path**에 대해서만 \`hypothesis\`를 작성하세요. **마크다운**으로 해당 폴더의 역할·목적·내용을 2~4문장으로 서술하세요. 제목(\`## 역할\`, \`## 요약\` 등), 리스트, 강조를 활용하고, 개발 경험이 적은 사람도 이해할 수 있게 작성하세요.
+- **파일 path**에 대해서는 \`hypothesis\`를 **빈 문자열 \`""\`** 로 두세요. 출력 길이 절약을 위해 파일은 hypothesis를 비우세요.
 
 # 기타
-- "1단계에서 요청한 주요 파일 내용"을 참고해 구체적인 예시나 키워드를 hypothesis에 반영하세요.
+- "1단계에서 요청한 주요 파일 내용"을 참고해 **폴더** hypothesis에 구체적인 예시나 키워드를 반영하세요.
 - **confidence:** 근거가 명확하면 "high", 추측이 섞이면 "medium", 정보가 부족하면 "low".
+
+# 2단계: 프로젝트 의도(Intent)와 사용자 스토리
+위에서 작성한 \`responsibility_hypotheses\`를 종합하여, 이 프로젝트의 **의도(Intent)**와 **사용자 시나리오(User Stories)**를 도출하세요.
+
+## 프로젝트 의도 (project_intent)
+- **overview, purpose:** 전반적인 개요와 핵심 목적 요약.
+- **architectural_tendencies:** 아키텍처 패턴·구조적 특징 한 줄.
+- **key_features:** 핵심 기능 3~5개.
+- **technology_stack:** frontend, backend, infrastructure, database 각 배열 (아키텍처/설계에 영향을 주는 주요 기술만).
+- **confidence:** 근거가 명확하면 "high", 추측이 섞이면 "medium", 정보가 부족하면 "low".
+
+## 사용자 스토리 (user_stories)
+- **story:** 행동과 목적이 드러나는 문장 (예: "사용자는 검색 필터로 원하는 상품을 찾을 수 있다").
+- **related_paths:** 반드시 위 \`responsibility_hypotheses\`에 넣은 \`path\` 값만 사용하세요. 그 외 경로는 넣지 마세요.
+- **rationale:** 해당 스토리가 도출된 기술적 근거.
 
 # 출력 형식 (JSON)
 반드시 다음 JSON 형식을 정확히 따르세요. (마크다운 없이 JSON만 반환. hypothesis 안의 마크다운은 이스케이프된 문자열로 넣으세요.)
-- 설정·CI·스크립트·인프라 전용 폴더/파일은 넣지 말고, **path는 모두 "앱/서비스 소스 코드 영역" 안**인지 확인하세요. **각 path의 부모·조부모·… 최상위까지 모두 리스트에 있어야** 트리가 끊기지 않습니다. 출력 전에 상위 경로 누락이 없는지 검토하세요.
+- **응답이 길더라도 중단하지 말고**, \`responsibility_hypotheses\`, \`project_intent\`, \`user_stories\`를 **끝까지 완성**한 뒤 응답을 마치세요.
+- 설정·CI·스크립트·인프라 전용 폴더/파일은 넣지 말고, **path는 모두 "앱/서비스 소스 코드 영역" 안**인지 확인하세요. **각 path의 부모·조부모·… 최상위까지 모두 리스트에 있어야** 트리가 끊기지 않습니다. **user_stories의 related_paths는 responsibility_hypotheses의 path와 완전히 동일한 문자열만** 사용하세요.
 
 {
   "responsibility_hypotheses": [
     {
       "path": "폴더 또는 파일 경로",
-      "hypothesis": "해당 폴더/파일에 대한 자세한 설명 (마크다운, 적당한 길이)",
-      "evidence": "설명의 근거 (관련 파일명·분류 등)",
+      "hypothesis": "폴더만 작성, 파일은 """,
       "confidence": "low" | "medium" | "high"
+    }
+  ],
+  "project_intent": {
+    "overview": "프로젝트 개요 (한글)",
+    "purpose": "프로젝트의 핵심 목적 (한글)",
+    "architectural_tendencies": "아키텍처 성향 및 구조적 특징 요약",
+    "key_features": ["핵심 기능 1", "핵심 기능 2"],
+    "technology_stack": {
+      "frontend": ["기술 스택"],
+      "backend": ["기술 스택"],
+      "infrastructure": ["기술 스택"],
+      "database": ["기술 스택"]
+    },
+    "confidence": "low" | "medium" | "high"
+  },
+  "user_stories": [
+    {
+      "story": "사용자 스토리 문장",
+      "related_paths": ["responsibility_hypotheses에 나온 path 값만"],
+      "rationale": "도출 근거"
     }
   ]
 }
