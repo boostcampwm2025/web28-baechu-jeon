@@ -3,10 +3,42 @@ import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
 import { ConfigService } from '@nestjs/config';
 import { AiClientRequest } from '../types/ai.types';
 
+/**
+ * 간단한 세마포어 구현: Gemini API 동시 호출 수 제한
+ */
+class Semaphore {
+  private current = 0;
+  private queue: (() => void)[] = [];
+
+  constructor(private readonly max: number) {}
+
+  async acquire(): Promise<void> {
+    if (this.current < this.max) {
+      this.current++;
+      return;
+    }
+    return new Promise((resolve) => {
+      this.queue.push(() => {
+        this.current++;
+        resolve();
+      });
+    });
+  }
+
+  release(): void {
+    this.current--;
+    const next = this.queue.shift();
+    if (next) next();
+  }
+}
+
 // TODO: input 타입 처리하기
 // TODO: 발생할 수 있는 에러 예외처리하기
 // TODO: 단계 분석 구현 후 config 수정하기
 // TODO: usageMetadata 정보 추가하기 (GenerateContentResponse 확인)
+
+// Gemini API 동시 호출 제한 (전역 세마포어)
+const geminiSemaphore = new Semaphore(10);
 
 @Injectable()
 export class GeminiClient {
@@ -34,8 +66,25 @@ export class GeminiClient {
   async generateResponse(
     input: AiClientRequest,
   ): Promise<GenerateContentResponse> {
-    const { userPrompt, systemPrompt } = input;
+    const { userPrompt, systemPrompt, step } = input;
 
+    // 세마포어로 동시 호출 제한
+    await geminiSemaphore.acquire();
+    this.logger.debug('Gemini 세마포어 획득');
+
+    try {
+      return await this.executeWithRetry(userPrompt, systemPrompt, step);
+    } finally {
+      geminiSemaphore.release();
+      this.logger.debug('Gemini 세마포어 해제');
+    }
+  }
+
+  private async executeWithRetry(
+    userPrompt: string,
+    systemPrompt: string,
+    step?: number,
+  ): Promise<GenerateContentResponse> {
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
         const response = await this.ai.models.generateContent({
@@ -51,6 +100,15 @@ export class GeminiClient {
             maxOutputTokens: 60000, // step3(코드요약) 다수 파일 시 마크다운 길이 대비 (잘림 방지)
           },
         });
+
+        // 토큰 사용량 로깅
+        const usage = response.usageMetadata;
+        if (usage) {
+          const stepLabel = step ? `Step${step}` : 'Unknown';
+          this.logger.log(
+            `[Gemini 토큰] ${stepLabel} | 입력: ${usage.promptTokenCount ?? 0} | 출력: ${usage.candidatesTokenCount ?? 0} | 총: ${usage.totalTokenCount ?? 0}`,
+          );
+        }
 
         // 성공하면 응답 반환
         if (attempt > 0) {

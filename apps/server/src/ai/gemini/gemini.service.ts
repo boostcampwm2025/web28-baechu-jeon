@@ -58,6 +58,7 @@ export class GeminiService implements AiProvider {
     const analysisResult = await this.geminiClient.generateResponse({
       userPrompt,
       systemPrompt,
+      step: input.step,
     });
 
     const content = analysisResult.candidates?.[0]?.content?.parts?.[0]?.text;

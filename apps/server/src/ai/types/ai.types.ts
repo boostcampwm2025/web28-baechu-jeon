@@ -71,6 +71,7 @@ export interface Step3CodeSummaryResult {
 export interface AiClientRequest {
   userPrompt: string;
   systemPrompt: string;
+  step?: number; // 단계 정보 (토큰 로깅용)
 }
 
 export interface PromptResponse {
