@@ -29,14 +29,14 @@ export default function ZipUploadTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* 드래그 앤 드롭 영역 */}
       <label
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-20 transition-all ${
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-6 transition-all ${
           isDragging
             ? "border-accent bg-accent/10"
             : error
@@ -51,7 +51,7 @@ export default function ZipUploadTab() {
           className="hidden"
         />
         <svg
-          className="mb-5 h-14 w-14 text-accent"
+          className="mb-3 h-10 w-10 text-accent"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -63,10 +63,10 @@ export default function ZipUploadTab() {
             d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
           />
         </svg>
-        <p className="mb-2 text-lg font-semibold text-body">
+        <p className="mb-1 text-base font-semibold text-body">
           {ZIP_UPLOAD.DRAG_DROP_TITLE}
         </p>
-        <p className="text-sm text-muted">
+        <p className="text-xs text-muted">
           {ZIP_UPLOAD.DRAG_DROP_SUBTITLE}
         </p>
       </label>
@@ -190,7 +190,7 @@ export default function ZipUploadTab() {
       <button
         onClick={handleAnalyze}
         disabled={!projectId || isUploading}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-semibold text-white shadow-sm transition-all hover:bg-primary-hover hover:shadow-md disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted disabled:shadow-none"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-hover hover:shadow-md disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted disabled:shadow-none"
       >
         {isUploading ? (
           <>

@@ -27,7 +27,7 @@ export default function GithubUploadTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* 레포지토리 URL 입력 필드 */}
       <div>
         <label className="mb-3 block text-xs font-semibold tracking-wider text-muted uppercase">
@@ -92,7 +92,7 @@ export default function GithubUploadTab() {
         <button
           onClick={handleConfirm}
           disabled={!githubUrl}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-subtle px-6 py-4 text-base font-semibold text-white shadow-sm transition-all hover:bg-muted hover:shadow-md disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted disabled:shadow-none"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-subtle px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-muted hover:shadow-md disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted disabled:shadow-none"
         >
           <svg
             className="h-5 w-5"
@@ -115,7 +115,7 @@ export default function GithubUploadTab() {
       <button
         onClick={handleAnalyze}
         disabled={!projectId}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-semibold text-white shadow-sm transition-all hover:bg-primary-hover hover:shadow-md disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted disabled:shadow-none"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-hover hover:shadow-md disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted disabled:shadow-none"
       >
         <svg
           className="h-5 w-5"
