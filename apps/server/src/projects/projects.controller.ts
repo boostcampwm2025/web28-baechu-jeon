@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Param,
+  Body,
   UploadedFile,
   UseInterceptors,
   BadRequestException,
@@ -32,6 +33,29 @@ export class ProjectsController {
       },
     }),
   )
+  @Post('github')
+  async uploadFromGithub(@Body('githubUrl') githubUrl: string) {
+    if (!githubUrl || typeof githubUrl !== 'string') {
+      throw new BadRequestException('githubUrl이 필요합니다.');
+    }
+    try {
+      const { projectId } =
+        await this.projectsService.createProjectFromGithubUrl(githubUrl);
+      return {
+        success: true,
+        projectId,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('GitHub ZIP 처리 실패:', error);
+      throw new InternalServerErrorException(
+        'GitHub 저장소 처리에 실패했습니다.',
+      );
+    }
+  }
+
   async uploadZip(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
