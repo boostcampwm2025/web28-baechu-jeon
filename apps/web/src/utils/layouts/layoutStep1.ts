@@ -1,8 +1,17 @@
 import { Node } from "@xyflow/react";
-import dagre from "dagre";
 import { ApiNode } from "@/api/visualization";
 import { BaseNodeData, LAYOUT_SETTINGS } from "./layoutSettings";
 import { calculateTextDimensions } from "./layoutUtils";
+
+// 레이아웃 상수
+const STEP1_CONFIG = {
+  NODE_MIN_W: 600,
+  NODE_MAX_W: 800,
+  NODE_GAP: 100,
+  PADDING: { TOP: 70, SIDE: 80 },
+  LABEL_OFFSET_Y: -120,
+  LABEL_HEIGHT: 50,
+};
 
 export function layoutStep1(
   apiNodes: ApiNode[],
@@ -11,141 +20,54 @@ export function layoutStep1(
   maxWidth: number,
   maxHeight: number,
 ) {
-  // 1. 텍스트 길이에 맞춰 박스 크기 계산
-  let calculatedMaxWidth = maxWidth;
-  let calculatedMaxHeight = maxHeight;
-  apiNodes.forEach((node) => {
-    // 글자 수에 따라 타겟 너비를 먼저 결정
-    const targetW = Math.max(600, Math.min(node.label.length * 15, 800));
-    const dims = calculateTextDimensions(node.label, targetW, 24);
-    calculatedMaxWidth = Math.max(calculatedMaxWidth, dims.width);
-    calculatedMaxHeight = Math.max(calculatedMaxHeight, dims.height);
-  });
-  const NODE_W = calculatedMaxWidth;
-  const NODE_H = calculatedMaxHeight;
+  // 개별 노드 및 전체 그룹 크기 계산
+  const { nodeW, nodeH, graphWidth, graphHeight } = calculateStep1Dimensions(
+    apiNodes,
+    maxWidth,
+    maxHeight,
+  );
 
-  // 2. Dagre 그래프 생성
-  const g = new dagre.graphlib.Graph();
-  g.setGraph({
-    rankdir: "TB", // 위에서 아래로
-    nodesep: 50, // 노드 간 간격 (가로) - 증가
-    ranksep: 80, // 랭크 간 간격 (세로) - 대폭 증가
-    align: "UL", // 정렬 방식 (UL=상단좌측 기준, 중앙 정렬 효과)
-    marginx: 40, // X축 패딩
-    marginy: 60, // Y축 패딩 - 증가
-  });
-  g.setDefaultEdgeLabel(() => ({}));
-
-  const groupId = "group-STEP1";
-  const headerId = `${groupId}-header`;
-  const HEADER_H = 50;
-
-  // (1) 아이템 노드들만 Dagre에 추가 (헤더는 제외!)
-  let previousNodeId: string | null = null;
-
-  apiNodes.forEach((node) => {
-    g.setNode(node.id, { width: NODE_W, height: NODE_H });
-
-    // 순서 강제를 위해 가상의 엣지 연결 (화면엔 안 그림)
-    if (previousNodeId) {
-      g.setEdge(previousNodeId, node.id);
-    }
-    previousNodeId = node.id;
-  });
-
-  // 3. 레이아웃 계산 실행!
-  dagre.layout(g);
-
-  // 4. 결과 노드 생성
   const groupNodes: Node<BaseNodeData>[] = [];
   const childNodes: Node<BaseNodeData>[] = [];
   const updatedApiNodes: ApiNode[] = [];
 
-  // Dagre가 계산한 전체 그래프 크기
-  const graphWidth = g.graph().width || 500;
-  const graphHeight = g.graph().height || 500;
+  const groupId = "group-STEP1";
 
-  // (1) 배경 그룹 박스 (Dagre가 계산한 크기 그대로 사용)
-  groupNodes.push({
-    id: groupId,
-    type: "baseNode",
-    data: {
-      label: "",
-      contents: "",
-      groups: "GROUP_PARENT",
-      width: graphWidth,
-      height: graphHeight,
-      theme: LAYOUT_SETTINGS.diagram1Group.theme,
-      diagramType: "STEP1",
-    },
-    position: { x: xOffset, y: yOffset },
-    style: { zIndex: -1 },
-  });
+  // 그룹 배경 노드 생성
+  groupNodes.push(
+    createContainerNode(groupId, xOffset, yOffset, graphWidth, graphHeight),
+  );
 
-  // ✅ 수정: 헤더를 그룹 외부 독립 노드로 변경
-  groupNodes.push({
-    id: headerId,
-    type: "baseNode",
-    // parentId 제거 - 독립 노드로 만듦
-    draggable: false, // 드래그 비활성화
-    data: {
-      label: "User Stories & Features",
-      contents: "",
-      groups: "GROUP_HEADER",
-      width: graphWidth - 80,
-      height: HEADER_H,
-      theme: {
-        borderColor: "transparent",
-        bgColor: "transparent",
-        textColor: LAYOUT_SETTINGS.diagram1Group.theme.borderColor,
-      },
-      diagramType: "STEP1",
-    },
-    // 절대 좌표로 배치 (그룹 상단 위에 고정)
-    position: {
-      x: xOffset + 40,
-      y: yOffset - HEADER_H - 30, // 그룹 위에 여유있게 배치 (10 -> 30)
-    },
-    style: {
-      zIndex: 10, // 최상위로
-      fontWeight: "bold",
-      fontSize: "1.5rem",
-      textAlign: "center",
-    },
-  });
+  // 라벨 노드 생성
+  groupNodes.push(createHeaderLabel(groupId, graphWidth));
 
-  // 2-2. 아이템 노드 배치
-  apiNodes.forEach((node) => {
-    const pos = g.node(node.id);
+  // 다이어그램1 노드 순회하면서 배치
+  apiNodes.forEach((node, index) => {
+    const relX = STEP1_CONFIG.PADDING.SIDE;
+    const relY =
+      STEP1_CONFIG.PADDING.TOP + index * (nodeH + STEP1_CONFIG.NODE_GAP);
 
-    // 그룹 내부 상대 좌표
-    const relativeX = pos.x - NODE_W / 2;
-    const relativeY = pos.y - NODE_H / 2;
-
+    // React Flow용 노드
     childNodes.push({
       id: node.id,
       type: "baseNode",
       parentId: groupId,
       extent: "parent",
+      position: { x: relX, y: relY },
       data: {
-        label: node.label,
-        contents: node.contents || "",
-        groups: "STEP1_CHILD",
-        width: NODE_W,
-        height: NODE_H,
+        ...node,
+        width: nodeW,
+        height: nodeH,
         theme: LAYOUT_SETTINGS.diagram1.theme,
         diagramType: "STEP1",
-        relatedNodeIds: node.relatedNodeIds || [],
-        relatedPaths: node.relatedPaths || [],
       },
-      position: { x: relativeX, y: relativeY },
     });
 
-    // API 업데이트용 절대 좌표
+    // DB 저장용 좌표 업데이트
     updatedApiNodes.push({
       ...node,
-      x: Math.round(xOffset + relativeX),
-      y: Math.round(yOffset + relativeY),
+      x: Math.round(xOffset + relX),
+      y: Math.round(yOffset + relY),
     });
   });
 
@@ -155,5 +77,87 @@ export function layoutStep1(
     apiNodes: updatedApiNodes,
     width: graphWidth,
     height: graphHeight,
+  };
+}
+
+function calculateStep1Dimensions(
+  nodes: ApiNode[],
+  defaultW: number,
+  defaultH: number,
+) {
+  if (nodes.length === 0)
+    return {
+      nodeW: defaultW,
+      nodeH: defaultH,
+      graphWidth: defaultW,
+      graphHeight: defaultH,
+    };
+
+  // 제일 긴 노드 하나 찾기
+  const longestNode = nodes.reduce((prev, curr) =>
+    curr.label.length > prev.label.length ? curr : prev,
+  );
+
+  const targetW = Math.max(
+    STEP1_CONFIG.NODE_MIN_W,
+    Math.min(longestNode.label.length * 15, STEP1_CONFIG.NODE_MAX_W),
+  );
+
+  const { width: nodeW, height: nodeH } = calculateTextDimensions(
+    longestNode.label,
+    targetW,
+    24,
+  );
+
+  // 결과값을 바탕으로 전체 크기 산출
+  const graphWidth = nodeW + STEP1_CONFIG.PADDING.SIDE * 2;
+  const graphHeight =
+    nodes.length * nodeH +
+    (nodes.length - 1) * STEP1_CONFIG.NODE_GAP +
+    STEP1_CONFIG.PADDING.TOP * 2;
+
+  return { nodeW, nodeH, graphWidth, graphHeight };
+}
+
+function createContainerNode(
+  id: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): Node<BaseNodeData> {
+  return {
+    id,
+    type: "baseNode",
+    position: { x, y },
+    data: {
+      label: "",
+      width: w,
+      height: h,
+      theme: LAYOUT_SETTINGS.diagram1.theme,
+      diagramType: "STEP1",
+    },
+    style: { zIndex: -1, width: w, height: h },
+  };
+}
+
+function createHeaderLabel(parentId: string, w: number): Node<BaseNodeData> {
+  return {
+    id: `${parentId}-label`,
+    type: "baseNode",
+    parentId,
+    position: { x: 0, y: STEP1_CONFIG.LABEL_OFFSET_Y },
+    data: {
+      label: "User Stories & Features",
+      width: w,
+      height: STEP1_CONFIG.LABEL_HEIGHT,
+      theme: {
+        borderColor: "transparent",
+        bgColor: "transparent",
+        textColor: LAYOUT_SETTINGS.diagram1.theme.borderColor,
+      },
+      diagramType: "STEP1",
+      groups: "GROUP_HEADER",
+    },
   };
 }

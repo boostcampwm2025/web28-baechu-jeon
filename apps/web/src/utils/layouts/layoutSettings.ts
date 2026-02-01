@@ -6,8 +6,8 @@ export interface NodeTheme {
 
 export interface BaseNodeData extends Record<string, unknown> {
   label: string;
-  contents: string;
-  groups: string;
+  contents?: string | null;
+  groups?: string | null;
   width: number;
   height: number;
   theme: NodeTheme;
@@ -19,16 +19,6 @@ export interface BaseNodeData extends Record<string, unknown> {
   path?: string;
 }
 
-/*
-interface LayoutSettingItem {
-  w: number;
-  h: number;
-  nSep: number;
-  rSep: number;
-  theme: NodeTheme;
-}
-*/
-
 export const LAYOUT_SETTINGS = {
   diagram1: {
     w: 500,
@@ -39,13 +29,6 @@ export const LAYOUT_SETTINGS = {
       borderColor: "#3b82f6",
       bgColor: "rgba(59, 130, 246, 0.1)",
       textColor: "#60a5fa",
-    },
-  },
-  diagram1Group: {
-    theme: {
-      borderColor: "#1d4ed8",
-      bgColor: "rgba(30, 64, 175, 0.1)",
-      textColor: "#bfdbfe",
     },
   },
   diagram2: {
