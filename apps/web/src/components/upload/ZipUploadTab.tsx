@@ -36,7 +36,9 @@ export default function ZipUploadTab() {
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-6 transition-all ${
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 transition-all duration-300 ease-in-out ${
+          selectedFile ? "py-3" : "py-6"
+        } ${
           isDragging
             ? "border-accent bg-accent/10"
             : error
@@ -51,7 +53,9 @@ export default function ZipUploadTab() {
           className="hidden"
         />
         <svg
-          className="mb-3 h-10 w-10 text-accent"
+          className={`text-accent transition-all duration-300 ease-in-out ${
+            selectedFile ? "mb-1 h-6 w-6" : "mb-3 h-10 w-10"
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -63,10 +67,18 @@ export default function ZipUploadTab() {
             d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
           />
         </svg>
-        <p className="mb-1 text-base font-semibold text-body">
+        <p
+          className={`font-semibold text-body transition-all duration-300 ease-in-out ${
+            selectedFile ? "mb-0 text-sm" : "mb-1 text-base"
+          }`}
+        >
           {ZIP_UPLOAD.DRAG_DROP_TITLE}
         </p>
-        <p className="text-xs text-muted">
+        <p
+          className={`text-muted transition-all duration-300 ease-in-out ${
+            selectedFile ? "h-0 overflow-hidden opacity-0" : "text-xs opacity-100"
+          }`}
+        >
           {ZIP_UPLOAD.DRAG_DROP_SUBTITLE}
         </p>
       </label>
@@ -166,9 +178,15 @@ export default function ZipUploadTab() {
       )}
 
       {/* 주의사항 메시지 */}
-      <div className="flex gap-3 rounded-xl border border-orange-500/30 bg-orange-500/10 p-4">
+      <div
+        className={`flex items-center gap-3 rounded-xl border border-orange-500/30 bg-orange-500/10 transition-all duration-300 ease-in-out ${
+          selectedFile ? "px-4 py-2" : "p-4"
+        }`}
+      >
         <svg
-          className="mt-0.5 h-5 w-5 flex-shrink-0 text-orange-400"
+          className={`flex-shrink-0 text-orange-400 transition-all duration-300 ease-in-out ${
+            selectedFile ? "h-4 w-4" : "h-5 w-5"
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -180,9 +198,19 @@ export default function ZipUploadTab() {
             d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
           />
         </svg>
-        <div className="text-sm text-body">
+        <div
+          className={`text-body transition-all duration-300 ease-in-out ${
+            selectedFile ? "text-xs" : "text-sm"
+          }`}
+        >
           <p className="font-semibold">{ZIP_UPLOAD.WARNING_TITLE}</p>
-          <p className="mt-1 text-subtle">{ZIP_UPLOAD.WARNING_SUBTITLE}</p>
+          <p
+            className={`text-subtle transition-all duration-300 ease-in-out ${
+              selectedFile ? "mt-0 h-0 overflow-hidden opacity-0" : "mt-1 opacity-100"
+            }`}
+          >
+            {ZIP_UPLOAD.WARNING_SUBTITLE}
+          </p>
         </div>
       </div>
 
