@@ -6,6 +6,7 @@ import {
   analysisResultsKey,
   analysisStatusKey,
 } from '../infra/analysis.redis.js';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { Step4Result } from '../../ai/types/ai.types.js';
 
@@ -112,28 +113,36 @@ export class AnalysesService {
     context: PipelineContext,
   ): Promise<void> {
     try {
+      // step2 = 가설+의도 통합, step3 = 코드요약(기존 step4)
+      const step2Merged =
+        context.step2 && context.step3
+          ? {
+              ...(context.step2 as Record<string, unknown>),
+              ...(context.step3 as Record<string, unknown>),
+            }
+          : {};
+
       await this.prisma.analysisResult.create({
         data: {
           id: analysisId,
           projectId,
-          step1: context.step1 || {},
-          step2: context.step2 || {},
-          step3: context.step3 || {},
-          step4: context.step4 || {},
+          step1: (context.step1 || {}) as Prisma.InputJsonValue,
+          step2: step2Merged as Prisma.InputJsonValue,
+          step3: (context.step4 || {}) as Prisma.InputJsonValue,
         },
       });
 
-      const step4 = context.step4 as Step4Result | undefined;
-      if (step4?.file_summaries?.length) {
+      const codeSummary = context.step4 as Step4Result | undefined;
+      if (codeSummary?.file_summaries?.length) {
         await this.prisma.fileSummary.createMany({
-          data: step4.file_summaries.map((s) => ({
+          data: codeSummary.file_summaries.map((s) => ({
             analysisResultId: analysisId,
             filePath: s.file_path,
             markdownContent: s.markdown_content,
           })),
         });
         this.logger.log(
-          `[${analysisId}] FileSummary ${step4.file_summaries.length}건 저장`,
+          `[${analysisId}] FileSummary ${codeSummary.file_summaries.length}건 저장`,
         );
       }
 
