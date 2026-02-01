@@ -21,7 +21,10 @@ export default function ResultTabs() {
   ];
 
   return (
-    <nav className="flex items-center gap-1 rounded-lg border-2 border-sky-100 bg-sky-50 p-1 shadow-sm">
+    <nav
+      id="result-tabs-nav"
+      className="flex items-center gap-1 rounded-lg border-2 border-sky-100 bg-sky-50 p-1 shadow-sm"
+    >
       {tabs.map((tab) => (
         <TabLink
           key={tab.id}
