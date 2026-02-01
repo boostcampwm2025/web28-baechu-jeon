@@ -2,7 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { AnalysesService } from '../analyses.service';
 import { Job } from 'bullmq';
 
-@Processor('analyses', { concurrency: 15 })
+@Processor('analyses', { concurrency: 20 })
 export class AnalysesProcessor extends WorkerHost {
   constructor(private readonly analysesService: AnalysesService) {
     super();
