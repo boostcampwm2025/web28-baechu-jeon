@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import FolderExplorer from "@/components/layout/FolderExplorer";
-import { FileNode } from "@/utils/pathTree";
+import Guide from "@/components/layout/Guide";
+import { useGuideStore } from "@/stores/useGuideStore";
+import { useVisualizationStore } from "@/store/useVisualizationStore";
 import { HiFolderOpen } from "react-icons/hi";
+import { FileNode } from "@/utils/pathTree";
+import { ReactFlowProvider } from "@xyflow/react";
 
 interface LayoutClientProps {
   children: React.ReactNode;
   treeData: FileNode[];
 }
 
-const CLOSE_THRESHOLD = 100;
+// const CLOSE_THRESHOLD = 100;
 const MIN_WIDTH = 250;
 const MAX_WIDTH = 350;
 const DEFAULT_WIDTH = 288;
@@ -19,10 +23,16 @@ export default function LayoutClient({
   children,
   treeData,
 }: LayoutClientProps) {
-  const [isExplorerOpen, setIsExplorerOpen] = useState(true);
+  const { checkFirstVisit, run } = useGuideStore();
+  const { isSidebarOpen, setIsSidebarOpen } = useVisualizationStore();
+
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
   const [isDragging, setIsDragging] = useState(false);
   const isResizing = useRef(false);
+
+  useEffect(() => {
+    checkFirstVisit();
+  }, [checkFirstVisit]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -35,7 +45,7 @@ export default function LayoutClient({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
-      const newWidth = Math.min(MAX_WIDTH, Math.max(0, e.clientX));
+      const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, e.clientX));
       setSidebarWidth(newWidth);
     };
 
@@ -45,16 +55,6 @@ export default function LayoutClient({
       setIsDragging(false);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
-      setSidebarWidth((prev) => {
-        if (prev < CLOSE_THRESHOLD) {
-          setIsExplorerOpen(false);
-          return DEFAULT_WIDTH;
-        }
-        if (prev < MIN_WIDTH) {
-          return MIN_WIDTH;
-        }
-        return prev;
-      });
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -65,49 +65,54 @@ export default function LayoutClient({
     };
   }, []);
 
+  const shouldAnimate = !isDragging && !run;
+
   return (
-    <div className="no-scrollbar relative flex h-full w-full overflow-hidden">
-      <aside
-        className={`relative border-r border-slate-200 bg-gray-50 ${
-          isDragging
-            ? ""
-            : "transition-all duration-300 ease-in-out"
-        } ${isExplorerOpen ? "translate-x-0" : "-translate-x-full opacity-0"}`}
-        style={{
-          width: isExplorerOpen ? `${sidebarWidth}px` : 0,
-        }}
-      >
-        <div className="h-full overflow-y-auto">
-          <FolderExplorer
-            tree={treeData}
-            onClose={() => setIsExplorerOpen(false)}
-          />
-        </div>
+    <ReactFlowProvider>
+      <div className="no-scrollbar relative flex h-full w-full overflow-hidden">
+        <Guide />
 
-        <div
-          onMouseDown={handleMouseDown}
-          className="absolute top-0 -right-1 z-10 h-full w-2.5 cursor-col-resize transition-colors hover:bg-slate-300 active:bg-slate-400"
-        />
-      </aside>
-
-      <section className="relative flex min-w-0 flex-1 flex-col bg-white">
-        <div
-          className={`absolute top-4 left-4 z-20 transition-opacity duration-200 ${
-            !isExplorerOpen
-              ? "pointer-events-auto opacity-100"
-              : "pointer-events-none opacity-0"
-          }`}
+        <aside
+          id="folder-sidebar"
+          className={`relative border-r border-slate-200 bg-gray-50 ${
+            shouldAnimate ? "transition-all duration-300 ease-in-out" : ""
+          } ${isSidebarOpen ? "translate-x-0" : "-translate-x-full opacity-0"}`}
+          style={{
+            width: isSidebarOpen ? `${sidebarWidth}px` : 0,
+          }}
         >
-          <button
-            onClick={() => setIsExplorerOpen(true)}
-            className="cursor-pointer rounded-md border border-slate-200 bg-white p-2 text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-700"
-          >
-            <HiFolderOpen className="h-5 w-5" />
-          </button>
-        </div>
+          <div className="h-full overflow-y-auto">
+            <FolderExplorer
+              tree={treeData}
+              onClose={() => setIsSidebarOpen(false)}
+            />
+          </div>
 
-        <div className="no-scrollbar flex-1 overflow-y-auto">{children}</div>
-      </section>
-    </div>
+          <div
+            onMouseDown={handleMouseDown}
+            className="absolute top-0 -right-1 z-10 h-full w-2.5 cursor-col-resize transition-colors hover:bg-slate-300 active:bg-slate-400"
+          />
+        </aside>
+
+        <section className="relative flex min-w-0 flex-1 flex-col bg-white">
+          <div
+            className={`absolute top-4 left-4 z-20 transition-opacity duration-200 ${
+              !isSidebarOpen
+                ? "pointer-events-auto opacity-100"
+                : "pointer-events-none opacity-0"
+            }`}
+          >
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="cursor-pointer rounded-md border border-slate-200 bg-white p-2 text-slate-500 shadow-sm hover:bg-slate-50"
+            >
+              <HiFolderOpen className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="no-scrollbar flex-1 overflow-y-auto">{children}</div>
+        </section>
+      </div>
+    </ReactFlowProvider>
   );
 }
