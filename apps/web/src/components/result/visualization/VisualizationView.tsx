@@ -61,7 +61,7 @@ export default function VisualizationView({
   const clearHighlightedPaths = useExplorerStore(
     (s) => s.clearHighlightedPaths,
   );
-  const { getViewport } = useReactFlow();
+  const { fitView, getNodes, getViewport } = useReactFlow();
   const setStoreViewport = useVisualizationStore((state) => state.setViewport);
 
   const {
@@ -69,7 +69,31 @@ export default function VisualizationView({
     highlightNodeIds,
     setSelectedNodeId,
     setSelectedFilePath,
+    focusTargetType,
+    setFocusTargetType,
   } = useVisualizationStore();
+
+  useEffect(() => {
+    if (!focusTargetType) return;
+
+    if (focusTargetType === "ALL") {
+      fitView({ duration: 800 });
+    } else {
+      const targetNodes = getNodes().filter(
+        (n) => n.data.diagramType === focusTargetType,
+      );
+      if (targetNodes.length > 0) {
+        fitView({
+          nodes: targetNodes,
+          duration: 1000,
+          padding: 0.2,
+          minZoom: 0.5,
+          maxZoom: 1.0,
+        });
+      }
+    }
+    setFocusTargetType(null); // 실행 후 초기화
+  }, [focusTargetType, fitView, getNodes, setFocusTargetType]);
 
   useEffect(() => {
     setNodes((nds) =>
@@ -137,7 +161,7 @@ export default function VisualizationView({
   }, [getViewport, setStoreViewport]);
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full" id="visualization-canvas">
       <ReactFlow
         nodes={nodes}
         edges={edges}
