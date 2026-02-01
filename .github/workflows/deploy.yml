@@ -71,10 +71,13 @@ jobs:
 
             # DB 마이그레이션을 서버 시작 전에 실행 (일회성 컨테이너)
             echo "🔄 Running database migrations..."
-            # Fix stuck migration (temporary - remove after successful deployment)
+            # Fix stuck/failed migrations (temporary - remove after successful deployment)
+            # These migrations have enum types that may already exist in the database
             docker compose run --rm -T server npx prisma migrate resolve --applied 20260112114603_add_project_status_enum || true
-            # Fix failed migration - mark as rolled back, then it will be re-applied
-            docker compose run --rm -T server npx prisma migrate resolve --rolled-back 20260127151858_refactor_nodes_and_edges_schema || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260126084315_add_edge_type || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260127151858_refactor_nodes_and_edges_schema || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260129060113_extend_node_graph_fields || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260129132558_add_default_values_and_rename_type_enum || true
             docker compose run --rm -T server npx prisma migrate deploy
 
             # 배포 실행
