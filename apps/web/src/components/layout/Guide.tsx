@@ -1,3 +1,4 @@
+// TODO: 안내 문구 표현 알기 쉽게 변경하기
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -85,12 +86,14 @@ export default function Guide() {
         target: ".react-flow",
         content: (
           <div className="text-left">
-            <h3 className="text-lg font-bold">🗺️ 다이어그램 및 제어</h3>
+            <h3 className="text-lg font-bold">🗺️ 다이어그램 결과 확인</h3>
             <p>프로젝트 구조를 자유롭게 탐색하세요.</p>
             <p className="mt-2 text-sm text-slate-500">
-              💡 좌측 하단의 <strong>[+, -, Fit, 잠금]</strong> 버튼으로
-              <br />
-              화면을 제어할 수 있습니다.
+              💡 좌측 하단의 <strong>[+, -, Fit, 잠금]</strong> 버튼으로 화면을
+              제어할 수 있습니다.
+            </p>
+            <p className="mt-2 text-sm text-slate-500">
+              💡 shift+드래깅 시 노드 영역을 선택할 수 있습니다.
             </p>
           </div>
         ),
@@ -100,12 +103,14 @@ export default function Guide() {
         target: ".react-flow",
         content: (
           <div className="text-left">
-            <h3 className="text-lg font-bold text-blue-600">👤 유저 스토리</h3>
-            <p>
-              프로젝트의 핵심 기능 흐름을 확인하세요.
+            <h3 className="text-lg font-bold">👤 유저 스토리</h3>
+            <p className="mt-2 text-sm text-slate-500">
+              프로젝트의 <strong>핵심 기능</strong>을 확인하세요.
               <br />
-              노드 클릭 시 유저 스토리와 연관된 폴더 및 파일을 확인할 수
-              있습니다.
+            </p>
+            <p>
+              노드 클릭 시 <strong>유저 스토리</strong>와 연관된 폴더 및 파일을
+              확인할 수 있습니다.
             </p>
           </div>
         ),
@@ -115,10 +120,17 @@ export default function Guide() {
         target: ".react-flow",
         content: (
           <div className="text-left">
-            <h3 className="text-lg font-bold text-purple-600">
-              🗂️ 핵심 파일트리
-            </h3>
-            <p>주요 폴더와 파일의 구조가 연결되어 표시됩니다.</p>
+            <h3 className="text-lg font-bold">🗂️ 핵심 파일트리</h3>
+            <p className="mt-2">
+              <strong>주요 폴더와 파일의 구조</strong>가 연결되어 표시됩니다.
+              폴더는 실선, 파일은 점선으로 연결됩니다.
+            </p>
+            <p className="mt-2 text-sm text-slate-500">
+              <b>폴더 노드</b>를 클릭하면 해당 폴더의 역할을 확인할 수 있습니다.
+            </p>
+            <p className="mt-2 text-sm text-slate-500">
+              <b>파일 노드</b>를 클릭하면 코드 요약 내용을 확인할 수 있습니다.
+            </p>
           </div>
         ),
         placement: "bottom",
@@ -127,8 +139,11 @@ export default function Guide() {
         target: ".react-flow",
         content: (
           <div className="text-left">
-            <h3 className="text-lg font-bold text-green-600">💻 기술 스택</h3>
-            <p>사용된 라이브러리와 기술을 확인합니다.</p>
+            <h3 className="text-lg font-bold">💻 기술 스택</h3>
+            <p className="mt-2 text-sm text-slate-500">
+              사용된 라이브러리와 기술을 확인합니다.
+            </p>
+            <p>FE, BE, DB, INFRA에 해당하는 기술을 확인할 수 있습니다.</p>
           </div>
         ),
         placement: "bottom",
@@ -139,8 +154,6 @@ export default function Guide() {
           <div className="text-left">
             <h3 className="text-lg font-bold">🔎 프로젝트 상세 설명</h3>
             <p>
-              선택한 <strong>폴더의 역할</strong>과
-              <br />
               <strong>프로젝트의 전체 개요</strong>를 한눈에 확인하세요.
             </p>
             <p className="mt-2 text-sm text-slate-500">
@@ -151,10 +164,12 @@ export default function Guide() {
         placement: "left",
       },
       {
-        target: "#header-help-btn",
+        target: "#header-export-btn",
         content: (
           <div className="text-center">
-            <p className="font-bold">여기서 사용법을 다시 볼 수 있습니다.</p>
+            <h3 className="text-lg font-bold">🔗 공유하기</h3>
+            <p>링크를 복사하여</p>
+            <p className="font-bold">분석 결과를 공유해보세요!</p>
           </div>
         ),
         placement: "bottom",

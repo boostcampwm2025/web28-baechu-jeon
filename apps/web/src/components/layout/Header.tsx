@@ -69,6 +69,7 @@ export default function Header() {
 function ExportButton({ onClick }: { onClick: () => void }) {
   return (
     <button
+      id="header-export-btn"
       onClick={onClick}
       title="공유 링크 추출"
       className="flex cursor-pointer items-center gap-2 rounded-lg bg-blue-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-600"
