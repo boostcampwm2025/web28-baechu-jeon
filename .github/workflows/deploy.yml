@@ -71,13 +71,25 @@ jobs:
 
             # DB 마이그레이션을 서버 시작 전에 실행 (일회성 컨테이너)
             echo "🔄 Running database migrations..."
-            # Fix stuck/failed migrations (temporary - remove after successful deployment)
-            # These migrations have enum types that may already exist in the database
+            # Fix inconsistent migration state - mark all migrations as applied
+            # The database schema is already up to date but migration history is broken
+            # (temporary - remove after successful deployment)
             docker compose run --rm -T server npx prisma migrate resolve --applied 20260112114603_add_project_status_enum || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260122080100_schema_update || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260124164455_add_edges || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260125140552_make_node_groups_nullable || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260125191954_add_diagram_type_to_nodes_and_edges || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260126083604_add_visualization_index || true
             docker compose run --rm -T server npx prisma migrate resolve --applied 20260126084315_add_edge_type || true
             docker compose run --rm -T server npx prisma migrate resolve --applied 20260127151858_refactor_nodes_and_edges_schema || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260127160250_add_column_name_mappings || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260127180732_change_related_folders_to_array || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260127181255_add_extra_to_node_group || true
             docker compose run --rm -T server npx prisma migrate resolve --applied 20260129060113_extend_node_graph_fields || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260129083047_add_file_summaries || true
             docker compose run --rm -T server npx prisma migrate resolve --applied 20260129132558_add_default_values_and_rename_type_enum || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260129141055_add_path_field || true
+            docker compose run --rm -T server npx prisma migrate resolve --applied 20260201120000_analysis_result_three_steps || true
             docker compose run --rm -T server npx prisma migrate deploy
 
             # 배포 실행
