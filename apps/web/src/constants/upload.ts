@@ -23,6 +23,9 @@ export const GITHUB_UPLOAD = {
   WARNING_MESSAGE:
     "분석된 코드는 저장되지 않으며 작업 후 즉시 파기됩니다. Private 리포지토리는 지원하지 않습니다.",
   SUBMIT_BUTTON: "분석 시작하기",
+  LOADING_MESSAGE: "리포지토리 다운로드 중…",
+  ERROR_PRIVATE_OR_NOT_FOUND:
+    "비공개 저장소는 접근할 수 없습니다. GitHub에서 ZIP으로 다운로드한 뒤, 'ZIP 파일 업로드' 탭에서 업로드해 주세요.",
 } as const;
 
 export const FILE_SIZE = {

@@ -16,23 +16,6 @@ import { ProjectsService } from './projects.service';
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
-  @Post('')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      limits: {
-        fileSize: 300 * 1024 * 1024, // 300MB
-      },
-      fileFilter: (req, file, cb) => {
-        if (!file.originalname.endsWith('.zip')) {
-          return cb(
-            new BadRequestException('Only ZIP files are allowed'),
-            false,
-          );
-        }
-        cb(null, true);
-      },
-    }),
-  )
   @Post('github')
   async uploadFromGithub(@Body('githubUrl') githubUrl: string) {
     if (!githubUrl || typeof githubUrl !== 'string') {
@@ -56,6 +39,23 @@ export class ProjectsController {
     }
   }
 
+  @Post('')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 300 * 1024 * 1024, // 300MB
+      },
+      fileFilter: (req, file, cb) => {
+        if (!file.originalname.endsWith('.zip')) {
+          return cb(
+            new BadRequestException('Only ZIP files are allowed'),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
   async uploadZip(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
