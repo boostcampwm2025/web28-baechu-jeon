@@ -10,31 +10,20 @@ export type { BaseNodeData };
 
 export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
   const reactFlowEdges = getReactFlowEdges(apiResponse.edges);
-  let layoutEdges: Edge[] = [];
 
   let nodesResult: {
     reactFlowNodes: Node<BaseNodeData>[];
     updatedApiNodes: ApiNode[];
-    generatedEdges?: Edge[];
   };
 
   if (apiResponse.layoutState === "INITIAL") {
-    const calcResult = calculateLayout(apiResponse.nodes, reactFlowEdges);
-    nodesResult = {
-      reactFlowNodes: calcResult.reactFlowNodes,
-      updatedApiNodes: calcResult.updatedApiNodes,
-    };
-    if (calcResult.generatedEdges) {
-      layoutEdges = calcResult.generatedEdges;
-    }
+    nodesResult = calculateLayout(apiResponse.nodes, reactFlowEdges);
   } else {
     nodesResult = transformExistingNodes(apiResponse.nodes);
   }
 
-  const finalEdges = [...reactFlowEdges, ...layoutEdges];
-
   return {
-    reactFlowEdges: finalEdges,
+    reactFlowEdges,
     reactFlowNodes: nodesResult.reactFlowNodes,
     updatedApiNodes: {
       nodes: nodesResult.updatedApiNodes,
@@ -46,7 +35,6 @@ export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
 function calculateLayout(nodeGroups: Record<string, ApiNode[]>, edges: Edge[]) {
   const reactFlowNodes: Node<BaseNodeData>[] = [];
   const updatedApiNodes: ApiNode[] = [];
-  const generatedEdges: Edge[] = [];
 
   const TOP_MARGIN = 100;
 
@@ -83,13 +71,9 @@ function calculateLayout(nodeGroups: Record<string, ApiNode[]>, edges: Edge[]) {
 
     reactFlowNodes.push(...s3.groupNodes, ...s3.childNodes);
     updatedApiNodes.push(...s3.apiNodes);
-
-    if (s3.generatedEdges) {
-      generatedEdges.push(...s3.generatedEdges);
-    }
   }
 
-  return { reactFlowNodes, updatedApiNodes, generatedEdges };
+  return { reactFlowNodes, updatedApiNodes };
 }
 
 function transformExistingNodes(apiNodes: Record<string, ApiNode[]>) {

@@ -13,7 +13,6 @@ export function layoutStep3(
   const groupNodes: Node<BaseNodeData>[] = [];
   const childNodes: Node<BaseNodeData>[] = [];
   const updatedApiNodes: ApiNode[] = [];
-  const generatedEdges: Edge[] = [];
 
   // 그룹핑
   const groupMap = new Map<string, ApiNode[]>();
@@ -162,7 +161,6 @@ export function layoutStep3(
     groupNodes,
     childNodes,
     apiNodes: updatedApiNodes,
-    generatedEdges,
     width: totalRootWidth,
   };
 }
