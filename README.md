@@ -2,7 +2,7 @@
 
 ## 📍 프로젝트 소개
 
-안녕하세요 저희는 SHOW ME THE 구조~!  
+안녕하세요! 저희는 SHOW ME THE 구조~!  
 프로젝트 업로드를 통한 AI 분석 및 시각화를 제공하여 프로젝트를 쉽게 파악할 수 있도록 도움을 주는 서비스입니다!
 
 ## 🔗 배포 주소
@@ -21,25 +21,30 @@ https://showmethegujo.site
 
 #### 3. AI 3단계 자동 분석
 
-- STEP1: 핵심 파일 8~20개를 AI가 추천
-- STEP2: 파일/폴더 역할, 프로젝트 의도, 기술 스택, 유저 스토리 정리
+- STEP1: 핵심 파일 추출
+- STEP2: 파일/폴더 역할, 프로젝트 의도, 기술 스택, 유저 스토리 정의
 - STEP3: 주요 파일의 코드 요약 문서를 자동 생성
 
 #### 4. 결과 시각화 및 코드 뷰
 
-- 구조 시각화 탭: 트리 형태 구조도와 노드별 설명, 프로젝트 개요 제공.
-- 코드 설명 탭: 파일별 마크다운 요약을 보고 주요 메서드와 개요 확인 가능.
-- 링크 공유: 결과 페이지 링크를 팀원과 공유 가능.
+- 구조 시각화 탭: 트리 형태 구조도와 노드별 설명, 프로젝트 개요 제공
+- 코드 설명 탭: 파일별 마크다운 요약을 보고 주요 메서드와 개요 확인 가능
+- 링크 공유: 결과 페이지 링크를 팀원과 공유 가능
 
 ---
 
 ## 🛠 기술 스택
 
+### Common
+
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Turborepo](https://img.shields.io/badge/Turborepo-EF4444?style=for-the-badge&logo=turborepo&logoColor=white)
+![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
+
 ### Frontend
 
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Zustand](https://img.shields.io/badge/Zustand-443E38?style=for-the-badge&logo=react&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![React Flow](https://img.shields.io/badge/React_Flow-FF0072?style=for-the-badge&logo=react&logoColor=white)
@@ -48,7 +53,6 @@ https://showmethegujo.site
 ### Backend
 
 ![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
@@ -56,11 +60,10 @@ https://showmethegujo.site
 
 ### Infra & DevOps
 
+![Naver Cloud Platform](https://camo.githubusercontent.com/c2f8f4a179a05e5f0f2ac3ac6df551ddbc8f0b4a618527e0befa88b755b6d850/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4e617665725f436c6f75645f506c6174666f726d2d3033433735413f7374796c653d666f722d7468652d6261646765266c6f676f3d6e61766572266c6f676f436f6c6f723d7768697465)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2671E5?style=for-the-badge&logo=githubactions&logoColor=white)
 ![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
-![Turborepo](https://img.shields.io/badge/Turborepo-EF4444?style=for-the-badge&logo=turborepo&logoColor=white)
-![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
 
 ---
 
@@ -95,8 +98,7 @@ web28-boostcamp/
 │
 ├── packages/
 │   ├── eslint-config/          # 공유 ESLint 설정
-│   ├── typescript-config/      # 공유 TypeScript 설정
-│   └── ui/                     # 공유 UI 컴포넌트
+│   └── typescript-config/      # 공유 TypeScript 설정
 │
 ├── nginx/                      # Nginx 설정
 ├── docker-compose.yml          # Docker Compose 설정
@@ -181,9 +183,9 @@ docker compose up -d
 
 | 명령어                 | 설명                   |
 | ---------------------- | ---------------------- |
-| `pnpm prisma:generate` | Prisma 클라이언트 생성 |
-| `pnpm prisma:migrate`  | DB 마이그레이션 실행   |
-| `pnpm prisma:studio`   | Prisma Studio 실행     |
+| `pnpm prisma generate` | Prisma 클라이언트 생성 |
+| `pnpm prisma migrate`  | DB 마이그레이션 실행   |
+| `pnpm prisma studio`   | Prisma Studio 실행     |
 | `pnpm test`            | 테스트 실행            |
 
 ---
