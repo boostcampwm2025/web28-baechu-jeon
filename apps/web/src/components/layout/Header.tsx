@@ -32,7 +32,7 @@ export default function Header() {
     <>
       <Toast message={toastMessage} show={showToast} />
 
-      <header className="border-line bg-surface/80 top-0 z-50 flex w-full shrink-0 items-center justify-between border-b px-6 py-6 backdrop-blur-md">
+      <header className="border-line bg-surface/80 top-0 z-50 flex w-full shrink-0 items-center justify-between border-b px-6 py-3 backdrop-blur-md">
         <Link href="/" className="flex items-center gap-3">
           <img src="/logo.svg" alt="로고" />
           <h1 className="text-heading text-xl font-bold">쇼미더구조</h1>
