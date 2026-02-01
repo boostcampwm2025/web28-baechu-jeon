@@ -73,6 +73,8 @@ jobs:
             echo "🔄 Running database migrations..."
             # Fix stuck migration (temporary - remove after successful deployment)
             docker compose run --rm -T server npx prisma migrate resolve --applied 20260112114603_add_project_status_enum || true
+            # Fix failed migration - mark as rolled back, then it will be re-applied
+            docker compose run --rm -T server npx prisma migrate resolve --rolled-back 20260127151858_refactor_nodes_and_edges_schema || true
             docker compose run --rm -T server npx prisma migrate deploy
 
             # 배포 실행
