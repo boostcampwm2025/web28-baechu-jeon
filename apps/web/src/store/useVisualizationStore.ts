@@ -23,6 +23,8 @@ interface VisualizationState {
 
   // 코드 프리패치 캐시 (key: "analysisId::filePath", value: markdownContent)
   codeCache: Record<string, string>;
+  // LRU 캐시를 위한 접근 순서 추적
+  cacheAccessOrder: string[];
 
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
   setSelectedNodeId: (id: string | null) => void;
@@ -41,6 +43,8 @@ interface VisualizationState {
   getCachedCode: (analysisId: string, filePath: string) => string | undefined;
 }
 
+const MAX_CACHE_SIZE = 20;
+
 export const useVisualizationStore = create<VisualizationState>((set, get) => ({
   viewport: null,
   selectedNodeId: null,
@@ -52,6 +56,7 @@ export const useVisualizationStore = create<VisualizationState>((set, get) => ({
   isNodeOpen: false,
   isProjectOpen: true,
   codeCache: {},
+  cacheAccessOrder: [],
 
   setViewport: (viewport) => set({ viewport }),
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
@@ -63,9 +68,50 @@ export const useVisualizationStore = create<VisualizationState>((set, get) => ({
   setIsNodeOpen: (isOpen) => set({ isNodeOpen: isOpen }),
   setIsProjectOpen: (isOpen) => set({ isProjectOpen: isOpen }),
   setCachedCode: (analysisId, filePath, content) =>
-    set((s) => ({
-      codeCache: { ...s.codeCache, [`${analysisId}::${filePath}`]: content },
-    })),
-  getCachedCode: (analysisId, filePath) =>
-    get().codeCache[`${analysisId}::${filePath}`],
+    set((s) => {
+      const key = `${analysisId}::${filePath}`;
+      const newCache = { ...s.codeCache };
+      const newAccessOrder = [...s.cacheAccessOrder];
+
+      // 이미 존재하면 접근 순서에서 제거
+      const existingIndex = newAccessOrder.indexOf(key);
+      if (existingIndex > -1) {
+        newAccessOrder.splice(existingIndex, 1);
+      }
+
+      // 새 데이터 추가
+      newCache[key] = content;
+      newAccessOrder.push(key); // 맨 뒤에 추가 (가장 최근)
+
+      // LRU: 크기 초과 시 가장 오래된 항목 제거
+      if (newAccessOrder.length > MAX_CACHE_SIZE) {
+        const oldestKey = newAccessOrder.shift(); // 맨 앞 제거 (가장 오래됨)
+        if (oldestKey) {
+          delete newCache[oldestKey];
+        }
+      }
+
+      return {
+        codeCache: newCache,
+        cacheAccessOrder: newAccessOrder,
+      };
+    }),
+  getCachedCode: (analysisId, filePath) => {
+    const key = `${analysisId}::${filePath}`;
+    const state = get();
+    const cached = state.codeCache[key];
+
+    // 캐시 히트 시 접근 순서 갱신 (가장 최근으로 이동)
+    if (cached) {
+      const newAccessOrder = [...state.cacheAccessOrder];
+      const index = newAccessOrder.indexOf(key);
+      if (index > -1) {
+        newAccessOrder.splice(index, 1);
+        newAccessOrder.push(key);
+        set({ cacheAccessOrder: newAccessOrder });
+      }
+    }
+
+    return cached;
+  },
 }));
