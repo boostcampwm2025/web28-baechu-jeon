@@ -38,7 +38,7 @@ class Semaphore {
 // TODO: usageMetadata 정보 추가하기 (GenerateContentResponse 확인)
 
 // Gemini API 동시 호출 제한 (전역 세마포어)
-const geminiSemaphore = new Semaphore(10);
+const geminiSemaphore = new Semaphore(15);
 
 @Injectable()
 export class GeminiClient {
