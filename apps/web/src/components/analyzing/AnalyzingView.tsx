@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ProgressBar from "@/components/analyzing/ProgressBar";
 import { startAnalysis, AnalysisError } from "@/api/analysis";
+import NotificationButton from "@/components/analyzing/NotificationButton";
+import MemeSlider from "@/components/analyzing/MemeSlider";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -38,8 +40,30 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
   const [completedSteps, setCompletedSteps] = useState<number>(0);
   const [estimatedTime, setEstimatedTime] = useState<number>(180); // 총 예상 시간 (초, 3단계)
   const [error, setError] = useState<string | null>(null);
+  const [isNotiGranted, setIsNotiGranted] = useState(false);
   const totalSteps = 3;
+  
+  // 알림 권한 확인
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setIsNotiGranted(Notification.permission === "granted");
+    }
+  }, []);
 
+  // 알림 신청 함수
+  const requestNotification = async () => {
+    if (!("Notification" in window)) {
+      alert("이 브라우저는 알림을 지원하지 않습니다.");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      setIsNotiGranted(true);
+      new Notification("알림 설정 완료!", {
+        body: "분석이 완료되면 알려드릴게요. 편하게 다른 일을 보셔도 됩니다!",
+      });
+    }
+  };
   // 분석 시작 및 SSE 연결
   useEffect(() => {
     let eventSource: EventSource | null = null;
@@ -81,6 +105,13 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
               setCompletedSteps(totalSteps);
               setEstimatedTime(0);
               eventSource?.close();
+
+              if (Notification.permission === "granted") {
+                new Notification("분석 완료! 🚀", {
+                  body: "프로젝트 분석이 끝났습니다. 결과를 확인해보세요!",
+                });
+              }
+
               router.replace(`/result/${projectId}/${result.analysisId}`);
             } else if (data.type === "failed") {
               setCurrentStep("분석 실패");
@@ -127,26 +158,29 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
   };
 
   return (
-    <div className="flex h-full flex-col items-center justify-center bg-gray-50">
+    <div className="bg-page flex h-full flex-col items-center justify-center">
       <div className="w-full max-w-2xl px-6">
         {/* 제목 영역 */}
         <div className="mb-8 text-center">
-          <h1 className="mb-2 text-3xl font-bold text-gray-900">
+          <h1 className="text-heading mb-2 text-3xl font-bold">
             AI 분석 중...
           </h1>
-          <p className="text-gray-600">프로젝트 구조를 분석하고 있습니다.</p>
+          <p className="text-subtle">프로젝트 구조를 분석하고 있습니다.</p>
         </div>
 
+        {/* 밈 슬라이더 */}
+        <MemeSlider />
+
         {/* 프로그레스 바 영역 */}
-        <div className="rounded-lg bg-white p-8 shadow-md">
+        <div className="bg-surface rounded-lg p-8 shadow-md">
           {/* 현재 분석 단계 표시 */}
-          <p className="mb-4 text-center text-sm font-medium text-gray-700">
+          <p className="text-body mb-4 text-center text-sm font-medium">
             {currentStep}
           </p>
 
           {/* 에러 표시 */}
           {error && (
-            <div className="mb-4 rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">
+            <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-center text-sm text-red-400">
               {error}
             </div>
           )}
@@ -154,10 +188,15 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
           {/* 애니메이션 프로그레스 바 */}
           <ProgressBar />
 
+          {/* 알림 신청 버튼 */}
+          <NotificationButton
+            isGranted={isNotiGranted}
+            onRequest={requestNotification}
+          />
           {/* 단계 완료 및 예상 소요 시간 표시 */}
-          <div className="mt-3 flex flex-col items-center gap-1 text-xs text-gray-500">
+          <div className="text-muted mt-3 flex flex-col items-center gap-1 text-xs">
             {completedSteps > 0 && (
-              <span className="font-medium text-gray-700">
+              <span className="text-body font-medium">
                 {completedSteps}/{totalSteps} 단계 완료
               </span>
             )}
@@ -168,3 +207,4 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
     </div>
   );
 }
+
