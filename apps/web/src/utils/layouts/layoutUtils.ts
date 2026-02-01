@@ -45,7 +45,7 @@ export function calculateTextDimensions(
   const lines = Math.ceil(estimatedTotalLength / availableWidth);
 
   const lineHeight = fontSize * 1.6;
-  const verticalPadding = 70;
+  const verticalPadding = 100;
 
   const height = Math.max(90, lines * lineHeight + verticalPadding);
 
