@@ -1,20 +1,18 @@
 import "./globals.css";
+import { cookies } from "next/headers";
 import Header from "../components/layout/Header";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const theme = cookieStore.get("theme")?.value;
+  const isLight = theme === "light";
+
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=document.cookie.match(new RegExp('(^|;)\\s*theme\\s*=\\s*([^;]+)'));var t=m?decodeURIComponent(m[2]):null;if(t==='light')document.documentElement.classList.add('light')}catch(e){}})()`,
-          }}
-        />
-      </head>
+    <html lang="en" className={isLight ? "light" : ""} suppressHydrationWarning>
       <body className="bg-page text-body flex h-screen flex-col overflow-hidden">
         <Header />
         <main className="no-scrollbar w-full flex-1 overflow-y-auto">

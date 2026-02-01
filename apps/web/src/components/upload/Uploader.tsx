@@ -11,15 +11,19 @@ export default function Uploader() {
   const [activeTab, setActiveTab] = useState<UploadTab>("zip");
 
   return (
-    <div className="mx-auto mb-16 w-full max-w-2xl rounded-2xl bg-surface p-8 shadow-sm">
+    <div>
       {/* 탭 메뉴 */}
-      <div className="mb-6 flex gap-3">
+      <div className="relative mb-4 flex rounded-xl bg-page/50 p-1">
+        {/* 슬라이딩 배경 */}
+        <div
+          className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-hover shadow-sm transition-transform duration-300 ease-in-out ${
+            activeTab === "zip" ? "translate-x-1" : "translate-x-[calc(100%+4px)]"
+          }`}
+        />
         <button
           onClick={() => setActiveTab("zip")}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-medium transition-all ${
-            activeTab === "zip"
-              ? "bg-hover text-accent shadow-sm"
-              : "bg-page/50 text-muted hover:bg-hover/70"
+          className={`relative z-10 flex flex-1 items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300 ${
+            activeTab === "zip" ? "text-accent" : "text-muted hover:text-body"
           }`}
         >
           <svg
@@ -39,10 +43,8 @@ export default function Uploader() {
         </button>
         <button
           onClick={() => setActiveTab("github")}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-medium transition-all ${
-            activeTab === "github"
-              ? "bg-hover text-accent shadow-sm"
-              : "bg-page/50 text-muted hover:bg-hover/70"
+          className={`relative z-10 flex flex-1 items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300 ${
+            activeTab === "github" ? "text-accent" : "text-muted hover:text-body"
           }`}
         >
           <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -52,8 +54,22 @@ export default function Uploader() {
         </button>
       </div>
 
-      {/* 탭 콘텐츠 */}
-      {activeTab === "zip" ? <ZipUploadTab /> : <GithubUploadTab />}
+      {/* 탭 콘텐츠 - 슬라이드 애니메이션 */}
+      <div className="overflow-hidden">
+        <div
+          className={`flex transition-transform duration-300 ease-in-out ${
+            activeTab === "zip" ? "translate-x-0" : "-translate-x-1/2"
+          }`}
+          style={{ width: "200%" }}
+        >
+          <div className="w-1/2 shrink-0">
+            <ZipUploadTab />
+          </div>
+          <div className="w-1/2 shrink-0">
+            <GithubUploadTab />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
