@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useMemo } from "react";
-import { ReactFlowProvider, type Node, type Edge } from "@xyflow/react";
+import { type Node, type Edge } from "@xyflow/react";
 import { BaseNodeData } from "@/utils/transformNodes";
 import NodeDetails from "./NodeDetails";
 import ProjectDetails from "./ProjectDetails";
@@ -81,61 +81,63 @@ export default function VisualizationClient({
   }, [setSelectedNodeId, setSelectedFilePath, setIsNodeOpen, setIsProjectOpen]);
 
   return (
-    <ReactFlowProvider>
-      <div className="relative h-full w-full overflow-hidden bg-slate-900">
-        <VisualizationView
-          onNodeClick={handleNodeClick}
-          onPaneClick={handlePaneClick}
-          initialNodes={initialNodes}
-          initialEdges={initialEdges}
-          visualizationId={visualizationId}
-        />
+    <div className="relative h-full w-full overflow-hidden bg-slate-900">
+      <VisualizationView
+        onNodeClick={handleNodeClick}
+        onPaneClick={handlePaneClick}
+        initialNodes={initialNodes}
+        initialEdges={initialEdges}
+        visualizationId={visualizationId}
+      />
 
-        <aside className="pointer-events-none absolute top-6 right-6 bottom-6 z-50 flex w-96 flex-col gap-4">
+      <aside
+        id="details-panel"
+        className="pointer-events-none absolute top-6 right-6 bottom-6 z-50 flex w-96 flex-col gap-4"
+      >
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            panelNode && isNodeOpen
+              ? "h-80 translate-x-0 opacity-100"
+              : "h-0 translate-x-10 opacity-0"
+          }`}
+        >
+          <div className="pointer-events-auto h-full">
+            {panelNode && (
+              <NodeDetails
+                node={panelNode}
+                isOpen={isNodeOpen}
+                onClose={() => setIsNodeOpen(false)}
+              />
+            )}
+          </div>
+        </div>
+
+        {initialPurposes && (
           <div
+            id="project-details-panel"
             className={`overflow-hidden transition-all duration-300 ease-in-out ${
-              panelNode && isNodeOpen
-                ? "h-80 translate-x-0 opacity-100"
+              isProjectOpen
+                ? "flex-1 translate-x-0 opacity-100"
                 : "h-0 translate-x-10 opacity-0"
             }`}
           >
             <div className="pointer-events-auto h-full">
-              {panelNode && (
-                <NodeDetails
-                  node={panelNode}
-                  isOpen={isNodeOpen}
-                  onClose={() => setIsNodeOpen(false)}
-                />
-              )}
+              <ProjectDetails
+                data={initialPurposes}
+                onClose={() => setIsProjectOpen(false)}
+              />
             </div>
           </div>
+        )}
 
-          {initialPurposes && (
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                isProjectOpen
-                  ? "flex-1 translate-x-0 opacity-100"
-                  : "h-0 translate-x-10 opacity-0"
-              }`}
-            >
-              <div className="pointer-events-auto h-full">
-                <ProjectDetails
-                  data={initialPurposes}
-                  onClose={() => setIsProjectOpen(false)}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="pointer-events-auto mt-auto">
-            <SaveButtons
-              isProjectOpen={isProjectOpen}
-              onProjectDetails={() => setIsProjectOpen(true)}
-              onFolderDetails={() => setIsNodeOpen(true)}
-            />
-          </div>
-        </aside>
-      </div>
-    </ReactFlowProvider>
+        <div className="pointer-events-auto mt-auto">
+          <SaveButtons
+            isProjectOpen={isProjectOpen}
+            onProjectDetails={() => setIsProjectOpen(true)}
+            onFolderDetails={() => setIsNodeOpen(true)}
+          />
+        </div>
+      </aside>
+    </div>
   );
 }
