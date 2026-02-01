@@ -13,11 +13,11 @@ export default function FolderExplorer({ tree, onClose }: FolderExplorerProps) {
   return (
     <div className="flex h-full w-full flex-col p-4">
       <div className="mb-4 flex shrink-0 items-center justify-between">
-        <h3 className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase">
+        <h3 className="flex items-center gap-2 text-xs font-bold tracking-wider text-muted uppercase">
           Project Files
         </h3>
         <button onClick={onClose} className="cursor-pointer">
-          <HiOutlineChevronDoubleLeft className="transition-color text-slate-400 hover:text-slate-600" />
+          <HiOutlineChevronDoubleLeft className="transition-color text-muted hover:text-body" />
         </button>
       </div>
 

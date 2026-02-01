@@ -11,15 +11,15 @@ export default function Uploader() {
   const [activeTab, setActiveTab] = useState<UploadTab>("zip");
 
   return (
-    <div className="mx-auto mb-16 w-full max-w-2xl rounded-2xl bg-white p-8 shadow-sm">
+    <div className="mx-auto mb-16 w-full max-w-2xl rounded-2xl bg-surface p-8 shadow-sm">
       {/* 탭 메뉴 */}
       <div className="mb-6 flex gap-3">
         <button
           onClick={() => setActiveTab("zip")}
           className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-medium transition-all ${
             activeTab === "zip"
-              ? "bg-slate-100 text-blue-600 shadow-sm"
-              : "bg-slate-50/50 text-slate-500 hover:bg-slate-100/70"
+              ? "bg-hover text-accent shadow-sm"
+              : "bg-page/50 text-muted hover:bg-hover/70"
           }`}
         >
           <svg
@@ -41,8 +41,8 @@ export default function Uploader() {
           onClick={() => setActiveTab("github")}
           className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-medium transition-all ${
             activeTab === "github"
-              ? "bg-slate-100 text-blue-600 shadow-sm"
-              : "bg-slate-50/50 text-slate-500 hover:bg-slate-100/70"
+              ? "bg-hover text-accent shadow-sm"
+              : "bg-page/50 text-muted hover:bg-hover/70"
           }`}
         >
           <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">

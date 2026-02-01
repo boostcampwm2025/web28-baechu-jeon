@@ -48,7 +48,7 @@ export default function LayoutClient({
       setSidebarWidth((prev) => {
         if (prev < CLOSE_THRESHOLD) {
           setIsExplorerOpen(false);
-          return DEFAULT_WIDTH;
+          return prev; // 현재 위치에서 트랜지션으로 자연스럽게 닫힘
         }
         if (prev < MIN_WIDTH) {
           return MIN_WIDTH;
@@ -68,13 +68,17 @@ export default function LayoutClient({
   return (
     <div className="no-scrollbar relative flex h-full w-full overflow-hidden">
       <aside
-        className={`relative border-r border-slate-200 bg-gray-50 ${
-          isDragging
-            ? ""
-            : "transition-all duration-300 ease-in-out"
-        } ${isExplorerOpen ? "translate-x-0" : "-translate-x-full opacity-0"}`}
+        className={`relative overflow-hidden border-r border-line bg-surface ${
+          isDragging ? "" : "transition-all duration-300 ease-in-out"
+        }`}
         style={{
           width: isExplorerOpen ? `${sidebarWidth}px` : 0,
+          opacity:
+            !isExplorerOpen
+              ? 0
+              : isDragging && sidebarWidth < CLOSE_THRESHOLD
+                ? Math.max(0.3, sidebarWidth / CLOSE_THRESHOLD)
+                : 1,
         }}
       >
         <div className="h-full overflow-y-auto">
@@ -86,11 +90,11 @@ export default function LayoutClient({
 
         <div
           onMouseDown={handleMouseDown}
-          className="absolute top-0 -right-1 z-10 h-full w-2.5 cursor-col-resize transition-colors hover:bg-slate-300 active:bg-slate-400"
+          className="absolute top-0 -right-1 z-10 h-full w-2.5 cursor-col-resize transition-colors hover:bg-hover active:bg-subtle"
         />
       </aside>
 
-      <section className="relative flex min-w-0 flex-1 flex-col bg-white">
+      <section className="relative flex min-w-0 flex-1 flex-col bg-page">
         <div
           className={`absolute top-4 left-4 z-20 transition-opacity duration-200 ${
             !isExplorerOpen
@@ -99,8 +103,11 @@ export default function LayoutClient({
           }`}
         >
           <button
-            onClick={() => setIsExplorerOpen(true)}
-            className="cursor-pointer rounded-md border border-slate-200 bg-white p-2 text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-700"
+            onClick={() => {
+              setSidebarWidth(DEFAULT_WIDTH);
+              setIsExplorerOpen(true);
+            }}
+            className="cursor-pointer rounded-md border border-line bg-surface p-2 text-muted shadow-sm hover:bg-hover hover:text-body"
           >
             <HiFolderOpen className="h-5 w-5" />
           </button>
