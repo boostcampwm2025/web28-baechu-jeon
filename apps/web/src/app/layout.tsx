@@ -15,7 +15,7 @@ export default async function RootLayout({
     <html lang="en" className={isLight ? "light" : ""} suppressHydrationWarning>
       <body className="bg-page text-body flex h-screen flex-col overflow-hidden">
         <Header />
-        <main className="no-scrollbar w-full flex-1 overflow-y-auto">
+        <main className="no-scrollbar flex w-full flex-1 flex-col overflow-y-auto">
           {children}
         </main>
       </body>

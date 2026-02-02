@@ -2,10 +2,10 @@ import Uploader from "@/components/upload/Uploader";
 
 export default function Home() {
   return (
-    <main className="bg-page">
-      <section className="mx-auto max-w-6xl px-6 py-8">
+    <div className="grid min-h-full place-content-center">
+      <section className="mx-auto w-full max-w-6xl px-6 py-8">
         {/* 상단 제목 */}
-        <div className="mb-8 text-center">
+        <div className="mb-16 text-center">
           <h2 className="text-heading mb-3 text-3xl leading-tight font-black md:text-4xl">
             프로젝트 구조를{" "}
             <span className="from-accent-dim to-primary bg-linear-to-r bg-clip-text text-transparent">
@@ -50,7 +50,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
