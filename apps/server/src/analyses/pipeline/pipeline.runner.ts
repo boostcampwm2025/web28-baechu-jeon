@@ -5,6 +5,7 @@ import { AnalysisEmitter } from '../events/analysis.emitter';
 import { AnalysisStep } from '../events/analysis.events';
 import { ProjectsService } from 'src/projects/projects.service';
 import { Step1Result } from 'src/ai/types/ai.types';
+import { analysisMetricsLogger } from '../../common/logger/winston.config';
 
 // TODO: 에러 핸들링 추가: 한 단계에서 에러가 나면 context에 에러 상태를 기록하고 작업을 중단하거나 >>재시도하는 로직<<
 @Injectable()
@@ -35,6 +36,8 @@ export class PipelineRunner {
 
   async run(context: PipelineContext) {
     const { analysisId, projectId } = context;
+    const pipelineStartTime = Date.now();
+    let geminiCallCount = 0;
 
     try {
       // STEP 1
@@ -48,6 +51,7 @@ export class PipelineRunner {
           context.step1,
         );
       } else {
+        const step1StartTime = Date.now();
         await this.emitStep(
           analysisId,
           'STEP1_FEATURE_ANALYSIS',
@@ -58,8 +62,14 @@ export class PipelineRunner {
           projectId,
           step: 1,
         });
+        geminiCallCount++;
 
         context.step1 = step1.result;
+
+        const step1Duration = Date.now() - step1StartTime;
+        analysisMetricsLogger.info(
+          `${analysisId},${projectId},Step1,${step1Duration},1,true`,
+        );
 
         await this.emitStep(
           analysisId,
@@ -87,6 +97,7 @@ export class PipelineRunner {
           context.step2,
         );
       } else {
+        const step2StartTime = Date.now();
         await this.emitStep(
           analysisId,
           'STEP2_HYPOTHESIS_AND_INTENT',
@@ -109,6 +120,7 @@ export class PipelineRunner {
           analysisResult: { step1: context.step1 } as any,
           additionalFileContents,
         });
+        geminiCallCount++;
 
         const mergedResult = merged.result as {
           step2: { responsibility_hypotheses: unknown[] };
@@ -118,6 +130,11 @@ export class PipelineRunner {
           ...mergedResult.step2,
           ...mergedResult.step3,
         };
+
+        const step2Duration = Date.now() - step2StartTime;
+        analysisMetricsLogger.info(
+          `${analysisId},${projectId},Step2,${step2Duration},1,true`,
+        );
 
         await this.emitStep(
           analysisId,
@@ -136,6 +153,7 @@ export class PipelineRunner {
         );
       }
 
+      const step3StartTime = Date.now();
       await this.emitStep(analysisId, 'STEP3_CODE_SUMMARY', 'STARTED', 66);
 
       if (!context.step1 || !context.step2)
@@ -153,8 +171,14 @@ export class PipelineRunner {
         } as any,
         fileContents: context.mainFileContents,
       });
+      geminiCallCount++;
 
       context.step3 = step3Result.result;
+
+      const step3Duration = Date.now() - step3StartTime;
+      analysisMetricsLogger.info(
+        `${analysisId},${projectId},Step3,${step3Duration},1,true`,
+      );
 
       await this.emitStep(
         analysisId,
@@ -162,6 +186,12 @@ export class PipelineRunner {
         'COMPLETED',
         100,
         context.step3,
+      );
+
+      // 전체 파이프라인 완료 메트릭
+      const totalDuration = Date.now() - pipelineStartTime;
+      analysisMetricsLogger.info(
+        `${analysisId},${projectId},Total,${totalDuration},${geminiCallCount},true`,
       );
 
       // 전체 완료
@@ -182,6 +212,12 @@ export class PipelineRunner {
         );
       }
     } catch (err: any) {
+      // 실패 시에도 메트릭 기록
+      const totalDuration = Date.now() - pipelineStartTime;
+      analysisMetricsLogger.info(
+        `${analysisId},${projectId},Total,${totalDuration},${geminiCallCount},false`,
+      );
+
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       this.logger.error(`Pipeline failed at ${analysisId}: ${err.message}`);
       await this.emitter.emitFailed({
