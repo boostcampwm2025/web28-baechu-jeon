@@ -30,10 +30,10 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
 
-  // 다크모드 감지
+  // 다크모드 감지 (light 클래스가 없으면 다크모드)
   useEffect(() => {
     const checkDarkMode = () => {
-      setIsDark(document.documentElement.classList.contains("dark"));
+      setIsDark(!document.documentElement.classList.contains("light"));
     };
 
     checkDarkMode();
@@ -140,8 +140,10 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
       )}
 
       {!loading && !error && (
-        <div className="flex-1 overflow-auto p-6">
-          <div className="prose prose-zinc dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-heading prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-relaxed prose-p:text-[15px] prose-p:text-body prose-strong:font-semibold prose-strong:text-heading prose-code:rounded prose-code:bg-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[14px] prose-code:font-normal prose-code:text-body prose-code:before:content-[''] prose-code:after:content-[''] prose-pre:border-0 prose-pre:bg-transparent prose-pre:p-0 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-muted prose-blockquote:text-muted prose-ul:my-4 prose-ol:my-4 prose-li:my-1 prose-li:text-body">
+        <div
+          className={`flex-1 overflow-auto p-6 bg-[var(--color-hover)]`}
+        >
+          <div className="prose prose-zinc dark:prose-invert prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-heading prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-relaxed prose-p:text-[15px] prose-p:text-body prose-strong:font-semibold prose-strong:text-heading prose-code:rounded prose-code:bg-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[14px] prose-code:font-normal prose-code:text-body prose-code:before:content-[''] prose-code:after:content-[''] prose-pre:border-0 prose-pre:bg-transparent prose-pre:p-0 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-muted prose-blockquote:text-muted prose-ul:my-4 prose-ol:my-4 prose-li:my-1 prose-li:text-body max-w-none">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
