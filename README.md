@@ -1,13 +1,32 @@
-## 🥬 web28-baechu-jeon
+<div align="center">
 
-## 📍 프로젝트 소개
 
-안녕하세요! 저희는 SHOW ME THE 구조~!  
-프로젝트 업로드를 통한 AI 분석 및 시각화를 제공하여 프로젝트를 쉽게 파악할 수 있도록 도움을 주는 서비스입니다!
+ <h3>안녕하세요! 저희는 SHOW ME THE 구조~!  </h3>
+  <p> 프로젝트 업로드를 통한 AI 분석 및 시각화를 제공하여 프로젝트를 쉽게 파악할 수 있도록 도움을 주는 서비스입니다! </p>
+   <p>
+    <a href="https://showmethegujo.site"><strong>🥬 배포 사이트 🥬</strong></a>
+  </p>
+<img width="800px" alt="banner" src="https://github.com/user-attachments/assets/5ab216df-d866-463b-b2cc-3f0b0ccd15e6" />
 
-## 🔗 배포 주소
+<p></p>
 
-https://showmethegujo.site
+<table>
+  <thead>
+    <tr>
+      <th colspan="4" align="center">📍 핵심 기능</th>
+    </tr>
+    <tr>
+      <th align="center">프로젝트 업로드</th>
+      <th align="center">분석 진행 상태 확인</th>
+      <th align="center">AI 3단계 자동 분석</th>
+      <th align="center">결과 시각화 및 코드 뷰</th>
+    </tr>
+  </thead>
+</table>
+
+</div>
+
+---
 
 ## ⚡️ 주요 기능
 
