@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useMemo, useEffect } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import CodeView from "@/components/result/code/CodeView";
 import VisualizationClient from "@/components/result/visualization/VisualizationClient";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
@@ -24,14 +25,40 @@ export default function ResultTabsClient({
   initialVisualizationData = null,
   initialIntentionsData = null,
 }: Props) {
-  const activeTab = useVisualizationStore((s) => s.activeTab);
-  const initialized = useRef(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // 마운트 시 서버에서 내려준 initialTab으로 동기 세팅 (useEffect 대신 ref로 1회만)
-  if (!initialized.current) {
-    initialized.current = true;
-    useVisualizationStore.getState().setActiveTab(initialTab);
-  }
+  const activeTab = useVisualizationStore((s) => s.activeTab);
+  const setActiveTab = useVisualizationStore((s) => s.setActiveTab);
+  const setSelectedFilePath = useVisualizationStore(
+    (s) => s.setSelectedFilePath,
+  );
+
+  // URL searchParams 로만 상태 동기화
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab");
+    const filePathFromUrl = searchParams.get("filePath");
+
+    if (tabFromUrl === "code" || tabFromUrl === "visualization") {
+      setActiveTab(tabFromUrl);
+    }
+    if (filePathFromUrl) {
+      setSelectedFilePath(filePathFromUrl);
+    }
+  }, [searchParams, setActiveTab, setSelectedFilePath]);
+
+  // 첫 진입 시 URL에 쿼리 파라미터가 없으면 초기화
+  useEffect(() => {
+    if (!searchParams.has("tab")) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", initialTab);
+      if (initialFilePath) {
+        params.set("filePath", initialFilePath);
+      }
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, []);
 
   // 서버에서 받은 raw 데이터를 ReactFlow 형식으로 변환
   const { initialNodes, initialEdges, initialPurposes } = useMemo(() => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter, usePathname } from "next/navigation";
 import { HiFolder, HiDocument, HiOutlineChevronRight } from "react-icons/hi";
 import { FileNode } from "@/utils/pathTree";
 import { useExplorerStore } from "@/stores/useExplorerStore";
@@ -21,12 +21,11 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFolder = node.type === "folder";
 
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const params = useParams<{ analysisId: string }>();
   const highlightedPaths = useExplorerStore((s) => s.highlightedPaths);
-  const setSelectedFilePath = useVisualizationStore(
-    (s) => s.setSelectedFilePath,
-  );
-  const setActiveTab = useVisualizationStore((s) => s.setActiveTab);
   const setCachedCode = useVisualizationStore((s) => s.setCachedCode);
 
   const indicatedPaths = useExplorerStore((s) => s.indicatedPaths);
@@ -99,9 +98,12 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
       return;
     }
     const decoded = maybeDecode(node.path) ?? node.path;
-    setSelectedFilePath(decoded);
-    // URL 이동 없이 내부 탭으로 전환
-    setActiveTab("code");
+
+    // URL만 변경 (상태는 ResultTabsClient에서 URL 감시하여 동기화)
+    const urlParams = new URLSearchParams(searchParams.toString());
+    urlParams.set("tab", "code");
+    urlParams.set("filePath", decoded);
+    router.push(`${pathname}?${urlParams.toString()}`, { scroll: false });
   };
 
   return (
