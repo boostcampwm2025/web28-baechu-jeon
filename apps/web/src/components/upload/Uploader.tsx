@@ -55,17 +55,17 @@ export default function Uploader() {
       </div>
 
       {/* 탭 콘텐츠 - 슬라이드 애니메이션 */}
-      <div className="overflow-hidden">
+      <div className="h-[340px] overflow-hidden">
         <div
-          className={`flex transition-transform duration-300 ease-in-out ${
+          className={`flex h-full transition-transform duration-300 ease-in-out ${
             activeTab === "zip" ? "translate-x-0" : "-translate-x-1/2"
           }`}
           style={{ width: "200%" }}
         >
-          <div className="w-1/2 shrink-0">
+          <div className="thin-scrollbar h-full w-1/2 shrink-0 overflow-y-auto">
             <ZipUploadTab />
           </div>
-          <div className="w-1/2 shrink-0">
+          <div className="thin-scrollbar h-full w-1/2 shrink-0 overflow-y-auto">
             <GithubUploadTab />
           </div>
         </div>
