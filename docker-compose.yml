@@ -49,8 +49,3 @@ services:
       - '3002:3000'
     depends_on:
       - influxdb
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - '6379:6379'
