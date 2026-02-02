@@ -79,12 +79,22 @@ export default function VisualizationView({
 
       if (node.data.diagramType === "STEP1") {
         if (node.data.relatedNodeIds?.length) {
-          toggleHighlight(node.id, [node.id, ...node.data.relatedNodeIds]);
-          setHighlightedPaths(node.data.relatedPaths || []);
-        } else {
-          resetHighlights();
+          const isHighlighted = toggleHighlight(node.id, [
+            node.id,
+            ...node.data.relatedNodeIds,
+          ]);
+
+          if (isHighlighted) {
+            setHighlightedPaths(node.data.relatedPaths || []);
+            return;
+          }
+
           clearHighlightedPaths();
+          return;
         }
+        resetHighlights();
+        clearHighlightedPaths();
+        return;
       }
 
       if (node.data.type === "FILE") {
