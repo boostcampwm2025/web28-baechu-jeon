@@ -11,6 +11,7 @@ export default function ZipUploadTab() {
     uploadError,
     isUploading,
     projectId,
+    fileInputRef,
     handleDragEnter,
     handleDragLeave,
     handleDragOver,
@@ -47,6 +48,7 @@ export default function ZipUploadTab() {
         }`}
       >
         <input
+          ref={fileInputRef}
           type="file"
           accept=".zip"
           onChange={handleFileSelect}
