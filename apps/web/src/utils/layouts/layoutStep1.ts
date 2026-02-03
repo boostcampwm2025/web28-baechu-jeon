@@ -1,163 +1,65 @@
-import { Node } from "@xyflow/react";
 import { ApiNode } from "@/api/visualization";
-import { BaseNodeData, LAYOUT_SETTINGS } from "./layoutSettings";
 import { calculateTextDimensions } from "./layoutUtils";
+import { LAYOUT_SETTINGS } from "./layoutSettings";
 
-// 레이아웃 상수
-const STEP1_CONFIG = {
-  NODE_MIN_W: 600,
-  NODE_MAX_W: 800,
-  NODE_GAP: 100,
-  PADDING: { TOP: 70, SIDE: 80 },
-  LABEL_OFFSET_Y: -120,
-  LABEL_HEIGHT: 50,
-};
+export const layoutStep1 = (
+  nodes: ApiNode[],
+  xOffset: number = 0,
+  yOffset: number = 0,
+) => {
+  const SETTING = LAYOUT_SETTINGS.diagram1;
 
-export function layoutStep1(
-  apiNodes: ApiNode[],
-  xOffset: number,
-  yOffset: number,
-  maxWidth: number,
-  maxHeight: number,
-) {
-  // 개별 노드 및 전체 그룹 크기 계산
-  const { nodeW, nodeH, graphWidth, graphHeight } = calculateStep1Dimensions(
-    apiNodes,
-    maxWidth,
-    maxHeight,
-  );
+  // 텍스트가 줄바꿈되어야 할 기준 너비 계산
+  const textLimitWidth = SETTING.w - SETTING.font.xPadding * 2;
 
-  const groupNodes: Node<BaseNodeData>[] = [];
-  const childNodes: Node<BaseNodeData>[] = [];
-  const updatedApiNodes: ApiNode[] = [];
+  // 가장 큰 높이 찾기
+  let maxNodeHeight: number = SETTING.minH;
 
-  const groupId = "group-STEP1";
+  nodes.forEach((node) => {
+    const { height } = calculateTextDimensions(node.label || "", {
+      fontSize: SETTING.font.size,
+      lineHeight: SETTING.font.lineHeight,
 
-  // 그룹 배경 노드 생성
-  groupNodes.push(
-    createContainerNode(groupId, xOffset, yOffset, graphWidth, graphHeight),
-  );
+      maxWidth: textLimitWidth, // 이 너비를 넘으면 줄바꿈
+      paddingX: SETTING.font.xPadding * 2, // 좌우 패딩 합
+      paddingY: SETTING.font.yPadding * 2, // 상하 패딩 합
 
-  // 라벨 노드 생성
-  groupNodes.push(createHeaderLabel(groupId, graphWidth));
-
-  // 다이어그램1 노드 순회하면서 배치
-  apiNodes.forEach((node, index) => {
-    const relX = STEP1_CONFIG.PADDING.SIDE;
-    const relY =
-      STEP1_CONFIG.PADDING.TOP + index * (nodeH + STEP1_CONFIG.NODE_GAP);
-
-    // React Flow용 노드
-    childNodes.push({
-      id: node.id,
-      type: "baseNode",
-      parentId: groupId,
-      extent: "parent",
-      position: { x: relX, y: relY },
-      data: {
-        ...node,
-        width: nodeW,
-        height: nodeH,
-        theme: LAYOUT_SETTINGS.diagram1.theme,
-        diagramType: "STEP1",
-      },
+      minHeight: SETTING.minH,
     });
 
-    // DB 저장용 좌표 업데이트
-    updatedApiNodes.push({
-      ...node,
-      x: Math.round(xOffset + relX),
-      y: Math.round(yOffset + relY),
-    });
+    if (height > maxNodeHeight) {
+      maxNodeHeight = height;
+    }
   });
 
-  return {
-    groupNodes,
-    childNodes,
-    apiNodes: updatedApiNodes,
-    width: graphWidth,
-    height: graphHeight,
-  };
-}
+  // 좌표 계산
+  const contentStartX = xOffset + SETTING.paddingSide;
+  const contentStartY = yOffset + SETTING.paddingTop;
 
-function calculateStep1Dimensions(
-  nodes: ApiNode[],
-  defaultW: number,
-  defaultH: number,
-) {
-  if (nodes.length === 0)
+  // 노드 데이터에 좌표와 크기 주입
+  const calculatedNodes = nodes.map((node, index) => {
+    const currentY = contentStartY + index * (maxNodeHeight + SETTING.nSep);
+
     return {
-      nodeW: defaultW,
-      nodeH: defaultH,
-      graphWidth: defaultW,
-      graphHeight: defaultH,
+      ...node,
+      x: Math.round(contentStartX),
+      y: Math.round(currentY),
+      width: SETTING.w,
+      height: maxNodeHeight, // 계산된 최대 높이
     };
+  });
 
-  // 제일 긴 노드 하나 찾기
-  const longestNode = nodes.reduce((prev, curr) =>
-    curr.label.length > prev.label.length ? curr : prev,
-  );
+  // 전체 영역 크기 반환
+  const totalHeight =
+    calculatedNodes.length > 0
+      ? calculatedNodes[calculatedNodes.length - 1].y +
+        maxNodeHeight +
+        SETTING.paddingTop
+      : 200;
 
-  const targetW = Math.max(
-    STEP1_CONFIG.NODE_MIN_W,
-    Math.min(longestNode.label.length * 15, STEP1_CONFIG.NODE_MAX_W),
-  );
-
-  const { width: nodeW, height: nodeH } = calculateTextDimensions(
-    longestNode.label,
-    targetW,
-    24,
-  );
-
-  // 결과값을 바탕으로 전체 크기 산출
-  const graphWidth = nodeW + STEP1_CONFIG.PADDING.SIDE * 2;
-  const graphHeight =
-    nodes.length * nodeH +
-    (nodes.length - 1) * STEP1_CONFIG.NODE_GAP +
-    STEP1_CONFIG.PADDING.TOP * 2;
-
-  return { nodeW, nodeH, graphWidth, graphHeight };
-}
-
-function createContainerNode(
-  id: string,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-): Node<BaseNodeData> {
   return {
-    id,
-    type: "baseNode",
-    position: { x, y },
-    data: {
-      label: "",
-      width: w,
-      height: h,
-      theme: LAYOUT_SETTINGS.diagram1.theme,
-      diagramType: "STEP1",
-    },
-    style: { zIndex: -1, width: w, height: h },
+    nodes: calculatedNodes,
+    width: SETTING.w + SETTING.paddingSide * 2,
+    height: totalHeight,
   };
-}
-
-function createHeaderLabel(parentId: string, w: number): Node<BaseNodeData> {
-  return {
-    id: `${parentId}-label`,
-    type: "baseNode",
-    parentId,
-    position: { x: 0, y: STEP1_CONFIG.LABEL_OFFSET_Y },
-    data: {
-      label: "User Stories & Features",
-      width: w,
-      height: STEP1_CONFIG.LABEL_HEIGHT,
-      theme: {
-        borderColor: "transparent",
-        bgColor: "transparent",
-        textColor: LAYOUT_SETTINGS.diagram1.theme.borderColor,
-      },
-      diagramType: "STEP1",
-      groups: "GROUP_HEADER",
-    },
-  };
-}
+};
