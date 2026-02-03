@@ -10,10 +10,9 @@ import type { GetIntentionsResponse } from "@/types/intentionApi";
 import { Node, Edge } from "@xyflow/react";
 import { BaseNodeData } from "@/utils/layouts/layoutSettings";
 
-const CodeView = dynamic(
-  () => import("@/components/result/code/CodeView"),
-  { ssr: false },
-);
+const CodeView = dynamic(() => import("@/components/result/code/CodeView"), {
+  ssr: false,
+});
 
 const VisualizationClient = dynamic(
   () => import("@/components/result/visualization/VisualizationClient"),
@@ -23,6 +22,7 @@ const VisualizationClient = dynamic(
 type Props = {
   projectId: string;
   analysisId: string;
+  visualizationId: string;
   initialTab?: "code" | "visualization";
   initialFilePath?: string | null;
   initialVisualizationData?: VisualizationResponse | null;
@@ -30,6 +30,7 @@ type Props = {
 };
 
 export default function ResultTabsClient({
+  visualizationId,
   analysisId,
   initialTab = "visualization",
   initialFilePath = null,
@@ -116,7 +117,8 @@ export default function ResultTabsClient({
       >
         {vizLoaded && (
           <VisualizationClient
-            visualizationId={analysisId}
+            visualizationId={visualizationId}
+            analysisId={analysisId}
             initialNodes={initialNodes}
             initialEdges={initialEdges}
             initialPurposes={initialPurposes}

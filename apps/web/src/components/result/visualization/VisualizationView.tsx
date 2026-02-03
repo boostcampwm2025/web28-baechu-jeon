@@ -35,6 +35,7 @@ const nodeTypes: NodeTypes = {
 
 interface VisualizationViewProps {
   visualizationId: string;
+  analysisId: string;
   initialNodes: Node<BaseNodeData>[];
   initialEdges: Edge[];
   onNodeClick: (node: NodeData) => void;
@@ -43,6 +44,7 @@ interface VisualizationViewProps {
 
 export default function VisualizationView({
   visualizationId,
+  analysisId,
   onNodeClick,
   onPaneClick,
   initialNodes = [],
@@ -198,7 +200,7 @@ export default function VisualizationView({
       setIsResetting(false);
     }
   }, [
-    visualizationId,
+    analysisId,
     setNodes,
     setEdges,
     setSelectedNodeId,

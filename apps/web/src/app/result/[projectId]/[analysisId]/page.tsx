@@ -21,11 +21,15 @@ export default async function ResultPage({
   let initialVisualizationData: VisualizationResponse | null = null;
   let initialIntentionsData: GetIntentionsResponse | null = null;
 
+  let visualizationId = "";
+
   try {
     const [vizData, intentionsData] = await Promise.all([
       getVisualization(analysisId),
       getIntentions(analysisId),
     ]);
+
+    visualizationId = vizData.visualizationId;
 
     initialVisualizationData = vizData;
     initialIntentionsData = intentionsData;
@@ -54,6 +58,7 @@ export default async function ResultPage({
 
   return (
     <ResultTabsClient
+      visualizationId={visualizationId}
       projectId={projectId}
       analysisId={analysisId}
       initialTab={initialTab}

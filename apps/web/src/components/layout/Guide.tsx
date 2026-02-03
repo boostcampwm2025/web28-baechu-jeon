@@ -11,12 +11,12 @@ import Joyride, {
 } from "react-joyride";
 import { useGuideStore } from "@/stores/useGuideStore";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useReactFlow } from "@xyflow/react";
 
 export default function Guide() {
-  const pathname = usePathname();
-  const isCodePage = pathname?.includes("/code");
+  const params = useParams();
+  const isCodePage = params?.page === "code";
 
   const { getViewport, setViewport } = useReactFlow();
 

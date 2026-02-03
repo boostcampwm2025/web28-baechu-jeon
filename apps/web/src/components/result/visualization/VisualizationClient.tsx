@@ -18,6 +18,7 @@ interface VisualizationClientProps {
   initialNodes?: Node<BaseNodeData>[];
   initialEdges?: Edge[];
   initialPurposes?: ProjectDetailsData;
+  analysisId: string;
   visualizationId: string;
 }
 
@@ -25,6 +26,7 @@ export default function VisualizationClient({
   initialNodes = [],
   initialEdges = [],
   initialPurposes,
+  analysisId,
   visualizationId,
 }: VisualizationClientProps) {
   const {
@@ -66,21 +68,21 @@ export default function VisualizationClient({
     initialPurposes,
   );
   const [loading, setLoading] = useState(
-    () => !(initialNodes && initialNodes.length) && !!visualizationId,
+    () => !(initialNodes && initialNodes.length) && !!analysisId,
   );
 
   useEffect(() => {
     let cancelled = false;
     async function fetchVisual() {
-      if ((initialNodes && initialNodes.length) || !visualizationId) return;
+      if ((initialNodes && initialNodes.length) || !analysisId) return;
       setLoading(true);
       try {
         const { getIntentions } = await import("@/api/intention");
         const { getVisualization } = await import("@/api/visualization");
 
         const [intentions, ver] = await Promise.all([
-          getIntentions(visualizationId),
-          getVisualization(visualizationId),
+          getIntentions(analysisId),
+          getVisualization(analysisId),
         ]);
 
         if (cancelled) return;
@@ -105,7 +107,7 @@ export default function VisualizationClient({
     return () => {
       cancelled = true;
     };
-  }, [initialNodes, visualizationId]);
+  }, [initialNodes, analysisId]);
 
   const params = useParams();
   const analysisIdParam = params?.analysisId as string | undefined;
@@ -216,6 +218,7 @@ export default function VisualizationClient({
   }
 
   return (
+    <div>
       <div className="bg-page relative h-full w-full overflow-hidden">
         {/* 모바일/작은 화면 경고 메시지 */}
         <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm md:hidden">
@@ -235,13 +238,16 @@ export default function VisualizationClient({
         </div>
       </div>
 
-      <VisualizationView
-        initialNodes={nodes}
-        initialEdges={edges}
-        onNodeClick={handleNodeClick}
-        onPaneClick={handlePaneClick}
-        visualizationId={visualizationId}
-      />
+      <div className="relative h-[80vh] w-full">
+        <VisualizationView
+          visualizationId={visualizationId}
+          analysisId={analysisId}
+          initialNodes={nodes}
+          initialEdges={edges}
+          onNodeClick={handleNodeClick}
+          onPaneClick={handlePaneClick}
+        />
+      </div>
 
       <aside
         id="details-panel"
