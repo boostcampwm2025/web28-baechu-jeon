@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GeminiService } from 'src/ai/gemini/gemini.service';
+import { RetryableAnalysisError } from 'src/ai/gemini/gemini.client';
 import { PipelineContext } from './pipeline.context';
 import { AnalysisEmitter } from '../events/analysis.emitter';
 import { AnalysisStep } from '../events/analysis.events';
@@ -241,6 +242,14 @@ export class PipelineRunner {
       analysisMetricsLogger.info(
         `${analysisId},${projectId},Total,${totalDuration},${geminiCallCount},false`,
       );
+
+      // RetryableAnalysisError(429)면 job 레벨에서 재시도하도록 throw만 하고, 로그만 남김
+      if (err instanceof RetryableAnalysisError) {
+        this.logger.warn(
+          `Pipeline Step: Gemini 429/TPM 초과 - job 재시도 필요: ${err.message}`,
+        );
+        throw err;
+      }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       this.logger.error(`Pipeline failed at ${analysisId}: ${err.message}`);

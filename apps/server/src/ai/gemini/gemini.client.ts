@@ -41,8 +41,15 @@ class Semaphore {
 // Step2 실제 토큰: 평균 ~150K, 최대 385K (TPM 1M)
 // Step1/3: 평균 ~50K, 최대 ~130K
 // 안전 마진 60% 기준
-const geminiSemaphoreFlash25 = new Semaphore(12); // gemini-2.5-flash용 (Step 1, 3)
-const geminiSemaphoreStep2 = new Semaphore(6); // gemini-3-flash-preview용 (Step 2) - TPM 병목
+const geminiSemaphoreFlash25 = new Semaphore(11); // gemini-2.5-flash용 (Step 1, 3)
+const geminiSemaphoreStep2 = new Semaphore(2); // gemini-3-flash-preview용 (Step 2) - TPM 병목 (권장: 2)
+// RetryableAnalysisError: 429 등 job 레벨에서 재시도할 에러
+export class RetryableAnalysisError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RetryableAnalysisError';
+  }
+}
 
 // 모델 설정
 const MODEL_FLASH_25 = 'gemini-2.5-flash';
@@ -157,7 +164,16 @@ export class GeminiClient {
           this.logger.log(`Gemini API 호출 성공 (${attempt + 1}번째 시도)`);
         }
         return response;
-      } catch (error: unknown) {
+      } catch (error: any) {
+        // 429면 즉시 throw (job 레벨에서 재시도)
+        if (this.hasStatus(error) && error.status === 429) {
+          const stepLabel = step ? `Step${step}` : 'Unknown';
+          geminiMetricsLogger.info(`${stepLabel},0,0,0,0,${model},false`);
+          this.logger.error(
+            `Gemini API 429 (TPM 초과, 즉시 job 재시도 필요): ${this.getErrorMessage(error)}`,
+          );
+          throw new RetryableAnalysisError('Gemini 429: TPM exceeded');
+        }
         const isLastAttempt = attempt === this.maxRetries;
         const shouldRetry = this.shouldRetry(error);
 
