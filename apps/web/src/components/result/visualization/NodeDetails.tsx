@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { IoClose } from "react-icons/io5";
 import { NodeData } from "@/types/visualization";
 import ReactMarkdown from "react-markdown";
@@ -14,6 +17,24 @@ export default function NodeDetails({
   onClose,
   isOpen,
 }: NodeDetailsProps) {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDark(!document.documentElement.classList.contains("light"));
+    };
+
+    checkDarkMode();
+
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   if (!isOpen || !node) return null;
 
   return (
@@ -35,7 +56,15 @@ export default function NodeDetails({
           </h3>
         </div>
         <div className="text-body text-sm leading-relaxed">
-          <div className="prose prose-invert max-w-none">
+          <div
+            className={`prose max-w-none ${isDark ? "prose-invert" : ""}
+              prose-headings:text-heading
+              prose-strong:text-heading
+              prose-code:bg-hover prose-code:text-body prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+              prose-code:before:content-[''] prose-code:after:content-['']
+              prose-p:text-body
+              prose-li:text-body`}
+          >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {
                 node.contents.replace(/\*\*(.*?)\*\*/g, " **$1** ") // **내용** 앞뒤에 공백 추가
