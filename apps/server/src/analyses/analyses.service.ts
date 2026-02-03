@@ -48,74 +48,88 @@ export class AnalysesService {
         }
         // Step 2+3 통합 키 (가설+의도 한 덩어리)
         if (cachedResults['STEP2_HYPOTHESIS_AND_INTENT']) {
-          let parsed: any;
+          let parsed: unknown;
           try {
             parsed = JSON.parse(cachedResults['STEP2_HYPOTHESIS_AND_INTENT']);
           } catch {
             parsed = {};
           }
-          const step2 = parsed?.step2 as Record<string, unknown> | undefined;
-          const step3 = parsed?.step3 as Record<string, unknown> | undefined;
-          const merged = step2 && step3 ? { ...step2, ...step3 } : null;
           if (
-            merged &&
-            Array.isArray((merged as any).responsibility_hypotheses) &&
-            (merged as any).responsibility_hypotheses.length > 0 &&
-            (merged as any).project_intent &&
-            Array.isArray((merged as any).user_stories)
+            typeof parsed === 'object' &&
+            parsed !== null &&
+            'step2' in parsed &&
+            typeof (parsed as { step2: unknown }).step2 === 'object' &&
+            'step3' in parsed &&
+            typeof (parsed as { step3: unknown }).step3 === 'object'
           ) {
-            context.step2 = merged as Record<string, unknown>;
-            this.logger.log(`[${String(analysisId)}] Step2 복구 완료 (유효)`);
-          } else {
-            this.logger.warn(
-              `[${String(analysisId)}] Step2 복구 스킵 (불완전 데이터)`,
+            const step2 = (parsed as { step2: Record<string, unknown> }).step2;
+            const step3 = (parsed as { step3: Record<string, unknown> }).step3;
+            const merged = { ...step2, ...step3 };
+            if (
+              Array.isArray(
+                (merged as Record<string, unknown>).responsibility_hypotheses,
+              ) &&
+              (
+                (merged as Record<string, unknown>)
+                  .responsibility_hypotheses as unknown[]
+              ).length > 0 &&
+              (merged as Record<string, unknown>).project_intent &&
+              Array.isArray((merged as Record<string, unknown>).user_stories)
+            ) {
+              context.step2 = merged;
+              this.logger.log(`[${String(analysisId)}] Step2 복구 완료 (유효)`);
+            } else {
+              this.logger.warn(
+                `[${String(analysisId)}] Step2 복구 스킵 (불완전 데이터)`,
+              );
+            }
+          } else if (
+            cachedResults['STEP2_HYPOTHESIS'] &&
+            cachedResults['STEP3_INTENT']
+          ) {
+            const step2 = JSON.parse(
+              cachedResults['STEP2_HYPOTHESIS'],
+            ) as Record<string, unknown>;
+            const step3 = JSON.parse(cachedResults['STEP3_INTENT']) as Record<
+              string,
+              unknown
+            >;
+            context.step2 = { ...step2, ...step3 };
+            this.logger.log(
+              `[${analysisId}] Step 2 결과 복구 완료 (이전 형식)`,
             );
           }
-        } else if (
-          cachedResults['STEP2_HYPOTHESIS'] &&
-          cachedResults['STEP3_INTENT']
-        ) {
-          const step2 = JSON.parse(cachedResults['STEP2_HYPOTHESIS']) as Record<
-            string,
-            unknown
-          >;
-          const step3 = JSON.parse(cachedResults['STEP3_INTENT']) as Record<
-            string,
-            unknown
-          >;
-          context.step2 = { ...step2, ...step3 };
-          this.logger.log(`[${analysisId}] Step 2 결과 복구 완료 (이전 형식)`);
-        }
-        if (cachedResults['STEP3_CODE_SUMMARY']) {
-          try {
-            context.step3 = JSON.parse(
-              cachedResults['STEP3_CODE_SUMMARY'],
-            ) as Record<string, unknown>;
-          } catch {
-            context.step3 = {};
+          if (cachedResults['STEP3_CODE_SUMMARY']) {
+            try {
+              context.step3 = JSON.parse(
+                cachedResults['STEP3_CODE_SUMMARY'],
+              ) as Record<string, unknown>;
+            } catch {
+              context.step3 = {};
+            }
+            this.logger.log(
+              `[${String(analysisId)}] Step 3 (코드요약) 결과 복구 완료`,
+            );
           }
-          this.logger.log(
-            `[${String(analysisId)}] Step 3 (코드요약) 결과 복구 완료`,
-          );
         }
+
+        // 파이프라인
+        await this.pipelineRunner.run(context);
+
+        // 최종 결과를 DB에 저장
+        await this.saveResultToDatabase(analysisId, projectId, context);
+
+        // DB 저장 후 완료 이벤트 발송 (프론트엔드에서 시각화 요청 가능)
+        await this.emitter.emitCompleted({
+          analysisId,
+          completedAt: new Date(),
+        });
+
+        this.logger.log(`[${analysisId}] 모든 분석 완료 및 DB 저장`);
+
+        // Redis 청소
+        // await this.redis.del(analysisResultsKey(analysisId));
       }
-
-      // 파이프라인
-      await this.pipelineRunner.run(context);
-
-      // 최종 결과를 DB에 저장
-      await this.saveResultToDatabase(analysisId, projectId, context);
-
-      // DB 저장 후 완료 이벤트 발송 (프론트엔드에서 시각화 요청 가능)
-      await this.emitter.emitCompleted({
-        analysisId,
-        completedAt: new Date(),
-      });
-
-      this.logger.log(`[${analysisId}] 모든 분석 완료 및 DB 저장`);
-
-      // Redis 청소
-      // await this.redis.del(analysisResultsKey(analysisId));
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);

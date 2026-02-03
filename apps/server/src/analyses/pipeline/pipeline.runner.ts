@@ -6,6 +6,7 @@ import { AnalysisEmitter } from '../events/analysis.emitter';
 import { AnalysisStep } from '../events/analysis.events';
 import { ProjectsService } from 'src/projects/projects.service';
 import { Step1Result } from 'src/ai/types/ai.types';
+import { AnalysisResult } from '@prisma/client/edge';
 import { analysisMetricsLogger } from '../../common/logger/winston.config';
 
 // TODO: 에러 핸들링 추가: 한 단계에서 에러가 나면 context에 에러 상태를 기록하고 작업을 중단하거나 >>재시도하는 로직<<
@@ -131,8 +132,8 @@ export class PipelineRunner {
         const merged = await this.geminiService.getResult({
           projectId,
           step: 2,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          analysisResult: { step1: context.step1 } as any,
+
+          analysisResult: context.step1 as AnalysisResult,
           additionalFileContents: context.mainFileContents,
         });
         geminiCallCount++;
