@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { IoSunny, IoMoon } from "react-icons/io5";
 import ResultTabs from "@/components/layout/ResultTabs";
 import Toast from "@/components/result/visualization/Toast";
+import { HiOutlineBookOpen } from "react-icons/hi";
+import { useGuideStore } from "@/stores/useGuideStore";
 import { useThemeStore } from "@/stores/useThemeStore";
 import { getCookie } from "@/utils/cookies";
 
@@ -14,6 +16,7 @@ export default function Header() {
   const isResultPage = pathname?.startsWith("/result/");
   const [toastMessage, setToastMessage] = useState("");
   const [showToast, setShowToast] = useState(false);
+  const { startGuide } = useGuideStore();
 
   const handleExport = async () => {
     try {
@@ -45,6 +48,16 @@ export default function Header() {
         <div className="flex items-center gap-4">
           {isResultPage && (
             <>
+              <button
+                id="header-help-btn"
+                title="사용법 보기"
+                onClick={startGuide}
+              >
+                <HiOutlineBookOpen
+                  size={32}
+                  className="cursor-pointer hover:scale-105 active:scale-95"
+                />
+              </button>
               <ExportButton onClick={handleExport} />
               <div className="bg-line mx-2 h-8 w-0.5" />
             </>
@@ -59,7 +72,9 @@ export default function Header() {
 function ExportButton({ onClick }: { onClick: () => void }) {
   return (
     <button
+      id="header-export-btn"
       onClick={onClick}
+      title="공유 링크 추출"
       className="bg-primary hover:bg-primary-hover flex cursor-pointer items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors"
     >
       <svg

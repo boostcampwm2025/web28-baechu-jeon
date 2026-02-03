@@ -7,11 +7,12 @@ import { useVisualizationStore } from "@/store/useVisualizationStore";
 import { transformApiToReactFlow } from "@/utils/transformNodes";
 import type { VisualizationResponse } from "@/api/visualization";
 import type { GetIntentionsResponse } from "@/types/intentionApi";
+import { Node, Edge } from "@xyflow/react";
+import { BaseNodeData } from "@/utils/layouts/layoutSettings";
 
-const CodeView = dynamic(
-  () => import("@/components/result/code/CodeView"),
-  { ssr: false },
-);
+const CodeView = dynamic(() => import("@/components/result/code/CodeView"), {
+  ssr: false,
+});
 
 const VisualizationClient = dynamic(
   () => import("@/components/result/visualization/VisualizationClient"),
@@ -21,6 +22,7 @@ const VisualizationClient = dynamic(
 type Props = {
   projectId: string;
   analysisId: string;
+  visualizationId: string;
   initialTab?: "code" | "visualization";
   initialFilePath?: string | null;
   initialVisualizationData?: VisualizationResponse | null;
@@ -28,6 +30,7 @@ type Props = {
 };
 
 export default function ResultTabsClient({
+  visualizationId,
   analysisId,
   initialTab = "visualization",
   initialFilePath = null,
@@ -77,14 +80,18 @@ export default function ResultTabsClient({
   // 서버에서 받은 raw 데이터를 ReactFlow 형식으로 변환
   const { initialNodes, initialEdges, initialPurposes } = useMemo(() => {
     if (!initialVisualizationData) {
-      return { initialNodes: [], initialEdges: [], initialPurposes: undefined };
+      return {
+        initialNodes: [] as Node<BaseNodeData>[],
+        initialEdges: [] as Edge[],
+        initialPurposes: undefined,
+      };
     }
     const { reactFlowNodes, reactFlowEdges } = transformApiToReactFlow(
       initialVisualizationData,
     );
     return {
-      initialNodes: reactFlowNodes,
-      initialEdges: reactFlowEdges,
+      initialNodes: reactFlowNodes as Node<BaseNodeData>[],
+      initialEdges: reactFlowEdges as Edge[],
       initialPurposes: initialIntentionsData?.contents,
     };
   }, [initialVisualizationData, initialIntentionsData]);
@@ -110,7 +117,8 @@ export default function ResultTabsClient({
       >
         {vizLoaded && (
           <VisualizationClient
-            visualizationId={analysisId}
+            visualizationId={visualizationId}
+            analysisId={analysisId}
             initialNodes={initialNodes}
             initialEdges={initialEdges}
             initialPurposes={initialPurposes}

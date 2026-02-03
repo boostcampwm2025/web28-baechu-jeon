@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   ReactFlow,
@@ -23,6 +23,10 @@ import { NodeData } from "@/types/visualization";
 import { useNodeHighlight } from "@/hooks/useNodeHighlight";
 import { convertToNodeData } from "@/utils/nodeHelpers";
 import { useExplorerStore } from "@/stores/useExplorerStore";
+import { resetVisualization } from "@/api/visualization";
+import { transformApiToReactFlow } from "@/utils/transformNodes";
+import { HiOutlineRefresh } from "react-icons/hi";
+import { useVisualizationFocus } from "@/hooks/useVisualizationFocus";
 import { maybeDecode } from "@/utils/url";
 
 const nodeTypes: NodeTypes = {
@@ -30,7 +34,8 @@ const nodeTypes: NodeTypes = {
 };
 
 interface VisualizationViewProps {
-  visualizationId?: string;
+  visualizationId: string;
+  analysisId: string;
   initialNodes: Node<BaseNodeData>[];
   initialEdges: Edge[];
   onNodeClick: (node: NodeData) => void;
@@ -38,6 +43,8 @@ interface VisualizationViewProps {
 }
 
 export default function VisualizationView({
+  visualizationId,
+  analysisId,
   onNodeClick,
   onPaneClick,
   initialNodes = [],
@@ -49,6 +56,8 @@ export default function VisualizationView({
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [isResetting, setIsResetting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // 데이터 도착 시 1회만 동기화 (빈 배열 → 데이터 로드 완료)
   const hasSynced = useRef(initialNodes.length > 0);
@@ -61,22 +70,45 @@ export default function VisualizationView({
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
-
   const setHighlightedPaths = useExplorerStore((s) => s.setHighlightedPaths);
   const clearHighlightedPaths = useExplorerStore(
     (s) => s.clearHighlightedPaths,
   );
 
-  const { getViewport } = useReactFlow();
+  const { fitView, getViewport } = useReactFlow();
   const setStoreViewport = useVisualizationStore((state) => state.setViewport);
 
   const setSelectedNodeId = useVisualizationStore((s) => s.setSelectedNodeId);
+  const { selectedNodeId, highlightNodeIds, setFocusTargetType } =
+    useVisualizationStore();
 
+  useVisualizationFocus();
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        selected: node.id === selectedNodeId,
+        data: {
+          ...node.data,
+          highlightClass: highlightNodeIds.includes(node.id)
+            ? "highlight-fixed"
+            : "",
+        },
+      })),
+    );
+  }, [selectedNodeId, setNodes, highlightNodeIds]);
   /**
    * 노드 클릭 핸들러
    */
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<BaseNodeData>) => {
+      if (node.data.groups === "GROUP_HEADER") {
+        if (node.data.diagramType) {
+          setFocusTargetType(node.data.diagramType);
+        }
+        return;
+      }
+
       setSelectedNodeId(node.id);
       onNodeClick(convertToNodeData(node));
 
@@ -146,8 +178,39 @@ export default function VisualizationView({
     setStoreViewport(currentViewport);
   }, [getViewport, setStoreViewport]);
 
+  const handleReset = useCallback(async () => {
+    try {
+      setIsResetting(true);
+      const originalData = await resetVisualization(visualizationId);
+      const { reactFlowNodes, reactFlowEdges } =
+        transformApiToReactFlow(originalData);
+
+      setNodes(reactFlowNodes);
+      setEdges(reactFlowEdges);
+      setSelectedNodeId(null);
+      resetHighlights();
+      clearHighlightedPaths();
+
+      setTimeout(() => {
+        fitView({ duration: 800 });
+      }, 100);
+    } catch (error) {
+      console.error("레이아웃 초기화 실패:", error);
+    } finally {
+      setIsResetting(false);
+    }
+  }, [
+    analysisId,
+    setNodes,
+    setEdges,
+    setSelectedNodeId,
+    resetHighlights,
+    clearHighlightedPaths,
+    fitView,
+  ]);
+
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full" id="visualization-canvas">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -158,6 +221,7 @@ export default function VisualizationView({
         onPaneClick={handlePaneClick}
         onMoveEnd={handleMoveEnd}
         onInit={(instance) => {
+          setIsInitialized(true);
           const state = useVisualizationStore.getState();
 
           if (state.viewport) {
@@ -178,7 +242,7 @@ export default function VisualizationView({
         deleteKeyCode={null}
         elementsSelectable
         nodesDraggable
-        minZoom={0.2}
+        minZoom={0.1}
         maxZoom={1.0}
         defaultEdgeOptions={{
           type: "smoothstep",
@@ -193,6 +257,16 @@ export default function VisualizationView({
       >
         <Background color="var(--color-line)" gap={24} />
 
+        <button
+          disabled={isResetting || !isInitialized}
+          title="초기화"
+          onClick={handleReset}
+          className="absolute top-6 right-6 z-10 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border border-slate-700 bg-slate-800/80 text-blue-400 shadow-xl backdrop-blur-sm transition-all hover:scale-110 hover:bg-slate-700 hover:text-white active:scale-95 disabled:opacity-50"
+        >
+          <HiOutlineRefresh
+            className={`h-6 w-6 ${isResetting ? "animate-spin" : ""}`}
+          />
+        </button>
         <Controls className="rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] [&>button]:border-[var(--color-line)] [&>button]:bg-[var(--color-surface)] [&>button]:text-[var(--color-subtle)] [&>button:hover]:bg-[var(--color-hover)]" />
       </ReactFlow>
     </div>

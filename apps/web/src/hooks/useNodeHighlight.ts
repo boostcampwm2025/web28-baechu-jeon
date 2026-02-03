@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { type Node } from "@xyflow/react";
-import { type BaseNodeData } from "@/utils/transformNodes";
+import { BaseNodeData } from "@/utils/layouts/layoutSettings";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
 
 export function useNodeHighlight(

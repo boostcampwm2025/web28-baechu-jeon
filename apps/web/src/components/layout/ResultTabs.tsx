@@ -30,7 +30,10 @@ export default function ResultTabs() {
   };
 
   return (
-    <nav className="flex items-center gap-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-hover)] p-1 shadow-sm">
+    <nav
+      id="result-tabs-nav"
+      className="flex items-center gap-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-hover)] p-1 shadow-sm"
+    >
       {tabs.map((tab) => (
         <button
           key={tab.id}

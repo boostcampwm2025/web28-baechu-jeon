@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { NodeData } from "@/types/visualization";
+import { Viewport } from "@xyflow/react";
 
 interface VisualizationState {
   // 뷰포트 상태 (좌표 및 줌)
@@ -21,6 +22,15 @@ interface VisualizationState {
   isNodeOpen: boolean;
   isProjectOpen: boolean;
 
+  isSidebarOpen: boolean;
+  focusTargetType: "ALL" | "STEP1" | "STEP2" | "STEP3" | null;
+
+  preGuideState: {
+    viewport: Viewport;
+    isSidebarOpen: boolean;
+    isNodeOpen: boolean;
+    isProjectOpen: boolean;
+  } | null;
   // 코드 프리패치 캐시 (key: "analysisId::filePath", value: markdownContent)
   codeCache: Record<string, string>;
   // LRU 캐시를 위한 접근 순서 추적
@@ -35,6 +45,13 @@ interface VisualizationState {
   setPanelNode: (node: NodeData | null) => void;
   setIsNodeOpen: (isOpen: boolean) => void;
   setIsProjectOpen: (isOpen: boolean) => void;
+
+  setIsSidebarOpen: (isOpen: boolean) => void;
+  setFocusTargetType: (
+    type: "ALL" | "STEP1" | "STEP2" | "STEP3" | null,
+  ) => void;
+
+  setPreGuideState: (state: VisualizationState["preGuideState"]) => void; // ✅ 추가
   setCachedCode: (
     analysisId: string,
     filePath: string,
@@ -55,6 +72,9 @@ export const useVisualizationStore = create<VisualizationState>((set, get) => ({
   panelNode: null,
   isNodeOpen: false,
   isProjectOpen: true,
+  isSidebarOpen: true,
+  focusTargetType: "STEP1",
+  preGuideState: null,
   codeCache: {},
   cacheAccessOrder: [],
 
@@ -67,6 +87,9 @@ export const useVisualizationStore = create<VisualizationState>((set, get) => ({
   setPanelNode: (node) => set({ panelNode: node }),
   setIsNodeOpen: (isOpen) => set({ isNodeOpen: isOpen }),
   setIsProjectOpen: (isOpen) => set({ isProjectOpen: isOpen }),
+  setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+  setFocusTargetType: (type) => set({ focusTargetType: type }),
+  setPreGuideState: (state) => set({ preGuideState: state }),
   setCachedCode: (analysisId, filePath, content) =>
     set((s) => {
       const key = `${analysisId}::${filePath}`;

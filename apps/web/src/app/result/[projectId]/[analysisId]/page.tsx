@@ -1,9 +1,9 @@
 import ResultTabsClient from "@/components/result/ResultTabsClient";
-import { getVisualization } from "@/api/visualization";
+import { getVisualization, updateVisualization } from "@/api/visualization";
 import { getIntentions } from "@/api/intention";
+import { calculateInitialLayout } from "@/utils/layouts/layoutCalculator";
 import type { VisualizationResponse } from "@/api/visualization";
 import type { GetIntentionsResponse } from "@/types/intentionApi";
-
 export default async function ResultPage({
   params,
   searchParams,
@@ -18,21 +18,47 @@ export default async function ResultPage({
     resolvedSearchParams?.tab === "code" ? "code" : "visualization";
   const initialFilePath = resolvedSearchParams?.filePath ?? null;
 
-  // 서버에서 시각화 데이터를 미리 가져오기. 실패 시 클라이언트에서 재시도
   let initialVisualizationData: VisualizationResponse | null = null;
   let initialIntentionsData: GetIntentionsResponse | null = null;
 
+  let visualizationId = "";
+
   try {
-    [initialVisualizationData, initialIntentionsData] = await Promise.all([
+    const [vizData, intentionsData] = await Promise.all([
       getVisualization(analysisId),
       getIntentions(analysisId),
     ]);
-  } catch {
-    // 서버 fetch 실패 시 클라이언트에서 fallback
+
+    visualizationId = vizData.visualizationId;
+
+    initialVisualizationData = vizData;
+    initialIntentionsData = intentionsData;
+
+    // 레이아웃이 초기 상태일 때만 서버에서 계산 및 DB 업데이트
+    if (vizData.layoutState === "INITIAL") {
+      const layoutResult = calculateInitialLayout(vizData.nodes, vizData.edges);
+
+      await updateVisualization(vizData.visualizationId, {
+        nodes: layoutResult.nodes,
+        edges: layoutResult.edges,
+        layoutState: "FIXED",
+      });
+
+      // 덮어씌워서 클라이언트에 최신 좌표를 보냄
+      initialVisualizationData = {
+        ...vizData,
+        nodes: layoutResult.nodes,
+        edges: layoutResult.edges,
+        layoutState: "FIXED",
+      };
+    }
+  } catch (error) {
+    console.error("Data fetching failed:", error);
   }
 
   return (
     <ResultTabsClient
+      visualizationId={visualizationId}
       projectId={projectId}
       analysisId={analysisId}
       initialTab={initialTab}
