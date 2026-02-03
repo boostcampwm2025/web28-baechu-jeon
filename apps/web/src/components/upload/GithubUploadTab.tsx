@@ -68,13 +68,8 @@ export default function GithubUploadTab() {
             onChange={handleUrlChange}
             onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
             placeholder={GITHUB_UPLOAD.PLACEHOLDER}
-<<<<<<< HEAD
-            disabled={!!projectId || loading}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-3.5 pr-4 pl-12 text-slate-900 placeholder-slate-400 transition-all focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
-=======
             disabled={!!projectId}
             className="w-full rounded-xl border border-line bg-page/50 py-3.5 pr-4 pl-12 text-heading placeholder-muted transition-all focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/10 focus:outline-none disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted"
->>>>>>> ba8951f5e3596dd7023188a9d75d4823f30a1161
           />
         </div>
         {errorMessage && (
@@ -114,13 +109,8 @@ export default function GithubUploadTab() {
       {!projectId ? (
         <button
           onClick={handleConfirm}
-<<<<<<< HEAD
-          disabled={!githubUrl.trim() || loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-600 px-6 py-4 text-base font-semibold text-white shadow-sm transition-all hover:bg-slate-700 hover:shadow-md disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
-=======
           disabled={!githubUrl}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-subtle px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-muted hover:shadow-md disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted disabled:shadow-none"
->>>>>>> ba8951f5e3596dd7023188a9d75d4823f30a1161
         >
           {loading ? (
             <>
