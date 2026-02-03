@@ -1,8 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
-// import Image from "next/image";
+import { useCallback, useEffect, useRef } from "react";
 import {
   ReactFlow,
   Background,
@@ -16,14 +14,15 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+
 import { type BaseNodeData } from "@/utils/layouts/layoutSettings";
 import BaseNode from "@/components/result/visualization/nodes/BaseNode";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
-// import resetIcon from "@/assets/reset.svg";
 import { NodeData } from "@/types/visualization";
 import { useNodeHighlight } from "@/hooks/useNodeHighlight";
 import { convertToNodeData } from "@/utils/nodeHelpers";
 import { useExplorerStore } from "@/stores/useExplorerStore";
+import { maybeDecode } from "@/utils/url";
 
 const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
@@ -35,7 +34,6 @@ interface VisualizationViewProps {
   initialEdges: Edge[];
   onNodeClick: (node: NodeData) => void;
   onPaneClick?: () => void;
-  selectedNodeId?: string;
 }
 
 export default function VisualizationView({
@@ -45,54 +43,42 @@ export default function VisualizationView({
   initialEdges = [],
 }: VisualizationViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges] = useEdgesState(initialEdges);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  const router = useRouter();
-  const params = useParams();
-  const projectId = params.projectId as string;
-  const analysisId = params.analysisId as string;
-
-  // 해결: 사용하지 않는 setter와 변수 정리 (lint error 대응)
-  // const [isReseting] = useState(false);
-  // const [isInitialized, setIsInitialized] = useState(false);
+  // 데이터 도착 시 1회만 동기화 (빈 배열 → 데이터 로드 완료)
+  const hasSynced = useRef(initialNodes.length > 0);
+  useEffect(() => {
+    if (!hasSynced.current && initialNodes.length > 0) {
+      hasSynced.current = true;
+      setNodes(initialNodes);
+      setEdges(initialEdges);
+    }
+  }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
+
+  const setActiveTab = useVisualizationStore((s) => s.setActiveTab);
+
   const setHighlightedPaths = useExplorerStore((s) => s.setHighlightedPaths);
   const clearHighlightedPaths = useExplorerStore(
     (s) => s.clearHighlightedPaths,
   );
+
   const { getViewport } = useReactFlow();
   const setStoreViewport = useVisualizationStore((state) => state.setViewport);
 
-  const {
-    selectedNodeId,
-    highlightNodeIds,
-    setSelectedNodeId,
-    setSelectedFilePath,
-  } = useVisualizationStore();
+  const { setSelectedNodeId, setSelectedFilePath } = useVisualizationStore();
 
-  useEffect(() => {
-    setNodes((nds) =>
-      nds.map((node) => ({
-        ...node,
-        selected: node.id === selectedNodeId,
-        data: {
-          ...node.data,
-          highlightClass: highlightNodeIds.includes(node.id)
-            ? "highlight-fixed"
-            : "",
-        },
-      })),
-    );
-  }, [selectedNodeId, setNodes, highlightNodeIds]);
-
+  /**
+   * 노드 클릭 핸들러
+   */
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<BaseNodeData>) => {
       setSelectedNodeId(node.id);
       onNodeClick(convertToNodeData(node));
 
       if (node.data.diagramType === "STEP1") {
-        if (node.data.relatedNodeIds && node.data.relatedNodeIds.length > 0) {
+        if (node.data.relatedNodeIds?.length) {
           toggleHighlight(node.id, [node.id, ...node.data.relatedNodeIds]);
           setHighlightedPaths(node.data.relatedPaths || []);
         } else {
@@ -103,34 +89,37 @@ export default function VisualizationView({
 
       if (node.data.type === "FILE") {
         if (node.data.path) {
-          setSelectedFilePath(node.data.path);
+          const decoded = maybeDecode(node.data.path) ?? node.data.path;
+          setSelectedFilePath(decoded);
+          setActiveTab("code");
+        } else {
+          setActiveTab("code");
         }
-        router.push(`/result/${projectId}/${analysisId}/code`);
-        return;
       }
     },
-
     [
       onNodeClick,
       toggleHighlight,
-      router,
+      resetHighlights,
+      clearHighlightedPaths,
+      setHighlightedPaths,
       setSelectedNodeId,
       setSelectedFilePath,
-      projectId,
-      analysisId,
-      resetHighlights,
-      setHighlightedPaths,
-      clearHighlightedPaths,
+      setActiveTab,
     ],
   );
 
+  /**
+   * Pane 클릭 → 선택 해제
+   */
   const handlePaneClick = useCallback(() => {
     setSelectedNodeId(null);
-    if (onPaneClick) {
-      onPaneClick();
-    }
+    onPaneClick?.();
   }, [setSelectedNodeId, onPaneClick]);
 
+  /**
+   * 뷰포트 이동 종료 시 저장
+   */
   const handleMoveEnd = useCallback(() => {
     const currentViewport = getViewport();
     setStoreViewport(currentViewport);
@@ -143,23 +132,25 @@ export default function VisualizationView({
         edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         onMoveEnd={handleMoveEnd}
         onInit={(instance) => {
-          // setIsInitialized(true);
           const state = useVisualizationStore.getState();
+
           if (state.viewport) {
             instance.setViewport(state.viewport);
-          } else {
-            const step1Group = nodes.find((n) => n.id === "group-STEP1");
-            if (step1Group) {
-              instance.setViewport({
-                x: -step1Group.position.x + 50,
-                y: -step1Group.position.y + 150,
-                zoom: 0.5,
-              });
-            }
+            return;
+          }
+
+          const step1Group = nodes.find((n) => n.id === "group-STEP1");
+          if (step1Group) {
+            instance.setViewport({
+              x: -step1Group.position.x + 50,
+              y: -step1Group.position.y + 150,
+              zoom: 0.5,
+            });
           }
         }}
         nodesConnectable={false}
@@ -174,24 +165,15 @@ export default function VisualizationView({
             type: MarkerType.ArrowClosed,
             width: 15,
             height: 15,
-            color: "#64748b",
+            color: "var(--color-muted)",
           },
         }}
-        className="bg-slate-900"
+        className="bg-[var(--color-page)]"
       >
-        <Background color="#334155" gap={24} />
-        <Controls className="rounded-lg border-slate-700 bg-slate-800 [&>button]:border-slate-700 [&>button]:bg-slate-800 [&>button]:text-slate-400 [&>button:hover]:bg-slate-700" />
-      </ReactFlow>
+        <Background color="var(--color-line)" gap={24} />
 
-      {/* 해결: isInitialized 변수 사용 예시 (린트 방지) */}
-      {/* <button
-        disabled={isReseting || !isInitialized}
-        title="초기화"
-        // onClick={handleReset}
-        className="absolute top-4 right-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <Image src={resetIcon} alt="초기화" width={32} height={32} />
-      </button> */}
+        <Controls className="rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] [&>button]:border-[var(--color-line)] [&>button]:bg-[var(--color-surface)] [&>button]:text-[var(--color-subtle)] [&>button:hover]:bg-[var(--color-hover)]" />
+      </ReactFlow>
     </div>
   );
 }

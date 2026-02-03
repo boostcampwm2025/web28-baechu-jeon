@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import { ReactFlowProvider, type Node, type Edge } from "@xyflow/react";
 import { BaseNodeData } from "@/utils/transformNodes";
+import type { VisualizationResponse } from "@/api/visualization";
 import NodeDetails from "./NodeDetails";
 import ProjectDetails from "./ProjectDetails";
 import SaveButtons from "./SaveButtons";
@@ -10,6 +12,7 @@ import VisualizationView from "./VisualizationView";
 import { NodeData, ProjectDetailsData } from "@/types/visualization";
 import { findInitialNode } from "@/utils/nodeHelpers";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
+import { useExplorerStore } from "@/stores/useExplorerStore";
 
 interface VisualizationClientProps {
   initialNodes?: Node<BaseNodeData>[];
@@ -49,11 +52,91 @@ export default function VisualizationClient({
     }
   }, [
     initialData,
+    panelNode,
     setSelectedNodeId,
     setPanelNode,
     setIsNodeOpen,
     setIsProjectOpen,
   ]);
+
+  // 서버에서 초기 데이터를 넘기지 않더라도 마운트 후 필요 시 시각화 데이터를 가져오기
+  const [nodes, setNodes] = useState<Node<BaseNodeData>[]>(initialNodes);
+  const [edges, setEdges] = useState<Edge[]>(initialEdges);
+  const [purposes, setPurposes] = useState<ProjectDetailsData | undefined>(
+    initialPurposes,
+  );
+  const [loading, setLoading] = useState(
+    () => !(initialNodes && initialNodes.length) && !!visualizationId,
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchVisual() {
+      if ((initialNodes && initialNodes.length) || !visualizationId) return;
+      setLoading(true);
+      try {
+        const { getIntentions } = await import("@/api/intention");
+        const { getVisualization } = await import("@/api/visualization");
+
+        const [intentions, ver] = await Promise.all([
+          getIntentions(visualizationId),
+          getVisualization(visualizationId),
+        ]);
+
+        if (cancelled) return;
+
+        const { transformApiToReactFlow } =
+          await import("@/utils/transformNodes");
+        const { reactFlowNodes, reactFlowEdges } = transformApiToReactFlow(
+          ver as VisualizationResponse,
+        );
+
+        setNodes(reactFlowNodes);
+        setEdges(reactFlowEdges);
+        setPurposes(intentions.contents);
+      } catch (e) {
+        console.error("Client fetch visualization failed:", e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchVisual();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialNodes, visualizationId]);
+
+  const params = useParams();
+  const analysisIdParam = params?.analysisId as string | undefined;
+
+  // 코드 탭 컴포넌트 번들 프리패치
+  useEffect(() => {
+    import("@/components/result/code/CodeView").catch(() => {});
+  }, []);
+
+  // STEP1 클릭으로 하이라이트된 경로가 바뀌면 첫 파일의 코드를 프리패치합니다.
+  const highlightedPaths = useExplorerStore((s) => s.highlightedPaths);
+  const setCachedCode = useVisualizationStore((s) => s.setCachedCode);
+
+  useEffect(() => {
+    if (!analysisIdParam || highlightedPaths.length === 0) return;
+    const firstPath = highlightedPaths[0];
+    if (
+      useVisualizationStore.getState().getCachedCode(analysisIdParam, firstPath)
+    )
+      return;
+
+    (async () => {
+      try {
+        const { getCode } = await import("@/api/code");
+        const result = await getCode(analysisIdParam, firstPath);
+        setCachedCode(analysisIdParam, firstPath, result.markdownContent);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [analysisIdParam, highlightedPaths, setCachedCode]);
 
   const handleNodeClick = useCallback(
     (node: NodeData | null) => {
@@ -80,14 +163,59 @@ export default function VisualizationClient({
     setIsProjectOpen(false);
   }, [setSelectedNodeId, setSelectedFilePath, setIsNodeOpen, setIsProjectOpen]);
 
+  if (loading) {
+    return (
+      <div className="bg-page relative flex h-full w-full items-center justify-center overflow-hidden">
+        <div className="flex flex-col items-center gap-8">
+          {/* 노드 스켈레톤 */}
+          <div className="flex items-center gap-6">
+            <div className="bg-hover h-16 w-28 animate-pulse rounded-lg" />
+            <div className="bg-hover h-1 w-10 animate-pulse rounded" />
+            <div className="bg-hover h-16 w-28 animate-pulse rounded-lg" />
+            <div className="bg-hover h-1 w-10 animate-pulse rounded" />
+            <div className="bg-hover h-16 w-28 animate-pulse rounded-lg" />
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="bg-hover h-12 w-24 animate-pulse rounded-lg" />
+            <div className="bg-hover h-1 w-8 animate-pulse rounded" />
+            <div className="bg-hover h-12 w-24 animate-pulse rounded-lg" />
+            <div className="bg-hover h-1 w-8 animate-pulse rounded" />
+            <div className="bg-hover h-12 w-24 animate-pulse rounded-lg" />
+            <div className="bg-hover h-1 w-8 animate-pulse rounded" />
+            <div className="bg-hover h-12 w-24 animate-pulse rounded-lg" />
+          </div>
+          <p className="text-muted text-sm">다이어그램을 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ReactFlowProvider>
-      <div className="relative h-full w-full overflow-hidden bg-slate-900">
+      <div className="bg-page relative h-full w-full overflow-hidden">
+        {/* 모바일/작은 화면 경고 메시지 */}
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm md:hidden">
+          <div className="mx-4 max-w-md rounded-lg bg-surface p-8 text-center shadow-2xl">
+            <div className="mb-4 text-5xl">💻</div>
+            <h2 className="text-heading mb-3 text-xl font-bold">
+              데스크톱 환경 권장
+            </h2>
+            <p className="text-body mb-2 text-sm leading-relaxed">
+              이 서비스는 <strong>데스크톱 환경</strong>에 최적화되어
+              있습니다.
+            </p>
+            <p className="text-muted text-xs">
+              더 나은 사용 경험을 위해 PC 또는 태블릿의 가로 모드를
+              이용해주세요.
+            </p>
+          </div>
+        </div>
+
         <VisualizationView
+          initialNodes={nodes}
+          initialEdges={edges}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
-          initialNodes={initialNodes}
-          initialEdges={initialEdges}
           visualizationId={visualizationId}
         />
 
@@ -110,7 +238,7 @@ export default function VisualizationClient({
             </div>
           </div>
 
-          {initialPurposes && (
+          {purposes && (
             <div
               className={`overflow-hidden transition-all duration-300 ease-in-out ${
                 isProjectOpen
@@ -120,7 +248,7 @@ export default function VisualizationClient({
             >
               <div className="pointer-events-auto h-full">
                 <ProjectDetails
-                  data={initialPurposes}
+                  data={purposes}
                   onClose={() => setIsProjectOpen(false)}
                 />
               </div>

@@ -12,18 +12,15 @@ import { buildDiagram3 } from './diagrams/diagram3.builder';
 @Injectable()
 export class GraphBuilderService {
   build(analysisResult: AnalysisResult): GraphBuildResult {
-    // TODO: 이중 타입 단언 확인하기, 타입 가드
-    const diagram1 = buildDiagram1(
-      analysisResult.step3 as unknown as Step3Analysis,
-      10,
-    );
+    // step2 = 가설(responsibility_hypotheses) + 의도(project_intent, user_stories) 통합
+    const step2Data = analysisResult.step2 as unknown as Step2Analysis &
+      Step3Analysis;
+    const diagram1 = buildDiagram1(step2Data, 10);
     const diagram2 = buildDiagram2(
-      analysisResult.step2 as unknown as Step2Analysis,
+      step2Data as unknown as Step2Analysis,
       10,
     );
-    const diagram3 = buildDiagram3(
-      analysisResult.step3 as unknown as Step3Analysis,
-    );
+    const diagram3 = buildDiagram3(step2Data);
 
     const result: GraphBuildResult = {
       step1: {
