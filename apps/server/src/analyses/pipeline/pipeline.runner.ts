@@ -150,12 +150,13 @@ export class PipelineRunner {
         this.logger.log(
           `[${analysisId}] Step2 mergedResult.step2 keys: ${Object.keys(mergedResult?.step2 || {}).join(', ')}`,
         );
-        this.logger.log(
-          `[${analysisId}] Step2 mergedResult.step3 keys: ${Object.keys(mergedResult?.step3 || {}).join(', ')}`,
-        );
-
-        if (!mergedResult?.step2 || !mergedResult?.step3) {
-          throw new Error('Invalid Step2 Gemini response shape');
+        if (mergedResult && typeof mergedResult === 'object') {
+          this.logger.log(
+            `[${analysisId}] Step2 mergedResult.step2 keys: ${Object.keys((mergedResult as { step2?: object }).step2 || {}).join(', ')}`,
+          );
+          this.logger.log(
+            `[${analysisId}] Step2 mergedResult.step3 keys: ${Object.keys((mergedResult as { step3?: object }).step3 || {}).join(', ')}`,
+          );
         }
 
         context.step2 = {

@@ -118,12 +118,12 @@ export class GeminiClient {
     systemPrompt: string,
     step?: number,
     modelName?: string,
+    responseJsonSchema?: object,
   ): Promise<GenerateContentResponse> {
     const model = modelName || MODEL_FLASH_25;
 
     // Step3은 마크다운+코드 블록 포함으로 JSON 깨질 위험 → text/plain 사용
-    const responseMimeType = step === 3 ? 'text/plain' : 'application/json';
-      
+
     const config = {
       systemInstruction: systemPrompt,
       temperature: 0.2,
