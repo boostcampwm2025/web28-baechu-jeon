@@ -22,7 +22,7 @@ export default function Uploader() {
         />
         <button
           onClick={() => setActiveTab("zip")}
-          className={`relative z-10 flex flex-1 items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300 ${
+          className={`relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300 ${
             activeTab === "zip" ? "text-accent" : "text-muted hover:text-body"
           }`}
         >
@@ -43,7 +43,7 @@ export default function Uploader() {
         </button>
         <button
           onClick={() => setActiveTab("github")}
-          className={`relative z-10 flex flex-1 items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300 ${
+          className={`relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300 ${
             activeTab === "github" ? "text-accent" : "text-muted hover:text-body"
           }`}
         >
@@ -55,17 +55,17 @@ export default function Uploader() {
       </div>
 
       {/* 탭 콘텐츠 - 슬라이드 애니메이션 */}
-      <div className="overflow-hidden">
+      <div className="h-[340px] overflow-hidden">
         <div
-          className={`flex transition-transform duration-300 ease-in-out ${
+          className={`flex h-full transition-transform duration-300 ease-in-out ${
             activeTab === "zip" ? "translate-x-0" : "-translate-x-1/2"
           }`}
           style={{ width: "200%" }}
         >
-          <div className="w-1/2 shrink-0">
+          <div className="thin-scrollbar h-full w-1/2 shrink-0 overflow-y-auto">
             <ZipUploadTab />
           </div>
-          <div className="w-1/2 shrink-0">
+          <div className="thin-scrollbar h-full w-1/2 shrink-0 overflow-y-auto">
             <GithubUploadTab />
           </div>
         </div>

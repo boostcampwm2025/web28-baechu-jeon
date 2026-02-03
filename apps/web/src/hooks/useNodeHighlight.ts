@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { type Node } from "@xyflow/react";
-import { type BaseNodeData } from "@/utils/transformNodes";
+import { BaseNodeData } from "@/utils/layouts/layoutSettings";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
 
 export function useNodeHighlight(
@@ -23,11 +23,12 @@ export function useNodeHighlight(
   }, [setNodes, setActiveStep1Id, setHighlights]);
 
   // 하이라이트 토글 (STEP1 노드 클릭 시)
+  // 반환값: true = 하이라이트 설정됨, false = 하이라이트 해제됨
   const toggleHighlight = useCallback(
-    (triggerNodeId: string, targetIds: string[]) => {
+    (triggerNodeId: string, targetIds: string[]): boolean => {
       if (activeStep1Id === triggerNodeId) {
         resetHighlights();
-        return;
+        return false;
       }
 
       setActiveStep1Id(triggerNodeId);
@@ -42,6 +43,7 @@ export function useNodeHighlight(
           },
         })),
       );
+      return true;
     },
     [activeStep1Id, setNodes, setActiveStep1Id, setHighlights, resetHighlights],
   );

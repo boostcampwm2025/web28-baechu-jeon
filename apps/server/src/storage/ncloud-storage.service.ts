@@ -6,6 +6,7 @@ import {
   GetObjectCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -37,14 +38,53 @@ export class NcloudStorageService {
    * @param objectKey 저장 시 사용할 객체 키 (예: projects/{projectId}.zip)
    */
   async uploadFile(localPath: string, objectKey: string): Promise<void> {
-    const body = fs.createReadStream(localPath);
-    await this.s3.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: objectKey,
-        Body: body,
-      }),
-    );
+    const fileSize = await fs.promises
+      .stat(localPath)
+      .then((stat) => stat.size);
+    const multipartThreshold = 8 * 1024 * 1024;
+    const maxAttempts = 3;
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      const body = fs.createReadStream(localPath);
+
+      try {
+        if (fileSize >= multipartThreshold) {
+          const upload = new Upload({
+            client: this.s3,
+            params: {
+              Bucket: this.bucket,
+              Key: objectKey,
+              Body: body,
+            },
+            queueSize: 4,
+            partSize: 8 * 1024 * 1024,
+            leavePartsOnError: false,
+          });
+          await upload.done();
+        } else {
+          await this.s3.send(
+            new PutObjectCommand({
+              Bucket: this.bucket,
+              Key: objectKey,
+              Body: body,
+            }),
+          );
+        }
+        return;
+      } catch (error: unknown) {
+        lastError = error;
+        body.destroy();
+
+        if (!this.isRetryableStreamError(error) || attempt === maxAttempts) {
+          throw error;
+        }
+
+        await this.sleep(300 * attempt);
+      }
+    }
+
+    throw lastError;
   }
 
   /**
@@ -99,5 +139,21 @@ export class NcloudStorageService {
   /** 객체 키 규칙: projects/{projectId}.zip */
   static objectKeyForProject(projectId: string): string {
     return `projects/${projectId}.zip`;
+  }
+
+  private isRetryableStreamError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+    const err = error as { code?: string; name?: string; message?: string };
+    return (
+      err.code === 'EPIPE' ||
+      err.code === 'ECONNRESET' ||
+      err.name === 'TimeoutError' ||
+      err.name === 'NetworkingError' ||
+      (err.message ?? '').toLowerCase().includes('streaming request')
+    );
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

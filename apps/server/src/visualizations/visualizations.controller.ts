@@ -14,11 +14,11 @@ export class VisualizationsController {
   @Put(':visualizationId')
   async updateVisualization(
     @Param('visualizationId') visualizationId: string,
-    @Body() body: { formattedData: Prisma.JsonObject },
+    @Body() formattedData: Prisma.JsonObject,
   ) {
     return await this.visualizationsService.updateGraph(
       visualizationId,
-      body.formattedData,
+      formattedData,
     );
   }
 

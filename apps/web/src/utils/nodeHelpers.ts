@@ -1,5 +1,5 @@
 import type { Node } from "@xyflow/react";
-import { BaseNodeData } from "@/utils/transformNodes";
+import { BaseNodeData } from "./layouts/layoutSettings";
 import { NodeData } from "@/types/visualization";
 
 export function convertToNodeData(node: Node<BaseNodeData>): NodeData {
@@ -17,6 +17,12 @@ export function convertToNodeData(node: Node<BaseNodeData>): NodeData {
 
 // 초기 상세 설명 노드
 export function findInitialNode(nodes: Node<BaseNodeData>[]): NodeData | null {
-  const firstStep2Node = nodes.find((n) => n.data.diagramType === "STEP2");
-  return firstStep2Node ? convertToNodeData(firstStep2Node) : null;
+  const initialNode = nodes.find((n) => {
+    const { diagramType, groups } = n.data;
+    if (diagramType !== "STEP2") return false;
+    if (groups === "GROUP_HEADER") return false;
+    return true;
+  });
+
+  return initialNode ? convertToNodeData(initialNode) : null;
 }

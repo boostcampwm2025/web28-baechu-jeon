@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Subject } from 'rxjs';
-import { AnalysisEvent } from '../analyses/analysis.events';
+import { AnalysisEvent } from '../analyses/events/analysis.events';
 import type {
   AnalysisStepEventPayload,
   AnalysisCompletedPayload,
   AnalysisFailedPayload,
-} from '../analyses/analysis.events';
+} from '../analyses/events/analysis.events';
 
 @Injectable()
 export class ProgressPublisher {

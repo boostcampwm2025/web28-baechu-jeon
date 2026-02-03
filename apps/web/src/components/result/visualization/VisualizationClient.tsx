@@ -1,9 +1,9 @@
 "use client";
 
+import { BaseNodeData } from "@/utils/layouts/layoutSettings";
 import { useEffect, useCallback, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { ReactFlowProvider, type Node, type Edge } from "@xyflow/react";
-import { BaseNodeData } from "@/utils/transformNodes";
+import { type Node, type Edge } from "@xyflow/react";
 import type { VisualizationResponse } from "@/api/visualization";
 import NodeDetails from "./NodeDetails";
 import ProjectDetails from "./ProjectDetails";
@@ -18,13 +18,15 @@ interface VisualizationClientProps {
   initialNodes?: Node<BaseNodeData>[];
   initialEdges?: Edge[];
   initialPurposes?: ProjectDetailsData;
-  visualizationId?: string;
+  analysisId: string;
+  visualizationId: string;
 }
 
 export default function VisualizationClient({
   initialNodes = [],
   initialEdges = [],
   initialPurposes,
+  analysisId,
   visualizationId,
 }: VisualizationClientProps) {
   const {
@@ -66,21 +68,21 @@ export default function VisualizationClient({
     initialPurposes,
   );
   const [loading, setLoading] = useState(
-    () => !(initialNodes && initialNodes.length) && !!visualizationId,
+    () => !(initialNodes && initialNodes.length) && !!analysisId,
   );
 
   useEffect(() => {
     let cancelled = false;
     async function fetchVisual() {
-      if ((initialNodes && initialNodes.length) || !visualizationId) return;
+      if ((initialNodes && initialNodes.length) || !analysisId) return;
       setLoading(true);
       try {
         const { getIntentions } = await import("@/api/intention");
         const { getVisualization } = await import("@/api/visualization");
 
         const [intentions, ver] = await Promise.all([
-          getIntentions(visualizationId),
-          getVisualization(visualizationId),
+          getIntentions(analysisId),
+          getVisualization(analysisId),
         ]);
 
         if (cancelled) return;
@@ -105,7 +107,7 @@ export default function VisualizationClient({
     return () => {
       cancelled = true;
     };
-  }, [initialNodes, visualizationId]);
+  }, [initialNodes, analysisId]);
 
   const params = useParams();
   const analysisIdParam = params?.analysisId as string | undefined;
@@ -114,6 +116,31 @@ export default function VisualizationClient({
   useEffect(() => {
     import("@/components/result/code/CodeView").catch(() => {});
   }, []);
+
+  // nodes가 로드되면 STEP1의 모든 relatedPaths를 수집하여 indicatedPaths에 설정
+  const setIndicatedPaths = useExplorerStore((s) => s.setIndicatedPaths);
+  const clearIndicatedPaths = useExplorerStore((s) => s.clearIndicatedPaths);
+
+  useEffect(() => {
+    if (nodes.length === 0) return;
+
+    const allRelatedPaths = new Set<string>();
+    nodes.forEach((node) => {
+      if (node.data.diagramType === "STEP1" && node.data.relatedPaths) {
+        node.data.relatedPaths.forEach((path: string) =>
+          allRelatedPaths.add(path),
+        );
+      }
+    });
+    console.log("Setting indicated paths:", allRelatedPaths);
+    if (allRelatedPaths.size > 0) {
+      setIndicatedPaths([...allRelatedPaths]);
+    }
+
+    return () => {
+      clearIndicatedPaths();
+    };
+  }, [nodes, setIndicatedPaths, clearIndicatedPaths]);
 
   // STEP1 클릭으로 하이라이트된 경로가 바뀌면 첫 파일의 코드를 프리패치합니다.
   const highlightedPaths = useExplorerStore((s) => s.highlightedPaths);
@@ -191,18 +218,17 @@ export default function VisualizationClient({
   }
 
   return (
-    <ReactFlowProvider>
+    <div>
       <div className="bg-page relative h-full w-full overflow-hidden">
         {/* 모바일/작은 화면 경고 메시지 */}
         <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm md:hidden">
-          <div className="mx-4 max-w-md rounded-lg bg-surface p-8 text-center shadow-2xl">
+          <div className="bg-surface mx-4 max-w-md rounded-lg p-8 text-center shadow-2xl">
             <div className="mb-4 text-5xl">💻</div>
             <h2 className="text-heading mb-3 text-xl font-bold">
               데스크톱 환경 권장
             </h2>
             <p className="text-body mb-2 text-sm leading-relaxed">
-              이 서비스는 <strong>데스크톱 환경</strong>에 최적화되어
-              있습니다.
+              이 서비스는 <strong>데스크톱 환경</strong>에 최적화되어 있습니다.
             </p>
             <p className="text-muted text-xs">
               더 나은 사용 경험을 위해 PC 또는 태블릿의 가로 모드를
@@ -210,60 +236,66 @@ export default function VisualizationClient({
             </p>
           </div>
         </div>
+      </div>
 
+      <div className="relative h-screen w-full">
         <VisualizationView
+          visualizationId={visualizationId}
+          analysisId={analysisId}
           initialNodes={nodes}
           initialEdges={edges}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
-          visualizationId={visualizationId}
         />
+      </div>
 
-        <aside className="pointer-events-none absolute top-6 right-6 bottom-6 z-50 flex w-96 flex-col gap-4">
+      <aside
+        id="details-panel"
+        className="pointer-events-none absolute top-6 right-6 bottom-6 z-50 flex w-96 flex-col gap-4"
+      >
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            panelNode && isNodeOpen
+              ? "h-80 translate-x-0 opacity-100"
+              : "h-0 translate-x-10 opacity-0"
+          }`}
+        >
+          <div className="pointer-events-auto h-full">
+            {panelNode && (
+              <NodeDetails
+                node={panelNode}
+                isOpen={isNodeOpen}
+                onClose={() => setIsNodeOpen(false)}
+              />
+            )}
+          </div>
+        </div>
+
+        {purposes && (
           <div
             className={`overflow-hidden transition-all duration-300 ease-in-out ${
-              panelNode && isNodeOpen
-                ? "h-80 translate-x-0 opacity-100"
+              isProjectOpen
+                ? "flex-1 translate-x-0 opacity-100"
                 : "h-0 translate-x-10 opacity-0"
             }`}
           >
             <div className="pointer-events-auto h-full">
-              {panelNode && (
-                <NodeDetails
-                  node={panelNode}
-                  isOpen={isNodeOpen}
-                  onClose={() => setIsNodeOpen(false)}
-                />
-              )}
+              <ProjectDetails
+                data={purposes}
+                onClose={() => setIsProjectOpen(false)}
+              />
             </div>
           </div>
+        )}
 
-          {purposes && (
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                isProjectOpen
-                  ? "flex-1 translate-x-0 opacity-100"
-                  : "h-0 translate-x-10 opacity-0"
-              }`}
-            >
-              <div className="pointer-events-auto h-full">
-                <ProjectDetails
-                  data={purposes}
-                  onClose={() => setIsProjectOpen(false)}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="pointer-events-auto mt-auto">
-            <SaveButtons
-              isProjectOpen={isProjectOpen}
-              onProjectDetails={() => setIsProjectOpen(true)}
-              onFolderDetails={() => setIsNodeOpen(true)}
-            />
-          </div>
-        </aside>
-      </div>
-    </ReactFlowProvider>
+        <div className="pointer-events-auto mt-auto">
+          <SaveButtons
+            isProjectOpen={isProjectOpen}
+            onProjectDetails={() => setIsProjectOpen(true)}
+            onFolderDetails={() => setIsNodeOpen(true)}
+          />
+        </div>
+      </aside>
+    </div>
   );
 }

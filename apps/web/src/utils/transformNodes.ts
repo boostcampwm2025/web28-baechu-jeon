@@ -1,116 +1,340 @@
 import { Node, Edge } from "@xyflow/react";
 import { VisualizationResponse, ApiNode, ApiEdge } from "@/api/visualization";
 import { BaseNodeData, LAYOUT_SETTINGS } from "./layouts/layoutSettings";
-import { createReactFlowNode } from "./layouts/layoutUtils";
-import { layoutStep1 } from "./layouts/layoutStep1";
-import { layoutStep2 } from "./layouts/layoutStep2";
-import { layoutStep3 } from "./layouts/layoutStep3";
+import { calculateTextDimensions } from "./layouts/layoutUtils";
 
-export type { BaseNodeData };
+type LayoutedApiNode = ApiNode & { width: number; height: number };
 
 export function transformApiToReactFlow(apiResponse: VisualizationResponse) {
-  const reactFlowEdges = getReactFlowEdges(apiResponse.edges);
-  let layoutEdges: Edge[] = [];
+  const { nodes, edges } = apiResponse;
 
-  let nodesResult: {
-    reactFlowNodes: Node<BaseNodeData>[];
-    updatedApiNodes: ApiNode[];
-    generatedEdges?: Edge[];
-  };
+  const reactFlowNodes: Node<BaseNodeData>[] = [];
+  const reactFlowEdges = getReactFlowEdges(edges);
 
-  if (apiResponse.layoutState === "INITIAL") {
-    const calcResult = calculateLayout(apiResponse.nodes, reactFlowEdges);
-    nodesResult = {
-      reactFlowNodes: calcResult.reactFlowNodes,
-      updatedApiNodes: calcResult.updatedApiNodes,
-    };
-    if (calcResult.generatedEdges) {
-      layoutEdges = calcResult.generatedEdges;
-    }
-  } else {
-    nodesResult = transformExistingNodes(apiResponse.nodes);
+  if (nodes.STEP1 && nodes.STEP1.length > 0) {
+    reactFlowNodes.push(...transformStep1(nodes.STEP1));
   }
 
-  const finalEdges = [...reactFlowEdges, ...layoutEdges];
+  if (nodes.STEP2 && nodes.STEP2.length > 0) {
+    reactFlowNodes.push(...transformStep2(nodes.STEP2));
+  }
+
+  if (nodes.STEP3 && nodes.STEP3.length > 0) {
+    reactFlowNodes.push(...transformStep3(nodes.STEP3));
+  }
 
   return {
-    reactFlowEdges: finalEdges,
-    reactFlowNodes: nodesResult.reactFlowNodes,
-    updatedApiNodes: {
-      nodes: nodesResult.updatedApiNodes,
-      edges: apiResponse.edges,
-    },
+    reactFlowNodes,
+    reactFlowEdges,
   };
 }
 
-function calculateLayout(nodeGroups: Record<string, ApiNode[]>, edges: Edge[]) {
-  const reactFlowNodes: Node<BaseNodeData>[] = [];
-  const updatedApiNodes: ApiNode[] = [];
-  const generatedEdges: Edge[] = [];
+function transformStep1(apiNodes: ApiNode[]): Node<BaseNodeData>[] {
+  const rfNodes: Node<BaseNodeData>[] = [];
+  const groupId = "group-STEP1";
+  const PADDING = 60;
+  const SETTING = LAYOUT_SETTINGS.diagram1;
 
-  const TOP_MARGIN = 100;
+  const nodesWithSize = apiNodes.map((node) => ({
+    ...node,
+    width: (node as LayoutedApiNode).width || SETTING.w,
+    height: (node as LayoutedApiNode).height || SETTING.minH,
+  }));
 
-  // STEP1 배치
-  let step1Width = 0;
-  if (nodeGroups.STEP1) {
-    // yOffset에 TOP_MARGIN 전달
-    const s1 = layoutStep1(nodeGroups.STEP1, 0, TOP_MARGIN, 600, 100);
-    reactFlowNodes.push(...s1.groupNodes, ...s1.childNodes);
-    updatedApiNodes.push(...s1.apiNodes);
-    step1Width = s1.width;
-  }
+  const bounds = getBoundingBox(nodesWithSize, SETTING.w, SETTING.minH);
 
-  // STEP2 배치 (STEP1 우측)
-  const STEP1_GAP = 200;
-  const step2X = step1Width + STEP1_GAP;
-  let step2Width = 0;
+  const groupX = bounds.minX - PADDING;
+  const groupY = bounds.minY - PADDING;
+  const groupW = bounds.width + PADDING * 2;
+  const groupH = bounds.height + PADDING * 2;
 
-  if (nodeGroups.STEP2) {
-    // STEP1과 높이 맞춤
-    const s2 = layoutStep2(nodeGroups.STEP2, edges, step2X, TOP_MARGIN);
-    reactFlowNodes.push(...s2.reactFlowNodes);
-    updatedApiNodes.push(...s2.apiNodes);
-    step2Width = s2.width;
-  }
+  rfNodes.push({
+    id: groupId,
+    type: "baseNode",
+    position: { x: groupX, y: groupY },
+    style: { width: groupW, height: groupH, zIndex: -1 },
+    data: {
+      label: "",
+      width: groupW,
+      height: groupH,
+      theme: SETTING.theme,
+      diagramType: "STEP1",
+      groups: "CONTAINER",
+    },
+  });
 
-  // STEP3 배치 (STEP2 우측)
-  const STEP2_GAP = 200;
-  const validStep2Width = step2Width > 0 ? step2Width : 500;
-  const step3X = step2X + validStep2Width + STEP2_GAP;
+  rfNodes.push({
+    id: `${groupId}-label`,
+    type: "baseNode",
+    parentId: groupId,
+    position: { x: 0, y: -150 },
+    style: { zIndex: 10 },
+    data: {
+      label: "User Stories & Features",
+      width: groupW,
+      height: 50,
+      theme: {
+        ...SETTING.theme,
+        borderColor: "transparent",
+        bgColor: "transparent",
+      },
+      diagramType: "STEP1",
+      groups: "GROUP_HEADER",
+    },
+  });
 
-  if (nodeGroups.STEP3) {
-    const s3 = layoutStep3(nodeGroups.STEP3, step3X, TOP_MARGIN);
+  nodesWithSize.forEach((node) => {
+    rfNodes.push({
+      id: node.id,
+      type: "baseNode",
+      parentId: groupId,
+      extent: "parent",
+      position: { x: node.x - groupX, y: node.y - groupY },
+      data: {
+        ...node,
+        width: node.width,
+        height: node.height,
+        paddingX: SETTING.font.xPadding,
+        paddingY: SETTING.font.yPadding,
+        theme: SETTING.theme,
+      },
+    });
+  });
 
-    reactFlowNodes.push(...s3.groupNodes, ...s3.childNodes);
-    updatedApiNodes.push(...s3.apiNodes);
-
-    if (s3.generatedEdges) {
-      generatedEdges.push(...s3.generatedEdges);
-    }
-  }
-
-  return { reactFlowNodes, updatedApiNodes, generatedEdges };
+  return rfNodes;
 }
 
-function transformExistingNodes(apiNodes: Record<string, ApiNode[]>) {
-  const reactFlowNodes: Node<BaseNodeData>[] = [];
-  const updatedApiNodes: ApiNode[] = [];
+function transformStep2(apiNodes: ApiNode[]): Node<BaseNodeData>[] {
+  const SETTING = LAYOUT_SETTINGS.diagram2;
+  const rfNodes: Node<BaseNodeData>[] = [];
 
-  Object.values(apiNodes)
-    .flat()
-    .forEach((n) => {
-      let settings;
-      if (n.diagramType === "STEP1") settings = LAYOUT_SETTINGS.diagram1;
-      else if (n.diagramType === "STEP2") settings = LAYOUT_SETTINGS.diagram2;
-      else settings = LAYOUT_SETTINGS.diagram3Child;
+  const nodesWithSize = apiNodes.map((node) => {
+    let width = (node as LayoutedApiNode).width;
+    if (!width) {
+      const calculated = calculateTextDimensions(node.label || "", {
+        fontSize: SETTING.font.size,
+        lineHeight: SETTING.font.lineHeight,
+        maxWidth: Infinity,
+        paddingX: SETTING.font.xPadding * 2,
+        minWidth: SETTING.minW,
+      });
+      width = calculated.width;
+    }
 
-      reactFlowNodes.push(
-        createReactFlowNode(n, Number(n.x), Number(n.y), settings),
-      );
-      updatedApiNodes.push(n);
+    return {
+      ...node,
+      width,
+      height: (node as LayoutedApiNode).height || SETTING.h,
+    };
+  });
+
+  const bounds = getBoundingBox(nodesWithSize, SETTING.minW, SETTING.h);
+
+  const LABEL_W = 600;
+  rfNodes.push({
+    id: "group-STEP2-label",
+    type: "baseNode",
+    position: {
+      x: bounds.minX + bounds.width / 2 - LABEL_W / 2,
+      y: bounds.minY - 120,
+    },
+    data: {
+      label: "Project File Tree",
+      width: LABEL_W,
+      height: 80,
+      theme: {
+        ...SETTING.theme,
+        borderColor: "transparent",
+        bgColor: "transparent",
+      },
+      diagramType: "STEP2",
+      groups: "GROUP_HEADER",
+    },
+  });
+
+  nodesWithSize.forEach((node) => {
+    const typeTheme = node.type === "FILE" ? SETTING.fileTheme : SETTING.theme;
+
+    rfNodes.push({
+      id: node.id,
+      type: "baseNode",
+      position: { x: node.x, y: node.y },
+      data: {
+        ...node,
+        label: node.label,
+        width: node.width,
+        height: node.height,
+        paddingX: SETTING.font.xPadding,
+        paddingY: SETTING.font.yPadding,
+        theme: typeTheme,
+        diagramType: "STEP2",
+      },
+    });
+  });
+  return rfNodes;
+}
+
+function transformStep3(apiNodes: ApiNode[]): Node<BaseNodeData>[] {
+  const rfNodes: Node<BaseNodeData>[] = [];
+  const SETTING = LAYOUT_SETTINGS.diagram3;
+  const categories = ["FE", "BE", "DB", "INFRA"];
+
+  const nodesWithSize = apiNodes.map((node) => ({
+    ...node,
+    width: (node as LayoutedApiNode).width || SETTING.minW,
+    height: (node as LayoutedApiNode).height || SETTING.h,
+  }));
+
+  const bounds = getBoundingBox(nodesWithSize, SETTING.minW, SETTING.h);
+
+  const rootX = bounds.minX - SETTING.categoryPadding - SETTING.paddingSide;
+  const rootY =
+    bounds.minY -
+    SETTING.categoryPadding -
+    SETTING.headerHeight -
+    SETTING.headerGap -
+    SETTING.paddingTop;
+  const rootW =
+    bounds.width + (SETTING.categoryPadding + SETTING.paddingSide) * 2;
+  const rootH =
+    bounds.height +
+    (SETTING.categoryPadding + SETTING.paddingTop) * 2 +
+    SETTING.headerHeight +
+    SETTING.headerGap;
+
+  rfNodes.push({
+    id: "group-STEP3-ROOT",
+    type: "baseNode",
+    position: { x: rootX, y: rootY },
+    style: { width: rootW, height: rootH, zIndex: -2 },
+    data: {
+      label: "",
+      width: rootW,
+      height: rootH,
+      theme: SETTING.rootTheme,
+      diagramType: "STEP3",
+      groups: "ROOT_CONTAINER",
+    },
+  });
+
+  rfNodes.push({
+    id: "group-STEP3-label",
+    type: "baseNode",
+    parentId: "group-STEP3-ROOT",
+    position: { x: 0, y: -100 },
+    data: {
+      label: "TECH STACK",
+      width: rootW,
+      height: 60,
+      theme: {
+        ...SETTING.rootTheme,
+        borderColor: "transparent",
+        bgColor: "transparent",
+      },
+      diagramType: "STEP3",
+      groups: "GROUP_HEADER",
+    },
+  });
+
+  categories.forEach((cat) => {
+    const children = nodesWithSize.filter(
+      (n) => (n.groups?.toUpperCase() || "INFRA") === cat,
+    );
+    if (children.length === 0) return;
+
+    const catBounds = getBoundingBox(children, SETTING.minW, SETTING.h);
+    const colW = catBounds.width + SETTING.categoryPadding * 2;
+    const colH = bounds.height + SETTING.categoryPadding * 2;
+
+    const colAbsX = catBounds.minX - SETTING.categoryPadding;
+    const colAbsY = catBounds.minY - SETTING.categoryPadding;
+
+    const catGroupId = `group-STEP3-${cat}`;
+
+    rfNodes.push({
+      id: `${catGroupId}-label`,
+      type: "baseNode",
+      parentId: "group-STEP3-ROOT",
+      position: {
+        x: colAbsX - rootX + (colW / 2 - 100 / 2),
+        y: colAbsY - rootY - SETTING.headerHeight - SETTING.headerGap,
+      },
+      data: {
+        label: cat,
+        width: 100,
+        height: SETTING.headerHeight,
+        theme: SETTING.headerTheme,
+        diagramType: "STEP3",
+        groups: "CATEGORY_HEADER",
+      },
     });
 
-  return { reactFlowNodes, updatedApiNodes };
+    rfNodes.push({
+      id: catGroupId,
+      type: "baseNode",
+      parentId: "group-STEP3-ROOT",
+      position: { x: colAbsX - rootX, y: colAbsY - rootY },
+      style: { width: colW, height: colH },
+      data: {
+        label: "",
+        width: colW,
+        height: colH,
+        theme: SETTING.categoryTheme,
+        diagramType: "STEP3",
+        groups: "ITEM_CONTAINER",
+      },
+    });
+
+    children.forEach((node) => {
+      rfNodes.push({
+        id: node.id,
+        type: "baseNode",
+        parentId: catGroupId,
+        extent: "parent",
+        position: {
+          x: node.x - colAbsX,
+          y: node.y - colAbsY,
+        },
+        data: {
+          ...node,
+          width: node.width,
+          height: node.height,
+          theme: SETTING.itemTheme,
+          paddingX: SETTING.font.xPadding,
+          paddingY: SETTING.font.yPadding,
+        },
+      });
+    });
+  });
+
+  return rfNodes;
+}
+
+export function getBoundingBox(
+  nodes: ApiNode[],
+  defaultNodeW: number,
+  defaultNodeH: number,
+) {
+  if (!nodes || nodes.length === 0) {
+    return { minX: 0, minY: 0, maxX: 0, maxY: 0, width: 0, height: 0 };
+  }
+
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+
+  nodes.forEach((n) => {
+    const w = (n as LayoutedApiNode).width || defaultNodeW;
+    const h = (n as LayoutedApiNode).height || defaultNodeH;
+
+    if (n.x < minX) minX = n.x;
+    if (n.y < minY) minY = n.y;
+    if (n.x + w > maxX) maxX = n.x + w;
+    if (n.y + h > maxY) maxY = n.y + h;
+  });
+
+  return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
 }
 
 function getReactFlowEdges(apiEdges: ApiEdge[]): Edge[] {

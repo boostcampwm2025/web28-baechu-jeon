@@ -99,6 +99,11 @@ html.light {
     font-size: 0.9em;
   }
 
+  .prose code::before,
+  .prose code::after {
+    content: "" !important;
+  }
+
   /* 링크 가독성 */
   .prose a {
     text-decoration: underline;

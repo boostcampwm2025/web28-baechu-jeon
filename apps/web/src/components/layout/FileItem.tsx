@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter, usePathname } from "next/navigation";
 import { HiFolder, HiDocument, HiOutlineChevronRight } from "react-icons/hi";
 import { FileNode } from "@/utils/pathTree";
 import { useExplorerStore } from "@/stores/useExplorerStore";
@@ -21,20 +21,28 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFolder = node.type === "folder";
 
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const params = useParams<{ analysisId: string }>();
   const highlightedPaths = useExplorerStore((s) => s.highlightedPaths);
-  const setSelectedFilePath = useVisualizationStore(
-    (s) => s.setSelectedFilePath,
-  );
-  const setActiveTab = useVisualizationStore((s) => s.setActiveTab);
   const setCachedCode = useVisualizationStore((s) => s.setCachedCode);
 
+  const indicatedPaths = useExplorerStore((s) => s.indicatedPaths);
+
   const isHighlighted = highlightedPaths.includes(node.path);
+  const isIndicated = !isFolder && indicatedPaths.has(node.path);
+  const isClickable = isHighlighted || isIndicated;
+  // 폴더 내부에 indicated 파일이 있는지 (파란 점 표시용)
+  const hasIndicatedChildren =
+    isFolder &&
+    [...indicatedPaths].some((ip) => ip.startsWith(node.path + "/"));
+  // 자동 펼침은 highlighted일 때만
   const shouldExpand =
     isFolder && highlightedPaths.some((hp) => hp.startsWith(node.path + "/"));
 
   const handleMouseEnter = useCallback(() => {
-    if (!isHighlighted || isFolder || !node.path || !params.analysisId) return;
+    if (!isClickable || isFolder || !node.path || !params.analysisId) return;
     const decoded = maybeDecode(node.path) ?? node.path;
     if (
       useVisualizationStore.getState().getCachedCode(params.analysisId, decoded)
@@ -50,7 +58,7 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
         /* ignore */
       }
     })();
-  }, [isHighlighted, isFolder, node.path, params.analysisId, setCachedCode]);
+  }, [isClickable, isFolder, node.path, params.analysisId, setCachedCode]);
 
   useEffect(() => {
     if (shouldExpand) {
@@ -84,31 +92,36 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
       setIsOpen(!isOpen);
       return;
     }
-    if (!isHighlighted) {
+    if (!isClickable) {
       setShowTooltip(true);
       timeoutRef.current = setTimeout(() => setShowTooltip(false), 2000);
       return;
     }
     const decoded = maybeDecode(node.path) ?? node.path;
-    setSelectedFilePath(decoded);
-    // URL 이동 없이 내부 탭으로 전환
-    setActiveTab("code");
+
+    // URL만 변경 (상태는 ResultTabsClient에서 URL 감시하여 동기화)
+    const urlParams = new URLSearchParams(searchParams.toString());
+    urlParams.set("tab", "code");
+    urlParams.set("filePath", decoded);
+    router.push(`${pathname}?${urlParams.toString()}`, { scroll: false });
   };
 
   return (
-    <div>
+    <div style={{ contentVisibility: "auto", containIntrinsicSize: "auto 32px" }}>
       <div className="relative">
         <div
           ref={itemRef}
           onClick={handleClick}
           onMouseEnter={handleMouseEnter}
           title={node.path}
-          className={`group flex items-center gap-1 px-2 py-1 pr-4 text-sm transition-colors select-none ${
+          className={`group flex items-center gap-1 px-2 py-1 pr-4 text-sm select-none ${
             isHighlighted
               ? "cursor-pointer rounded-sm bg-amber-500/15 font-semibold text-amber-400"
-              : isFolder
-                ? "text-body hover:bg-hover cursor-pointer font-medium"
-                : "text-subtle hover:bg-hover/50 cursor-default"
+              : isIndicated
+                ? "text-body hover:bg-hover/70 cursor-pointer"
+                : isFolder
+                  ? "text-body hover:bg-hover cursor-pointer font-medium"
+                  : "text-subtle hover:bg-hover/50 cursor-default"
           } `}
           style={{ paddingLeft: `${depth * 10 + 5}px` }}
         >
@@ -135,6 +148,11 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
           </span>
 
           <span className="ml-1 truncate pt-0.5">{node.name}</span>
+
+          {/* 코드 요약이 있는 파일 또는 하위에 있는 폴더 표시 (파란 원) */}
+          {(isIndicated || hasIndicatedChildren) && (
+            <span className="ml-auto flex h-2 w-2 shrink-0 rounded-full bg-blue-400" />
+          )}
         </div>
 
         {showTooltip && (

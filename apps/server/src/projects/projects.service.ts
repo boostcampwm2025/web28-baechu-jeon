@@ -1,12 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { promisify } from 'util';
 import * as fs from 'fs';
+import { Readable } from 'stream';
 import { ZipParserService } from './services/zip-parser.service';
 import {
   ProjectStructure,
   ProjectStructureService,
 } from './services/project-structure.service';
 import { GitignoreMatcherService } from './services/gitignore-matcher.service';
+import { GithubArchiveService } from './services/github-archive.service';
+import { GithubDownloadService } from './services/github-download.service';
 import { ProjectRepository } from './repository/project.repository';
 import { NcloudStorageService } from '../storage/ncloud-storage.service';
 import { Step1Result } from '../ai/types/ai.types';
@@ -23,9 +26,33 @@ export class ProjectsService {
     private readonly zipParser: ZipParserService,
     private readonly projectStructure: ProjectStructureService,
     private readonly gitignoreMatcher: GitignoreMatcherService,
+    private readonly githubArchive: GithubArchiveService,
+    private readonly githubDownload: GithubDownloadService,
     private readonly projectRepository: ProjectRepository,
     private readonly ncloudStorage: NcloudStorageService,
   ) {}
+
+  /**
+   * GitHub 저장소 URL로 ZIP을 다운로드한 뒤 기존 parseZipFile 파이프라인으로 프로젝트를 생성합니다.
+   */
+  async createProjectFromGithubUrl(githubUrl: string): Promise<ZipParseResult> {
+    const { archiveUrl, owner, repo, branch } =
+      this.githubArchive.getArchiveUrl(githubUrl);
+    const tempPath = await this.githubDownload.downloadToTempFile(archiveUrl);
+    const file = {
+      fieldname: 'file',
+      originalname: `${owner}-${repo}-${branch}.zip`,
+      encoding: '7bit',
+      mimetype: 'application/zip',
+      size: 0,
+      destination: '',
+      filename: '',
+      path: tempPath,
+      stream: null as unknown as Readable,
+      buffer: null as unknown as Buffer,
+    } as Express.Multer.File;
+    return this.parseZipFile(file);
+  }
 
   async parseZipFile(file: Express.Multer.File): Promise<ZipParseResult> {
     try {
