@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client';
 import { analysisResultsKey } from './infra/analysis.redis.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Step3CodeSummaryResult } from '../ai/types/ai.types.js';
+import { AnalysisEmitter } from './events/analysis.emitter.js';
 
 @Injectable()
 export class AnalysesService {
@@ -16,6 +17,7 @@ export class AnalysesService {
     private readonly redis: Redis,
     private readonly pipelineRunner: PipelineRunner,
     private readonly prisma: PrismaService,
+    private readonly emitter: AnalysisEmitter,
   ) {}
 
   async processJob(jobData: { analysisId: string; projectId: string }) {
@@ -44,12 +46,25 @@ export class AnalysesService {
         if (cachedResults['STEP2_HYPOTHESIS_AND_INTENT']) {
           const parsed = JSON.parse(
             cachedResults['STEP2_HYPOTHESIS_AND_INTENT'],
-          ) as { step2?: unknown; step3?: unknown } | Record<string, unknown>;
-          context.step2 =
-            parsed?.step2 != null && parsed?.step3 != null
+          );
+
+          const merged =
+            parsed?.step2 && parsed?.step3
               ? { ...parsed.step2, ...parsed.step3 }
-              : (parsed as Record<string, unknown>);
-          this.logger.log(`[${analysisId}] Step 2 (가설+의도) 결과 복구 완료`);
+              : null;
+
+          if (
+            merged &&
+            Array.isArray(merged.responsibility_hypotheses) &&
+            merged.responsibility_hypotheses.length > 0 &&
+            merged.project_intent &&
+            Array.isArray(merged.user_stories)
+          ) {
+            context.step2 = merged;
+            this.logger.log(`[${analysisId}] Step2 복구 완료 (유효)`);
+          } else {
+            this.logger.warn(`[${analysisId}] Step2 복구 스킵 (불완전 데이터)`);
+          }
         } else if (
           cachedResults['STEP2_HYPOTHESIS'] &&
           cachedResults['STEP3_INTENT']
@@ -78,6 +93,12 @@ export class AnalysesService {
 
       // 최종 결과를 DB에 저장
       await this.saveResultToDatabase(analysisId, projectId, context);
+
+      // DB 저장 후 완료 이벤트 발송 (프론트엔드에서 시각화 요청 가능)
+      await this.emitter.emitCompleted({
+        analysisId,
+        completedAt: new Date(),
+      });
 
       this.logger.log(`[${analysisId}] 모든 분석 완료 및 DB 저장`);
 
@@ -143,6 +164,11 @@ export class AnalysesService {
     context: PipelineContext,
   ): Promise<void> {
     try {
+      // 디버그 로그
+      this.logger.log(
+        `[${analysisId}] saveResultToDatabase - context.step2 keys: ${Object.keys(context.step2 || {}).join(', ') || 'EMPTY'}`,
+      );
+
       // step2 = 가설+의도 통합, step3 = 코드요약
       await this.prisma.analysisResult.create({
         data: {
@@ -162,6 +188,7 @@ export class AnalysesService {
             filePath: s.file_path,
             markdownContent: s.markdown_content,
           })),
+          skipDuplicates: true,
         });
         this.logger.log(
           `[${analysisId}] FileSummary ${codeSummary.file_summaries.length}건 저장`,
