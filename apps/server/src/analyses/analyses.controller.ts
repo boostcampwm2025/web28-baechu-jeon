@@ -18,12 +18,12 @@ export class AnalysesController {
     const analysisId = uuidv4();
     await this.analysisQueue.add(
       'run-analysis',
-      { analysisId, projectId },
+      { analysisId, projectId, attemptsMade: 0 },
       {
         attempts: 5,
         backoff: {
           type: 'exponential',
-          delay: 30000, // 60초부터 시작, 2^n 증가
+          delay: 10000, // 30초부터 시작, 2^n 증가
         },
         removeOnComplete: true,
         removeOnFail: false,
