@@ -3,20 +3,35 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GITHUB_UPLOAD } from "@/constants/upload";
+import { uploadGithubRepo, ProjectError } from "@/api/project";
 
 export default function GithubUploadTab() {
   const [githubUrl, setGithubUrl] = useState<string>("");
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const url = e.target.value;
-    setGithubUrl(url);
+    setGithubUrl(e.target.value);
+    setErrorMessage(null);
   };
 
-  const handleConfirm = () => {
-    if (githubUrl && !projectId) {
-      setProjectId(githubUrl);
+  const handleConfirm = async () => {
+    if (!githubUrl.trim() || projectId || loading) return;
+    setErrorMessage(null);
+    setLoading(true);
+    try {
+      const { projectId: id } = await uploadGithubRepo(githubUrl.trim());
+      setProjectId(id);
+    } catch (error) {
+      const message =
+        error instanceof ProjectError
+          ? error.message
+          : GITHUB_UPLOAD.ERROR_PRIVATE_OR_NOT_FOUND;
+      setErrorMessage(message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -57,6 +72,9 @@ export default function GithubUploadTab() {
             className="w-full rounded-xl border border-line bg-page/50 py-3.5 pr-4 pl-12 text-heading placeholder-muted transition-all focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/10 focus:outline-none disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted"
           />
         </div>
+        {errorMessage && (
+          <p className="mt-2 text-sm text-red-600">{errorMessage}</p>
+        )}
       </div>
 
       {/* Public 레포지토리 안내 */}
@@ -87,13 +105,57 @@ export default function GithubUploadTab() {
         </div>
       </div>
 
-      {/* URL 확인 버튼 (projectId 없을 때) */}
-      {!projectId && (
+      {/* URL 확인 버튼: 로딩 중 / 미확인 / 확인 완료(파란색) */}
+      {!projectId ? (
         <button
           onClick={handleConfirm}
           disabled={!githubUrl}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-subtle px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-muted hover:shadow-md disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted disabled:shadow-none"
         >
+          {loading ? (
+            <>
+              <svg
+                className="h-5 w-5 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              {GITHUB_UPLOAD.LOADING_MESSAGE}
+            </>
+          ) : (
+            <>
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              URL 확인
+            </>
+          )}
+        </button>
+      ) : (
+        <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-sm">
           <svg
             className="h-5 w-5"
             fill="none"
@@ -107,8 +169,8 @@ export default function GithubUploadTab() {
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          URL 확인
-        </button>
+          확인 완료
+        </div>
       )}
 
       {/* 분석 시작하기 버튼 - 항상 표시, URL 확인 시 활성화 */}
