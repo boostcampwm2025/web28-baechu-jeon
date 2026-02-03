@@ -39,7 +39,7 @@ export class GithubArchiveService {
       );
     }
 
-    const [owner, repo, type, branch, ...rest] = pathSegments;
+    const [owner, repo, type, branch] = pathSegments;
     let branchName = 'main';
     if (type === 'tree' && branch) {
       branchName = branch;
