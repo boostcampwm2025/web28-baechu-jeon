@@ -20,7 +20,10 @@ export default function NodeDetails({
     <div className="border-line bg-surface/90 flex h-full flex-col overflow-hidden rounded-xl border shadow-2xl backdrop-blur-md">
       <div className="border-line/50 flex items-center justify-between border-b p-4">
         <h2 className="text-subtle text-sm font-bold">폴더 역할 상세</h2>
-        <button onClick={onClose} className="text-subtle hover:text-heading">
+        <button
+          onClick={onClose}
+          className="text-subtle hover:text-heading cursor-pointer"
+        >
           <IoClose size={18} />
         </button>
       </div>

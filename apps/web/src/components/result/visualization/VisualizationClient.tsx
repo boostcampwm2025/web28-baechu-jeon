@@ -238,24 +238,6 @@ export default function VisualizationClient({
           </div>
         </div>
 
-        {initialPurposes && (
-          <div
-            id="project-details-panel"
-            className={`overflow-hidden transition-all duration-300 ease-in-out ${
-              isProjectOpen
-                ? "flex-1 translate-x-0 opacity-100"
-                : "h-0 translate-x-10 opacity-0"
-            }`}
-          >
-            <div className="pointer-events-auto h-full">
-              <ProjectDetails
-                data={initialPurposes}
-                onClose={() => setIsProjectOpen(false)}
-              />
-            </div>
-          </div>
-        )}
-
         {purposes && (
           <div
             className={`overflow-hidden transition-all duration-300 ease-in-out ${
