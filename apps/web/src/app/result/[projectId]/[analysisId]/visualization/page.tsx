@@ -2,6 +2,7 @@ import VisualizationClient from "@/components/result/visualization/Visualization
 import { getIntentions } from "@/api/intention";
 import { getVisualization, updateVisualization } from "@/api/visualization";
 import { transformApiToReactFlow } from "@/utils/transformNodes";
+import { calculateInitialLayout } from "@/utils/layouts/layoutCalculator";
 
 interface PageProps {
   params: Promise<{ projectId: string; analysisId: string }>;
@@ -15,22 +16,28 @@ export default async function VisualizationPage({ params }: PageProps) {
     getVisualization(analysisId),
   ]);
 
-  const { reactFlowNodes, reactFlowEdges, updatedApiNodes } =
-    transformApiToReactFlow(visualization);
+  let nodesToRender = visualization.nodes;
+  let edgesToRender = visualization.edges;
 
   if (visualization.layoutState === "INITIAL") {
-    const groupedNodes = {
-      STEP1: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP1"),
-      STEP2: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP2"),
-      STEP3: updatedApiNodes.nodes.filter((n) => n.diagramType === "STEP3"),
-    };
+    const layoutResult = calculateInitialLayout(nodesToRender, edgesToRender); //초기일 때만 레이아웃 좌표 계산
 
     await updateVisualization(visualization.visualizationId, {
-      nodes: groupedNodes,
-      edges: updatedApiNodes.edges,
+      nodes: layoutResult.nodes,
+      edges: layoutResult.edges,
       layoutState: "FIXED",
     });
+
+    nodesToRender = layoutResult.nodes;
+    edgesToRender = layoutResult.edges;
   }
+
+  // 리액트 플로우에서 사용할 형태로 노드, 엣지 가공
+  const { reactFlowNodes, reactFlowEdges } = transformApiToReactFlow({
+    ...visualization,
+    nodes: nodesToRender,
+    edges: edgesToRender,
+  });
 
   return (
     <VisualizationClient
