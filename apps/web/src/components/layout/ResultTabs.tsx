@@ -8,7 +8,9 @@ export default function ResultTabs() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const activeTab = useVisualizationStore((s) => s.activeTab);
+  // URL에서 바로가져오기 (store 업데이트 전 깜빡임 방지)
+  const activeTab =
+    (searchParams.get("tab") as "code" | "visualization") ?? "visualization";
   const selectedFilePath = useVisualizationStore((s) => s.selectedFilePath);
 
   const tabs = [

@@ -81,7 +81,6 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
       return;
     }
 
-    // 네트워크에서 가져옵니다
     const controller = new AbortController();
     setLoading(true);
     setError(null);
@@ -102,7 +101,6 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
   const hasPrefetched = useRef(false);
   useEffect(() => {
     if (!params.analysisId || hasPrefetched.current) return;
-    if (useVisualizationStore.getState().activeTab !== "code") return;
     hasPrefetched.current = true;
     (async () => {
       try {
@@ -143,10 +141,12 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
       )}
 
       {!loading && !error && (
-        <div className={`flex-1 overflow-auto bg-[var(--color-hover)] p-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[var(--color-muted)] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:opacity-50 hover:[&::-webkit-scrollbar-thumb]:opacity-100`}>
+        <div
+          className={`flex-1 overflow-auto bg-[var(--color-hover)] p-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--color-muted)] [&::-webkit-scrollbar-thumb]:opacity-50 hover:[&::-webkit-scrollbar-thumb]:opacity-100 [&::-webkit-scrollbar-track]:bg-transparent`}
+        >
           <div
             className={
-              "prose prose-zinc prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-heading prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-relaxed prose-p:text-[15px] prose-p:text-body prose-strong:font-semibold prose-strong:text-heading prose-code:rounded prose-code:bg-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[14px] prose-code:font-normal prose-code:text-body prose-code:before:content-[''] prose-code:after:content-[''] prose-pre:border-0 prose-pre:bg-transparent prose-pre:p-0 prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-muted prose-blockquote:text-muted prose-ul:my-4 prose-ol:my-4 prose-li:my-1 prose-li:text-body pb-12 max-w-none" +
+              "prose prose-zinc prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-heading prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-relaxed prose-p:text-[15px] prose-p:text-body prose-strong:font-semibold prose-strong:text-heading prose-code:rounded prose-code:bg-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[14px] prose-code:font-normal prose-code:text-body prose-code:before:content-[''] prose-code:after:content-[''] prose-pre:border-0 prose-pre:bg-transparent prose-pre:p-0 prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-muted prose-blockquote:text-muted prose-ul:my-4 prose-ol:my-4 prose-li:my-1 prose-li:text-body max-w-none pb-12" +
               (isDark
                 ? " prose-invert prose-a:text-blue-400"
                 : " prose-a:text-blue-600")

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useLayoutEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
@@ -38,8 +38,9 @@ export default function ResultTabsClient({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const activeTab = useVisualizationStore((s) => s.activeTab);
-  const setActiveTab = useVisualizationStore((s) => s.setActiveTab);
+  // URL을 소스 오브 트루스로 사용
+  const activeTab =
+    (searchParams.get("tab") as "code" | "visualization") ?? "visualization";
   const setSelectedFilePath = useVisualizationStore(
     (s) => s.setSelectedFilePath,
   );
@@ -53,18 +54,13 @@ export default function ResultTabsClient({
     if (activeTab === "visualization") setVizLoaded(true);
   }, [activeTab]);
 
-  // URL searchParams 로만 상태 동기화
-  useEffect(() => {
-    const tabFromUrl = searchParams.get("tab");
+  // filePath만 store에 동기화 (코드 프리페치 캐시용)
+  useLayoutEffect(() => {
     const filePathFromUrl = searchParams.get("filePath");
-
-    if (tabFromUrl === "code" || tabFromUrl === "visualization") {
-      setActiveTab(tabFromUrl);
-    }
     if (filePathFromUrl) {
       setSelectedFilePath(filePathFromUrl);
     }
-  }, [searchParams, setActiveTab, setSelectedFilePath]);
+  }, [searchParams, setSelectedFilePath]);
 
   // 첫 진입 시 URL에 쿼리 파라미터가 없으면 초기화
   useEffect(() => {
