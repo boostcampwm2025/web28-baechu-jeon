@@ -120,7 +120,7 @@ export default function ZipUploadTab() {
             </div>
             <button
               onClick={handleRemoveFile}
-              className="text-muted transition-colors hover:text-body"
+              className="cursor-pointer text-muted transition-colors hover:text-body"
             >
               <svg
                 className="h-5 w-5"
@@ -226,7 +226,7 @@ export default function ZipUploadTab() {
       <button
         onClick={handleAnalyze}
         disabled={!projectId || isUploading}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-hover hover:shadow-md disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted disabled:shadow-none"
+        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-hover hover:shadow-md disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted disabled:shadow-none"
       >
         {isUploading ? (
           <>

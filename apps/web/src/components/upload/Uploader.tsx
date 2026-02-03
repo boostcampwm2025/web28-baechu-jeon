@@ -22,7 +22,7 @@ export default function Uploader() {
         />
         <button
           onClick={() => setActiveTab("zip")}
-          className={`relative z-10 flex flex-1 items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300 ${
+          className={`relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300 ${
             activeTab === "zip" ? "text-accent" : "text-muted hover:text-body"
           }`}
         >
@@ -43,7 +43,7 @@ export default function Uploader() {
         </button>
         <button
           onClick={() => setActiveTab("github")}
-          className={`relative z-10 flex flex-1 items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300 ${
+          className={`relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300 ${
             activeTab === "github" ? "text-accent" : "text-muted hover:text-body"
           }`}
         >
