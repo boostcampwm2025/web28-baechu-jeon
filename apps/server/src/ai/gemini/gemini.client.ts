@@ -70,7 +70,7 @@ export class GeminiClient {
 
     this.maxRetries = this.configService.get<number>('GEMINI_MAX_RETRIES') || 5;
     this.baseDelay =
-      this.configService.get<number>('GEMINI_BASE_DELAY') || 1000;
+      this.configService.get<number>('GEMINI_BASE_DELAY') || 10000;
     this.retryableStatusCodes = [429, 500, 502, 503, 504];
     this.ai = new GoogleGenAI({ apiKey });
   }
