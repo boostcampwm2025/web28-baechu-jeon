@@ -25,6 +25,7 @@ import { useExplorerStore } from "@/stores/useExplorerStore";
 import { resetVisualization } from "@/api/visualization";
 import { transformApiToReactFlow } from "@/utils/transformNodes";
 import { HiOutlineRefresh } from "react-icons/hi";
+import { useVisualizationFocus } from "@/hooks/useVisualizationFocus";
 
 const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
@@ -61,7 +62,7 @@ export default function VisualizationView({
   const clearHighlightedPaths = useExplorerStore(
     (s) => s.clearHighlightedPaths,
   );
-  const { fitView, getNodes, getViewport } = useReactFlow();
+  const { fitView, getViewport } = useReactFlow();
   const setStoreViewport = useVisualizationStore((state) => state.setViewport);
 
   const {
@@ -69,32 +70,10 @@ export default function VisualizationView({
     highlightNodeIds,
     setSelectedNodeId,
     setSelectedFilePath,
-    focusTargetType,
     setFocusTargetType,
   } = useVisualizationStore();
 
-  useEffect(() => {
-    if (!focusTargetType) return;
-
-    if (focusTargetType === "ALL") {
-      fitView({ duration: 800 });
-    } else {
-      const targetNodes = getNodes().filter(
-        (n) => n.data.diagramType === focusTargetType,
-      );
-      if (targetNodes.length > 0) {
-        fitView({
-          nodes: targetNodes,
-          duration: 1000,
-          padding: 0.2,
-          minZoom: 0.5,
-          maxZoom: 1.0,
-        });
-      }
-    }
-    setFocusTargetType(null); // 실행 후 초기화
-  }, [focusTargetType, fitView, getNodes, setFocusTargetType]);
-
+  useVisualizationFocus();
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => ({
@@ -112,6 +91,13 @@ export default function VisualizationView({
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<BaseNodeData>) => {
+      if (node.data.groups === "GROUP_HEADER") {
+        if (node.data.diagramType) {
+          setFocusTargetType(node.data.diagramType);
+        }
+        return;
+      }
+
       setSelectedNodeId(node.id);
       onNodeClick(convertToNodeData(node));
 
@@ -125,15 +111,11 @@ export default function VisualizationView({
         }
       }
 
-      if (node.data.type === "FILE") {
-        if (node.data.path) {
-          setSelectedFilePath(node.data.path);
-        }
+      if (node.data.type === "FILE" && node.data.path) {
+        setSelectedFilePath(node.data.path);
         router.push(`/result/${projectId}/${analysisId}/code`);
-        return;
       }
     },
-
     [
       onNodeClick,
       toggleHighlight,
@@ -145,19 +127,17 @@ export default function VisualizationView({
       resetHighlights,
       setHighlightedPaths,
       clearHighlightedPaths,
+      setFocusTargetType,
     ],
   );
 
   const handlePaneClick = useCallback(() => {
     setSelectedNodeId(null);
-    if (onPaneClick) {
-      onPaneClick();
-    }
+    if (onPaneClick) onPaneClick();
   }, [setSelectedNodeId, onPaneClick]);
 
   const handleMoveEnd = useCallback(() => {
-    const currentViewport = getViewport();
-    setStoreViewport(currentViewport);
+    setStoreViewport(getViewport());
   }, [getViewport, setStoreViewport]);
 
   const handleReset = useCallback(async () => {
@@ -169,7 +149,6 @@ export default function VisualizationView({
 
       setNodes(reactFlowNodes);
       setEdges(reactFlowEdges);
-
       setSelectedNodeId(null);
       resetHighlights();
       clearHighlightedPaths();
@@ -243,13 +222,11 @@ export default function VisualizationView({
         disabled={isResetting || !isInitialized}
         title="초기화"
         onClick={handleReset}
-        className="absolute top-6 right-6 z-10 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border border-slate-700 bg-slate-800/80 text-slate-300 shadow-xl backdrop-blur-sm transition-all hover:scale-110 hover:bg-slate-700 hover:text-white active:scale-95 disabled:opacity-50"
+        className="absolute top-6 right-6 z-10 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border border-slate-700 bg-slate-800/80 text-blue-400 shadow-xl backdrop-blur-sm transition-all hover:scale-110 hover:bg-slate-700 hover:text-white active:scale-95 disabled:opacity-50"
       >
-        {isResetting ? (
-          <HiOutlineRefresh className="h-6 w-6 animate-spin text-blue-400" />
-        ) : (
-          <HiOutlineRefresh className="h-6 w-6 text-blue-400" />
-        )}
+        <HiOutlineRefresh
+          className={`h-6 w-6 ${isResetting ? "animate-spin" : ""}`}
+        />
       </button>
     </div>
   );
