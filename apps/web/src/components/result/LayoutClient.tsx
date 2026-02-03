@@ -84,8 +84,10 @@ export default function LayoutClient({
 
         <aside
           id="folder-sidebar"
-          className={`relative border-r border-slate-200 bg-gray-50 ${
-            shouldAnimate ? "transition-all duration-300 ease-in-out" : ""
+          className={`border-line bg-surface relative overflow-hidden border-r ${
+            shouldAnimate
+              ? "transition-[width,opacity] duration-300 ease-in-out"
+              : ""
           } ${isSidebarOpen ? "translate-x-0" : "-translate-x-full opacity-0"}`}
           style={{
             width: isSidebarOpen ? `${sidebarWidth}px` : 0,
