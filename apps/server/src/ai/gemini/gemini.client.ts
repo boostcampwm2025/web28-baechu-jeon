@@ -34,22 +34,24 @@ export class GeminiClient {
   async generateResponse(
     input: AiClientRequest,
   ): Promise<GenerateContentResponse> {
-    const { userPrompt, systemPrompt } = input;
+    const { userPrompt, systemPrompt, responseJsonSchema } = input;
+
+    const config = {
+      systemInstruction: systemPrompt,
+      temperature: 0.2,
+      topK: 40,
+      topP: 0.85,
+      responseMimeType: 'application/json' as const,
+      maxOutputTokens: 60000,
+      ...(responseJsonSchema && { responseJsonSchema }),
+    };
 
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
         const response = await this.ai.models.generateContent({
           model: this.modelName,
           contents: userPrompt,
-          config: {
-            systemInstruction: systemPrompt,
-            // 구조화된 JSON + 마크다운 문자열 출력용: 낮은 랜덤성으로 스키마 준수·일관성 우선
-            temperature: 0.2,
-            topK: 40,
-            topP: 0.85,
-            responseMimeType: 'application/json',
-            maxOutputTokens: 60000, // step3(코드요약) 다수 파일 시 마크다운 길이 대비 (잘림 방지)
-          },
+          config,
         });
 
         // 성공하면 응답 반환
