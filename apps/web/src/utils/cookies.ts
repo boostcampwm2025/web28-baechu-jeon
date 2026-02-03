@@ -1,9 +1,9 @@
 export function getCookie(name: string): string | undefined {
   if (typeof document === "undefined") return undefined;
-  const match = document.cookie.match(
-    new RegExp("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)"),
-  );
-  return match ? decodeURIComponent(match[2]) : undefined;
+  const entry = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(name + "="));
+  return entry ? decodeURIComponent(entry.split("=").slice(1).join("=")) : undefined;
 }
 
 export function setCookie(name: string, value: string, days = 365, path = "/") {

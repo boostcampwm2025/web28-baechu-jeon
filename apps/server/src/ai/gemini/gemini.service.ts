@@ -12,6 +12,11 @@ import { buildStep2Prompts } from '../prompts/step2.prompt';
 import { buildStep3Prompts } from '../prompts/step3.prompt';
 import { parseAiJson } from '../utils/parse-ai-json.util';
 import { Step2And3CombinedResult } from '../types/ai.types';
+import {
+  STEP1_RESPONSE_JSON_SCHEMA,
+  STEP2_AND_3_RESPONSE_JSON_SCHEMA,
+  STEP3_CODE_SUMMARY_RESPONSE_JSON_SCHEMA,
+} from '../schemas/response-schemas';
 
 // TODO: 단계별로 systemPrompt, userPrompt 넣기
 
@@ -56,10 +61,12 @@ export class GeminiService implements AiProvider {
 
   async getResult(input: AnalysisRequest): Promise<AnalysisResponse> {
     const { systemPrompt, userPrompt } = await this.buildPrompt(input);
+    const responseJsonSchema = this.getResponseJsonSchemaForStep(input.step);
     const analysisResult = await this.geminiClient.generateResponse({
       userPrompt,
       systemPrompt,
       step: input.step,
+      ...(responseJsonSchema && { responseJsonSchema }),
     });
 
     const content = analysisResult.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -95,5 +102,18 @@ export class GeminiService implements AiProvider {
 
     const result = parseAiJson<AnalysisResponse>(content);
     return { result };
+  }
+
+  private getResponseJsonSchemaForStep(step: number): object | undefined {
+    switch (step) {
+      case 1:
+        return STEP1_RESPONSE_JSON_SCHEMA;
+      case 2:
+        return STEP2_AND_3_RESPONSE_JSON_SCHEMA;
+      case 3:
+        return STEP3_CODE_SUMMARY_RESPONSE_JSON_SCHEMA;
+      default:
+        return undefined;
+    }
   }
 }

@@ -11,6 +11,7 @@ export default function ZipUploadTab() {
     uploadError,
     isUploading,
     projectId,
+    fileInputRef,
     handleDragEnter,
     handleDragLeave,
     handleDragOver,
@@ -47,6 +48,7 @@ export default function ZipUploadTab() {
         }`}
       >
         <input
+          ref={fileInputRef}
           type="file"
           accept=".zip"
           onChange={handleFileSelect}
@@ -84,12 +86,44 @@ export default function ZipUploadTab() {
       </label>
 
       {/* 선택된 파일 정보 표시 */}
-      {selectedFile && (
-        <div className="flex items-center justify-between rounded-xl border border-accent/30 bg-accent/10 px-4 py-3.5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-accent/20 p-2">
+      <div
+        className={`grid transition-all duration-300 ease-in-out ${
+          selectedFile ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="flex items-center justify-between rounded-xl border border-accent/30 bg-accent/10 px-4 py-3.5 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-accent/20 p-2">
+                <svg
+                  className="h-6 w-6 text-accent"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-heading">
+                  {selectedFile?.name}
+                </p>
+                <p className="text-sm text-subtle">
+                  {selectedFile ? formatFileSize(selectedFile.size) : ""}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleRemoveFile}
+              className="cursor-pointer text-muted transition-colors hover:text-body"
+            >
               <svg
-                className="h-6 w-6 text-accent"
+                className="h-5 w-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -98,39 +132,13 @@ export default function ZipUploadTab() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-            </div>
-            <div>
-              <p className="font-semibold text-heading">
-                {selectedFile.name}
-              </p>
-              <p className="text-sm text-subtle">
-                {formatFileSize(selectedFile.size)}
-              </p>
-            </div>
+            </button>
           </div>
-          <button
-            onClick={handleRemoveFile}
-            className="text-muted transition-colors hover:text-body"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
         </div>
-      )}
+      </div>
 
       {/* 파일 유효성 검사 에러 메시지 */}
       {error && (
@@ -179,7 +187,7 @@ export default function ZipUploadTab() {
 
       {/* 주의사항 메시지 */}
       <div
-        className={`flex items-center gap-3 rounded-xl border border-orange-500/30 bg-orange-500/10 transition-all duration-300 ease-in-out ${
+        className={`flex items-center gap-3 rounded-xl border border-orange-500/30 bg-orange-500/10 transition-all duration-300 ease-in-out -mt-2 ${
           selectedFile ? "px-4 py-2" : "p-4"
         }`}
       >
@@ -218,7 +226,7 @@ export default function ZipUploadTab() {
       <button
         onClick={handleAnalyze}
         disabled={!projectId || isUploading}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-hover hover:shadow-md disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted disabled:shadow-none"
+        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-hover hover:shadow-md disabled:cursor-not-allowed disabled:bg-hover disabled:text-muted disabled:shadow-none"
       >
         {isUploading ? (
           <>

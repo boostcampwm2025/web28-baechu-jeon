@@ -102,7 +102,7 @@ export const useVisualizationStore = create<VisualizationState>((set, get) => ({
     const cached = state.codeCache[key];
 
     // 캐시 히트 시 접근 순서 갱신 (가장 최근으로 이동)
-    if (cached) {
+    if (cached !== undefined) {
       const newAccessOrder = [...state.cacheAccessOrder];
       const index = newAccessOrder.indexOf(key);
       if (index > -1) {

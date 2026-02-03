@@ -123,6 +123,16 @@ export class GeminiClient {
 
     // Step3은 마크다운+코드 블록 포함으로 JSON 깨질 위험 → text/plain 사용
     const responseMimeType = step === 3 ? 'text/plain' : 'application/json';
+      
+    const config = {
+      systemInstruction: systemPrompt,
+      temperature: 0.2,
+      topK: 40,
+      topP: 0.85,
+      responseMimeType: 'application/json' as const,
+      maxOutputTokens: 60000,
+      ...(responseJsonSchema && { responseJsonSchema }),
+    };
 
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
@@ -130,15 +140,7 @@ export class GeminiClient {
         const response = await this.ai.models.generateContent({
           model,
           contents: userPrompt,
-          config: {
-            systemInstruction: systemPrompt,
-            // 구조화된 JSON 출력용: 낮은 랜덤성으로 스키마 준수·일관성 우선
-            temperature: 0.2,
-            topK: 40,
-            topP: 0.85,
-            responseMimeType,
-            maxOutputTokens: 60000, // step3(코드요약) 다수 파일 시 마크다운 길이 대비 (잘림 방지)
-          },
+          config,
         });
         const responseTimeMs = Date.now() - startTime;
 

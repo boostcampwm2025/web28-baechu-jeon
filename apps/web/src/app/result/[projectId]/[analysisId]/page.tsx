@@ -9,12 +9,14 @@ export default async function ResultPage({
   searchParams,
 }: {
   params: Promise<{ projectId: string; analysisId: string }>;
-  searchParams?: { tab?: string; filePath?: string };
+  searchParams: Promise<{ tab?: string; filePath?: string }>;
 }) {
   const { projectId, analysisId } = await params;
+  const resolvedSearchParams = await searchParams;
 
-  const initialTab = searchParams?.tab === "code" ? "code" : "visualization";
-  const initialFilePath = searchParams?.filePath ?? null;
+  const initialTab =
+    resolvedSearchParams?.tab === "code" ? "code" : "visualization";
+  const initialFilePath = resolvedSearchParams?.filePath ?? null;
 
   // 서버에서 시각화 데이터를 미리 가져오기. 실패 시 클라이언트에서 재시도
   let initialVisualizationData: VisualizationResponse | null = null;
