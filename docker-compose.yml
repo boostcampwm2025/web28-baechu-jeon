@@ -1,6 +1,5 @@
 services:
   web:
-    platform: linux/amd64
     image: ghcr.io/boostcampwm2025/web28-baechu-jeon/client:latest
     ports:
       - '${WEB_PORT}:${WEB_PORT}'
@@ -20,7 +19,6 @@ services:
       - server
 
   server:
-    platform: linux/amd64
     image: ghcr.io/boostcampwm2025/web28-baechu-jeon/server:latest
     ports:
       - '${SERVER_PORT}:${SERVER_PORT}'
