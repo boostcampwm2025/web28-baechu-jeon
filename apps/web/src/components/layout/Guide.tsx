@@ -11,12 +11,12 @@ import Joyride, {
 } from "react-joyride";
 import { useGuideStore } from "@/stores/useGuideStore";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useReactFlow } from "@xyflow/react";
 
 export default function Guide() {
-  const params = useParams();
-  const isCodePage = params?.page === "code";
+  const params = useSearchParams();
+  const isCodePage = params.get("tab") === "code";
 
   const { getViewport, setViewport } = useReactFlow();
 
@@ -63,6 +63,17 @@ export default function Guide() {
                 <br />
                 다이어그램 화면으로 돌아갑니다.
               </p>
+            </div>
+          ),
+          placement: "bottom",
+        },
+        {
+          target: "#header-export-btn",
+          content: (
+            <div className="text-center">
+              <h3 className="text-lg font-bold">🔗 공유하기</h3>
+              <p>링크를 복사하여</p>
+              <p className="font-bold">분석 결과를 공유해보세요!</p>
             </div>
           ),
           placement: "bottom",

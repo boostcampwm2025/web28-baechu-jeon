@@ -238,7 +238,7 @@ export default function VisualizationClient({
         </div>
       </div>
 
-      <div className="relative h-[80vh] w-full">
+      <div className="relative h-screen w-full">
         <VisualizationView
           visualizationId={visualizationId}
           analysisId={analysisId}
