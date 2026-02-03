@@ -31,7 +31,7 @@ export class GithubDownloadService {
       });
 
       if (response.status !== 200) {
-        this.throwPrivateOrNotFound();
+        this.throwUnavailableOrInvalidUrl();
       }
 
       return await this.streamToFileWithLimit(
@@ -42,7 +42,7 @@ export class GithubDownloadService {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 404 || error.response?.status === 403) {
-          this.throwPrivateOrNotFound();
+          this.throwUnavailableOrInvalidUrl();
         }
         if (error.code === 'ECONNABORTED') {
           throw new BadRequestException(
@@ -53,13 +53,13 @@ export class GithubDownloadService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      this.throwPrivateOrNotFound();
+      this.throwUnavailableOrInvalidUrl();
     }
   }
 
-  private throwPrivateOrNotFound(): never {
+  private throwUnavailableOrInvalidUrl(): never {
     throw new BadRequestException(
-      "비공개 저장소는 접근할 수 없습니다. GitHub에서 ZIP으로 다운로드한 뒤, 'ZIP 파일 업로드' 탭에서 업로드해 주세요.",
+      "해당 Repository에 접근할 수 없습니다. Public Repository라면 URL을 확인해 주세요. Private Repository는 GitHub에서 ZIP으로 다운로드한 뒤 'ZIP 파일 업로드' 탭에서 업로드해 주세요.",
     );
   }
 

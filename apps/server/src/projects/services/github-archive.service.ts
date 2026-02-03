@@ -12,7 +12,7 @@ export class GithubArchiveService {
   /**
    * GitHub 저장소 URL을 검증하고 ZIP 아카이브 다운로드 URL로 변환합니다.
    * - 허용: https://github.com/owner/repo, https://github.com/owner/repo/tree/branch
-   * - 브랜치 미지정 시 기본값: main
+   * - 브랜치 미지정 시: HEAD(저장소 디폴트 브랜치) 사용
    */
   getArchiveUrl(githubUrl: string): GithubArchiveUrlResult {
     let parsed: URL;
@@ -40,12 +40,15 @@ export class GithubArchiveService {
     }
 
     const [owner, repo, type, branch] = pathSegments;
-    let branchName = 'main';
+    let ref = 'HEAD'; // 브랜치 미지정 시 저장소 디폴트 브랜치
     if (type === 'tree' && branch) {
-      branchName = branch;
+      ref = branch;
     }
 
-    const archiveUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/${branchName}.zip`;
-    return { archiveUrl, owner, repo, branch: branchName };
+    const archiveUrl =
+      ref === 'HEAD'
+        ? `https://github.com/${owner}/${repo}/archive/HEAD.zip`
+        : `https://github.com/${owner}/${repo}/archive/${ref}.zip`;
+    return { archiveUrl, owner, repo, branch: ref };
   }
 }
