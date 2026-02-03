@@ -18,10 +18,10 @@ export function convertToNodeData(node: Node<BaseNodeData>): NodeData {
 // 초기 상세 설명 노드
 export function findInitialNode(nodes: Node<BaseNodeData>[]): NodeData | null {
   const initialNode = nodes.find((n) => {
-    const { diagramType, groups } = n.data;
-    if (diagramType !== "STEP2") return false;
-    if (groups === "GROUP_HEADER") return false;
-    return true;
+    const { diagramType, groups, type } = n.data;
+    return (
+      diagramType === "STEP2" && type === "FOLDER" && groups !== "GROUP_HEADER"
+    );
   });
 
   return initialNode ? convertToNodeData(initialNode) : null;
