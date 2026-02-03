@@ -39,7 +39,11 @@ export class GithubArchiveService {
       );
     }
 
-    const [owner, repo, type, branch] = pathSegments;
+    const [owner, repoRaw, type, branch] = pathSegments;
+
+    // .git 접미사 제거
+    const repo = repoRaw?.endsWith('.git') ? repoRaw.slice(0, -4) : repoRaw;
+
     let ref = 'HEAD'; // 브랜치 미지정 시 저장소 디폴트 브랜치
     if (type === 'tree' && branch) {
       ref = branch;
