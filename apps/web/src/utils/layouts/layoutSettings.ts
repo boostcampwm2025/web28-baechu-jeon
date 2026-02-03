@@ -64,6 +64,12 @@ export const LAYOUT_SETTINGS = {
       bgColor: "rgba(168, 85, 247, 0.1)",
       textColor: "#c084fc",
     },
+
+    fileTheme: {
+      borderColor: "##75767B",
+      bgColor: "rgba(211, 211, 211, 0.1)",
+      textColor: "##75767B",
+    },
   },
   diagram3: {
     // 배치 간격 설정

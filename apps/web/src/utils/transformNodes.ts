@@ -153,6 +153,8 @@ function transformStep2(apiNodes: ApiNode[]): Node<BaseNodeData>[] {
   });
 
   nodesWithSize.forEach((node) => {
+    let typeTheme = node.type === "FILE" ? SETTING.fileTheme : SETTING.theme;
+
     rfNodes.push({
       id: node.id,
       type: "baseNode",
@@ -164,7 +166,7 @@ function transformStep2(apiNodes: ApiNode[]): Node<BaseNodeData>[] {
         height: node.height,
         paddingX: SETTING.font.xPadding,
         paddingY: SETTING.font.yPadding,
-        theme: SETTING.theme,
+        theme: typeTheme,
         diagramType: "STEP2",
       },
     });
