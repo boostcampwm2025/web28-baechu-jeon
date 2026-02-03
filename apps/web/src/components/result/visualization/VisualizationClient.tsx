@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useMemo } from "react";
 import { type Node, type Edge } from "@xyflow/react";
-import { BaseNodeData } from "@/utils/transformNodes";
+import { BaseNodeData } from "@/utils/layouts/layoutSettings";
 import NodeDetails from "./NodeDetails";
 import ProjectDetails from "./ProjectDetails";
 import SaveButtons from "./SaveButtons";
@@ -15,7 +15,7 @@ interface VisualizationClientProps {
   initialNodes?: Node<BaseNodeData>[];
   initialEdges?: Edge[];
   initialPurposes?: ProjectDetailsData;
-  visualizationId?: string;
+  visualizationId: string;
 }
 
 export default function VisualizationClient({
