@@ -33,7 +33,7 @@ export default function ResultTabs() {
         <button
           key={tab.id}
           onClick={() => handleTabChange(tab.id as "code" | "visualization")}
-          className={`rounded-lg px-5 py-1.5 text-sm font-semibold transition-colors ${
+          className={`rounded-lg px-5 py-1.5 text-sm font-semibold ${
             activeTab === tab.id
               ? "border border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-accent)] shadow-sm"
               : "text-[var(--color-muted)] hover:bg-[var(--color-hover)] hover:text-[var(--color-heading)]"

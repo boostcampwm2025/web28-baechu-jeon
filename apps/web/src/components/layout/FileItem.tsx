@@ -107,14 +107,14 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
   };
 
   return (
-    <div>
+    <div style={{ contentVisibility: "auto", containIntrinsicSize: "auto 32px" }}>
       <div className="relative">
         <div
           ref={itemRef}
           onClick={handleClick}
           onMouseEnter={handleMouseEnter}
           title={node.path}
-          className={`group flex items-center gap-1 px-2 py-1 pr-4 text-sm transition-colors select-none ${
+          className={`group flex items-center gap-1 px-2 py-1 pr-4 text-sm select-none ${
             isHighlighted
               ? "cursor-pointer rounded-sm bg-amber-500/15 font-semibold text-amber-400"
               : isIndicated

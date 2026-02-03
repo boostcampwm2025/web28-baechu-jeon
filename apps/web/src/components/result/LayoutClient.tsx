@@ -69,7 +69,7 @@ export default function LayoutClient({
     <div className="no-scrollbar relative flex h-full w-full overflow-hidden">
       <aside
         className={`relative overflow-hidden border-r border-line bg-surface ${
-          isDragging ? "" : "transition-all duration-300 ease-in-out"
+          isDragging ? "" : "transition-[width,opacity] duration-300 ease-in-out"
         }`}
         style={{
           width: isExplorerOpen ? `${sidebarWidth}px` : 0,
