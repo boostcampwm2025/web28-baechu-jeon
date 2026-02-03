@@ -42,7 +42,7 @@ class Semaphore {
 // Step1/3: 평균 ~50K, 최대 ~130K
 // 안전 마진 60% 기준
 const geminiSemaphoreFlash25 = new Semaphore(11);
-const geminiSemaphoreStep2 = new Semaphore(4);
+const geminiSemaphoreStep2 = new Semaphore(3);
 // RetryableAnalysisError: 429 등 job 레벨에서 재시도할 에러
 export class RetryableAnalysisError extends Error {
   constructor(message: string) {
@@ -70,7 +70,7 @@ export class GeminiClient {
 
     this.maxRetries = this.configService.get<number>('GEMINI_MAX_RETRIES') || 5;
     this.baseDelay =
-      this.configService.get<number>('GEMINI_BASE_DELAY') || 10000;
+      this.configService.get<number>('GEMINI_BASE_DELAY') || 15000;
     this.retryableStatusCodes = [429, 500, 502, 503, 504];
     this.ai = new GoogleGenAI({ apiKey });
   }

@@ -16,19 +16,10 @@ export class AnalysesController {
   @HttpCode(202)
   async requestAnalysis(@Param('projectId') projectId: string) {
     const analysisId = uuidv4();
-    await this.analysisQueue.add(
-      'run-analysis',
-      { analysisId, projectId, attemptsMade: 0 },
-      {
-        attempts: 5,
-        backoff: {
-          type: 'exponential',
-          delay: 10000, // 30초부터 시작, 2^n 증가
-        },
-        removeOnComplete: true,
-        removeOnFail: false,
-      },
-    );
+    await this.analysisQueue.add('run-analysis', {
+      analysisId,
+      projectId,
+    });
 
     return { analysisId, status: 'pending' };
   }
