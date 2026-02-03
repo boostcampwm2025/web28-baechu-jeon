@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   ReactFlow,
   Background,
@@ -42,6 +43,10 @@ export default function VisualizationView({
   initialNodes = [],
   initialEdges = [],
 }: VisualizationViewProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
@@ -57,8 +62,6 @@ export default function VisualizationView({
 
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
 
-  const setActiveTab = useVisualizationStore((s) => s.setActiveTab);
-
   const setHighlightedPaths = useExplorerStore((s) => s.setHighlightedPaths);
   const clearHighlightedPaths = useExplorerStore(
     (s) => s.clearHighlightedPaths,
@@ -67,7 +70,7 @@ export default function VisualizationView({
   const { getViewport } = useReactFlow();
   const setStoreViewport = useVisualizationStore((state) => state.setViewport);
 
-  const { setSelectedNodeId, setSelectedFilePath } = useVisualizationStore();
+  const setSelectedNodeId = useVisualizationStore((s) => s.setSelectedNodeId);
 
   /**
    * 노드 클릭 핸들러
@@ -79,21 +82,38 @@ export default function VisualizationView({
 
       if (node.data.diagramType === "STEP1") {
         if (node.data.relatedNodeIds?.length) {
-          toggleHighlight(node.id, [node.id, ...node.data.relatedNodeIds]);
-          setHighlightedPaths(node.data.relatedPaths || []);
-        } else {
-          resetHighlights();
+          const isHighlighted = toggleHighlight(node.id, [
+            node.id,
+            ...node.data.relatedNodeIds,
+          ]);
+
+          if (isHighlighted) {
+            setHighlightedPaths(node.data.relatedPaths || []);
+            return;
+          }
+
           clearHighlightedPaths();
+          return;
         }
+        resetHighlights();
+        clearHighlightedPaths();
+        return;
       }
 
       if (node.data.type === "FILE") {
         if (node.data.path) {
           const decoded = maybeDecode(node.data.path) ?? node.data.path;
-          setSelectedFilePath(decoded);
-          setActiveTab("code");
+
+          // URL만 변경 (상태는 ResultTabsClient에서 URL 감시하여 동기화)
+          const params = new URLSearchParams(searchParams.toString());
+          params.set("tab", "code");
+          params.set("filePath", decoded);
+          router.push(`${pathname}?${params.toString()}`, { scroll: false });
         } else {
-          setActiveTab("code");
+          // 파일 경로 없이 코드 탭으로만 이동
+          const params = new URLSearchParams(searchParams.toString());
+          params.set("tab", "code");
+          router.push(`${pathname}?${params.toString()}`, { scroll: false });
         }
       }
     },
@@ -104,8 +124,9 @@ export default function VisualizationView({
       clearHighlightedPaths,
       setHighlightedPaths,
       setSelectedNodeId,
-      setSelectedFilePath,
-      setActiveTab,
+      router,
+      pathname,
+      searchParams,
     ],
   );
 

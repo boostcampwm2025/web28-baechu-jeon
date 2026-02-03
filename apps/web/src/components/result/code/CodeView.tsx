@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -30,10 +30,10 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
 
-  // 다크모드 감지
+  // 다크모드 감지 (light 클래스가 없으면 다크모드)
   useEffect(() => {
     const checkDarkMode = () => {
-      setIsDark(document.documentElement.classList.contains("dark"));
+      setIsDark(!document.documentElement.classList.contains("light"));
     };
 
     checkDarkMode();
@@ -47,13 +47,14 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
     return () => observer.disconnect();
   }, []);
 
+  // 최초 마운트 시 initialFilePath를 store에 동기화
+  // initialFilePath는 서버에서 내려온 고정값이므로 실질적으로 1회만 실행됨
   useEffect(() => {
     if (!initialFilePath) return;
     const decodedInitial = maybeDecode(initialFilePath) ?? initialFilePath;
-    if (selectedFilePath !== decodedInitial) {
-      setSelectedFilePath(decodedInitial);
-    }
-  }, [initialFilePath, selectedFilePath, setSelectedFilePath]);
+    setSelectedFilePath(decodedInitial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFilePath]);
 
   useEffect(() => {
     const initialNormalized = initialFilePath
@@ -66,7 +67,7 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
     const cached = useVisualizationStore
       .getState()
       .getCachedCode(params.analysisId, file);
-    if (cached) {
+    if (cached !== undefined) {
       setContent(cached);
       setLoading(false);
       setError(null);
@@ -80,7 +81,6 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
       return;
     }
 
-    // 네트워크에서 가져옵니다
     const controller = new AbortController();
     setLoading(true);
     setError(null);
@@ -97,10 +97,11 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
     return () => controller.abort();
   }, [selectedFilePath, params.analysisId, initialFilePath, initialContent]);
 
-  // 첫 탭(코드) 렌더 직후 백그라운드로 시각화 데이터를 프리패치합니다
+  // 코드 탭이 초기 탭일 때만 백그라운드로 시각화 데이터를 프리패치합니다
+  const hasPrefetched = useRef(false);
   useEffect(() => {
-    if (!params.analysisId) return;
-    // 비동기 프리패치, 실패해도 무시
+    if (!params.analysisId || hasPrefetched.current) return;
+    hasPrefetched.current = true;
     (async () => {
       try {
         const { getVisualization } = await import("@/api/visualization");
@@ -116,7 +117,7 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
   if (!fileToShow) {
     return (
       <div className="text-muted flex h-full items-center justify-center">
-        왼쪽 파일 탐색기에서 파일을 선택하세요.
+        왼쪽 파일 탐색기에서 파일(점이 표시된 파일)을 선택하세요.
       </div>
     );
   }
@@ -140,8 +141,17 @@ export default function CodeView({ initialFilePath, initialContent }: Props) {
       )}
 
       {!loading && !error && (
-        <div className="flex-1 overflow-auto p-6">
-          <div className="prose prose-zinc dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-heading prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-relaxed prose-p:text-[15px] prose-p:text-body prose-strong:font-semibold prose-strong:text-heading prose-code:rounded prose-code:bg-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[14px] prose-code:font-normal prose-code:text-body prose-code:before:content-[''] prose-code:after:content-[''] prose-pre:border-0 prose-pre:bg-transparent prose-pre:p-0 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-muted prose-blockquote:text-muted prose-ul:my-4 prose-ol:my-4 prose-li:my-1 prose-li:text-body">
+        <div
+          className={`flex-1 overflow-auto bg-[var(--color-hover)] p-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--color-muted)] [&::-webkit-scrollbar-thumb]:opacity-50 hover:[&::-webkit-scrollbar-thumb]:opacity-100 [&::-webkit-scrollbar-track]:bg-transparent`}
+        >
+          <div
+            className={
+              "prose prose-zinc prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-heading prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-relaxed prose-p:text-[15px] prose-p:text-body prose-strong:font-semibold prose-strong:text-heading prose-code:rounded prose-code:bg-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[14px] prose-code:font-normal prose-code:text-body prose-code:before:content-[''] prose-code:after:content-[''] prose-pre:border-0 prose-pre:bg-transparent prose-pre:p-0 prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-muted prose-blockquote:text-muted prose-ul:my-4 prose-ol:my-4 prose-li:my-1 prose-li:text-body max-w-none pb-12" +
+              (isDark
+                ? " prose-invert prose-a:text-blue-400"
+                : " prose-a:text-blue-600")
+            }
+          >
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{

@@ -115,6 +115,31 @@ export default function VisualizationClient({
     import("@/components/result/code/CodeView").catch(() => {});
   }, []);
 
+  // nodes가 로드되면 STEP1의 모든 relatedPaths를 수집하여 indicatedPaths에 설정
+  const setIndicatedPaths = useExplorerStore((s) => s.setIndicatedPaths);
+  const clearIndicatedPaths = useExplorerStore((s) => s.clearIndicatedPaths);
+
+  useEffect(() => {
+    if (nodes.length === 0) return;
+
+    const allRelatedPaths = new Set<string>();
+    nodes.forEach((node) => {
+      if (node.data.diagramType === "STEP1" && node.data.relatedPaths) {
+        node.data.relatedPaths.forEach((path: string) =>
+          allRelatedPaths.add(path),
+        );
+      }
+    });
+    console.log("Setting indicated paths:", allRelatedPaths);
+    if (allRelatedPaths.size > 0) {
+      setIndicatedPaths([...allRelatedPaths]);
+    }
+
+    return () => {
+      clearIndicatedPaths();
+    };
+  }, [nodes, setIndicatedPaths, clearIndicatedPaths]);
+
   // STEP1 클릭으로 하이라이트된 경로가 바뀌면 첫 파일의 코드를 프리패치합니다.
   const highlightedPaths = useExplorerStore((s) => s.highlightedPaths);
   const setCachedCode = useVisualizationStore((s) => s.setCachedCode);
@@ -195,14 +220,13 @@ export default function VisualizationClient({
       <div className="bg-page relative h-full w-full overflow-hidden">
         {/* 모바일/작은 화면 경고 메시지 */}
         <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm md:hidden">
-          <div className="mx-4 max-w-md rounded-lg bg-surface p-8 text-center shadow-2xl">
+          <div className="bg-surface mx-4 max-w-md rounded-lg p-8 text-center shadow-2xl">
             <div className="mb-4 text-5xl">💻</div>
             <h2 className="text-heading mb-3 text-xl font-bold">
               데스크톱 환경 권장
             </h2>
             <p className="text-body mb-2 text-sm leading-relaxed">
-              이 서비스는 <strong>데스크톱 환경</strong>에 최적화되어
-              있습니다.
+              이 서비스는 <strong>데스크톱 환경</strong>에 최적화되어 있습니다.
             </p>
             <p className="text-muted text-xs">
               더 나은 사용 경험을 위해 PC 또는 태블릿의 가로 모드를
