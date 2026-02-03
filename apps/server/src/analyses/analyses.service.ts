@@ -37,33 +37,39 @@ export class AnalysesService {
       if (cachedResults) {
         // 저장된 결과가 있다면 Context에 넣음
         if (cachedResults['STEP1_FEATURE_ANALYSIS']) {
-          context.step1 = JSON.parse(
-            cachedResults['STEP1_FEATURE_ANALYSIS'],
-          ) as unknown;
-          this.logger.log(`[${analysisId}] Step 1 결과 복구 완료`);
+          try {
+            context.step1 = JSON.parse(
+              cachedResults['STEP1_FEATURE_ANALYSIS'],
+            ) as Record<string, unknown>;
+          } catch {
+            context.step1 = {};
+          }
+          this.logger.log(`[${String(analysisId)}] Step 1 결과 복구 완료`);
         }
         // Step 2+3 통합 키 (가설+의도 한 덩어리)
         if (cachedResults['STEP2_HYPOTHESIS_AND_INTENT']) {
-          const parsed = JSON.parse(
-            cachedResults['STEP2_HYPOTHESIS_AND_INTENT'],
-          );
-
-          const merged =
-            parsed?.step2 && parsed?.step3
-              ? { ...parsed.step2, ...parsed.step3 }
-              : null;
-
+          let parsed: any;
+          try {
+            parsed = JSON.parse(cachedResults['STEP2_HYPOTHESIS_AND_INTENT']);
+          } catch {
+            parsed = {};
+          }
+          const step2 = parsed?.step2 as Record<string, unknown> | undefined;
+          const step3 = parsed?.step3 as Record<string, unknown> | undefined;
+          const merged = step2 && step3 ? { ...step2, ...step3 } : null;
           if (
             merged &&
-            Array.isArray(merged.responsibility_hypotheses) &&
-            merged.responsibility_hypotheses.length > 0 &&
-            merged.project_intent &&
-            Array.isArray(merged.user_stories)
+            Array.isArray((merged as any).responsibility_hypotheses) &&
+            (merged as any).responsibility_hypotheses.length > 0 &&
+            (merged as any).project_intent &&
+            Array.isArray((merged as any).user_stories)
           ) {
-            context.step2 = merged;
-            this.logger.log(`[${analysisId}] Step2 복구 완료 (유효)`);
+            context.step2 = merged as Record<string, unknown>;
+            this.logger.log(`[${String(analysisId)}] Step2 복구 완료 (유효)`);
           } else {
-            this.logger.warn(`[${analysisId}] Step2 복구 스킵 (불완전 데이터)`);
+            this.logger.warn(
+              `[${String(analysisId)}] Step2 복구 스킵 (불완전 데이터)`,
+            );
           }
         } else if (
           cachedResults['STEP2_HYPOTHESIS'] &&
@@ -81,10 +87,16 @@ export class AnalysesService {
           this.logger.log(`[${analysisId}] Step 2 결과 복구 완료 (이전 형식)`);
         }
         if (cachedResults['STEP3_CODE_SUMMARY']) {
-          context.step3 = JSON.parse(
-            cachedResults['STEP3_CODE_SUMMARY'],
-          ) as unknown;
-          this.logger.log(`[${analysisId}] Step 3 (코드요약) 결과 복구 완료`);
+          try {
+            context.step3 = JSON.parse(
+              cachedResults['STEP3_CODE_SUMMARY'],
+            ) as Record<string, unknown>;
+          } catch {
+            context.step3 = {};
+          }
+          this.logger.log(
+            `[${String(analysisId)}] Step 3 (코드요약) 결과 복구 완료`,
+          );
         }
       }
 
@@ -166,7 +178,7 @@ export class AnalysesService {
     try {
       // 디버그 로그
       this.logger.log(
-        `[${analysisId}] saveResultToDatabase - context.step2 keys: ${Object.keys(context.step2 || {}).join(', ') || 'EMPTY'}`,
+        `[${String(analysisId)}] saveResultToDatabase - context.step2 keys: ${Array.isArray(context.step2) ? 'ARRAY' : Object.keys(context.step2 || {}).join(', ') || 'EMPTY'}`,
       );
 
       // step2 = 가설+의도 통합, step3 = 코드요약

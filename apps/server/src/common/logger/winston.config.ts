@@ -9,7 +9,7 @@ const logsDir = path.join(process.cwd(), 'logs');
  * CSV 형식으로 저장하여 나중에 분석하기 쉽게
  */
 const geminiMetricsFormat = winston.format.printf(({ message, timestamp }) => {
-  return `${timestamp},${message}`;
+  return `${String(timestamp)},${String(message)}`;
 });
 
 /**

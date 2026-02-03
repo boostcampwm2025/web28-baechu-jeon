@@ -67,7 +67,6 @@ export class GeminiService implements AiProvider {
 
     // Step 2: 2·3 통합 응답 파싱 후 step2/step3 형태로 분리
     if (input.step === 2) {
-      /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
       const parsed = parseAiJson<Step2And3CombinedResult>(content);
 
       // 디버그 로그 추가
@@ -92,7 +91,6 @@ export class GeminiService implements AiProvider {
           },
         },
       };
-      /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
     }
 
     const result = parseAiJson<AnalysisResponse>(content);

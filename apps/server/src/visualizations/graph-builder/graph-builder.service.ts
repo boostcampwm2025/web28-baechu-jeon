@@ -16,10 +16,7 @@ export class GraphBuilderService {
     const step2Data = analysisResult.step2 as unknown as Step2Analysis &
       Step3Analysis;
     const diagram1 = buildDiagram1(step2Data, 10);
-    const diagram2 = buildDiagram2(
-      step2Data as unknown as Step2Analysis,
-      10,
-    );
+    const diagram2 = buildDiagram2(step2Data as unknown as Step2Analysis, 10);
     const diagram3 = buildDiagram3(step2Data);
 
     const result: GraphBuildResult = {
