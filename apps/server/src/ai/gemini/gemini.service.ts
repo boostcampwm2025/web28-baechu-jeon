@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { GeminiClient } from './gemini.client';
 import { ProjectRepository } from 'src/projects/repository/project.repository';
 import {
@@ -17,6 +17,7 @@ import { Step2And3CombinedResult } from '../types/ai.types';
 
 @Injectable()
 export class GeminiService implements AiProvider {
+  private readonly logger = new Logger(GeminiService.name);
   constructor(
     private readonly geminiClient: GeminiClient,
     private readonly projectRepository: ProjectRepository,
@@ -68,6 +69,18 @@ export class GeminiService implements AiProvider {
     if (input.step === 2) {
       /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
       const parsed = parseAiJson<Step2And3CombinedResult>(content);
+
+      // 디버그 로그 추가
+      this.logger.log(
+        `[Step2] Parsed keys: ${Object.keys(parsed || {}).join(', ')}`,
+      );
+      this.logger.log(
+        `[Step2] user_stories count: ${parsed?.user_stories?.length ?? 'undefined'}`,
+      );
+      this.logger.log(
+        `[Step2] project_intent exists: ${!!parsed?.project_intent}`,
+      );
+
       return {
         result: {
           step2: {
