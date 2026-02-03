@@ -53,7 +53,7 @@ export class RetryableAnalysisError extends Error {
 
 // 모델 설정
 const MODEL_FLASH_25 = 'gemini-2.5-flash';
-const MODEL_FLASH_STEP2 = 'gemini-3-flash-preview'; // Step 2 전용 (별도 TPM 한도 활용)
+const MODEL_FLASH_STEP2 = 'gemini-2.5-pro'; // Step 2 전용 (별도 TPM 한도 활용)
 
 @Injectable()
 export class GeminiClient {
@@ -70,7 +70,7 @@ export class GeminiClient {
 
     this.maxRetries = this.configService.get<number>('GEMINI_MAX_RETRIES') || 5;
     this.baseDelay =
-      this.configService.get<number>('GEMINI_BASE_DELAY') || 1000;
+      this.configService.get<number>('GEMINI_BASE_DELAY') || 10000;
     this.retryableStatusCodes = [429, 500, 502, 503, 504];
     this.ai = new GoogleGenAI({ apiKey });
   }
