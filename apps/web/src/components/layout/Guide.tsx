@@ -11,7 +11,7 @@ import Joyride, {
 } from "react-joyride";
 import { useGuideStore } from "@/stores/useGuideStore";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
-import { useParams, usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useReactFlow } from "@xyflow/react";
 
 export default function Guide() {

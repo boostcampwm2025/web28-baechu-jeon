@@ -153,7 +153,7 @@ function transformStep2(apiNodes: ApiNode[]): Node<BaseNodeData>[] {
   });
 
   nodesWithSize.forEach((node) => {
-    let typeTheme = node.type === "FILE" ? SETTING.fileTheme : SETTING.theme;
+    const typeTheme = node.type === "FILE" ? SETTING.fileTheme : SETTING.theme;
 
     rfNodes.push({
       id: node.id,
