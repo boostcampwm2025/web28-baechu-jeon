@@ -93,7 +93,7 @@ export class GeminiClient {
   async generateResponse(
     input: AiClientRequest,
   ): Promise<GenerateContentResponse> {
-    const { userPrompt, systemPrompt, step } = input;
+    const { userPrompt, systemPrompt, step, responseJsonSchema } = input;
     const { modelName, semaphore } = this.getModelConfig(step);
 
     // 세마포어로 동시 호출 제한
@@ -106,6 +106,7 @@ export class GeminiClient {
         systemPrompt,
         step,
         modelName,
+        responseJsonSchema,
       );
     } finally {
       semaphore.release();
