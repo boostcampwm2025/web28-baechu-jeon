@@ -92,20 +92,20 @@ export default function ResultTabsClient({
   return (
     <div className="relative h-full w-full overflow-hidden">
       <div
-        className={`absolute inset-0 transition-[transform,opacity] duration-300 ease-in-out ${
+        className={`absolute inset-0 ${
           activeTab === "code"
-            ? "z-10 translate-x-0 opacity-100"
-            : "pointer-events-none z-0 -translate-x-8 opacity-0"
+            ? "z-10 opacity-100"
+            : "pointer-events-none z-0 opacity-0"
         }`}
       >
         {codeLoaded && <CodeView initialFilePath={initialFilePath} />}
       </div>
 
       <div
-        className={`absolute inset-0 transition-[transform,opacity] duration-300 ease-in-out ${
+        className={`absolute inset-0 ${
           activeTab === "visualization"
-            ? "z-10 translate-x-0 opacity-100"
-            : "pointer-events-none z-0 translate-x-8 opacity-0"
+            ? "z-10 opacity-100"
+            : "pointer-events-none z-0 opacity-0"
         }`}
       >
         {vizLoaded && (
