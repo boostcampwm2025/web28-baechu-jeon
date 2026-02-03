@@ -38,14 +38,15 @@ class Semaphore {
 // TODO: usageMetadata 정보 추가하기 (GenerateContentResponse 확인)
 
 // Gemini API 동시 호출 제한 (모델별 세마포어)
-// TPM 기반 계산: Step2는 요청당 ~120k 토큰으로 가장 무거움
-// TPM 1M 기준, Step2 동시 2개 = 240k/batch, 안전 마진 확보
-const geminiSemaphoreFlash25 = new Semaphore(4); // gemini-2.5-flash용 (Step 1, 3)
-const geminiSemaphoreStep2 = new Semaphore(2); // gemini-3.0-flash용 (Step 2) - TPM 병목 방지
+// Step2 실제 토큰: 평균 ~150K, 최대 385K (TPM 1M)
+// Step1/3: 평균 ~50K, 최대 ~130K
+// 안전 마진 60% 기준
+const geminiSemaphoreFlash25 = new Semaphore(12); // gemini-2.5-flash용 (Step 1, 3)
+const geminiSemaphoreStep2 = new Semaphore(6); // gemini-3-flash-preview용 (Step 2) - TPM 병목
 
 // 모델 설정
 const MODEL_FLASH_25 = 'gemini-2.5-flash';
-const MODEL_FLASH_STEP2 = 'gemini-3.0-flash'; // Step 2 전용 (별도 TPM 한도 활용)
+const MODEL_FLASH_STEP2 = 'gemini-3-flash-preview'; // Step 2 전용 (별도 TPM 한도 활용)
 
 @Injectable()
 export class GeminiClient {
