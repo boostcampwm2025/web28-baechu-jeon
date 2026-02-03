@@ -53,7 +53,7 @@ export class RetryableAnalysisError extends Error {
 
 // 모델 설정
 const MODEL_FLASH_25 = 'gemini-2.5-flash';
-const MODEL_FLASH_STEP2 = 'gemini-3-flash-preview'; // Step 2 전용 (별도 TPM 한도 활용)
+const MODEL_FLASH_STEP2 = 'gemini-2.5-pro'; // Step 2 전용 (별도 TPM 한도 활용)
 
 @Injectable()
 export class GeminiClient {
