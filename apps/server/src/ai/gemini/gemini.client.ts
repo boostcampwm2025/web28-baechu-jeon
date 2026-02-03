@@ -41,8 +41,8 @@ class Semaphore {
 // Step2 실제 토큰: 평균 ~150K, 최대 385K (TPM 1M)
 // Step1/3: 평균 ~50K, 최대 ~130K
 // 안전 마진 60% 기준
-const geminiSemaphoreFlash25 = new Semaphore(11); // gemini-2.5-flash용 (Step 1, 3)
-const geminiSemaphoreStep2 = new Semaphore(2); // gemini-3-flash-preview용 (Step 2) - TPM 병목 (권장: 2)
+const geminiSemaphoreFlash25 = new Semaphore(11);
+const geminiSemaphoreStep2 = new Semaphore(4);
 // RetryableAnalysisError: 429 등 job 레벨에서 재시도할 에러
 export class RetryableAnalysisError extends Error {
   constructor(message: string) {
