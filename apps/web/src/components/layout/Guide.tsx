@@ -16,7 +16,7 @@ import { useReactFlow } from "@xyflow/react";
 
 export default function Guide() {
   const params = useParams();
-  const isCodePage = params?.page === "code";
+  const isCodePage = params?.tab === "code";
 
   const { getViewport, setViewport } = useReactFlow();
 
