@@ -17,10 +17,24 @@ export class VisualizationsService {
       where: { analysisResultId: analysisId },
     });
 
-    if (exist) return exist.formattedData;
+    if (exist) {
+      // formattedData에 visualizationId가 없으면 추가
+      const formattedData = exist.formattedData as Prisma.JsonObject;
+
+      if (!formattedData.visualizationId) {
+        formattedData.visualizationId = exist.id.toString();
+
+        // DB에도 업데이트
+        await this.prismaService.visualization.update({
+          where: { id: exist.id },
+          data: { formattedData },
+        });
+      }
+
+      return formattedData;
+    }
 
     // 그래프 없으면 새로 만들자.
-    // 일단 분석 결과가 존재하는지 확인하기
     const analysisResult = await this.prismaService.analysisResult.findUnique({
       where: { id: analysisId },
     });

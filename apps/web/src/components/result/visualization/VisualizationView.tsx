@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-// import Image from "next/image";
 import {
   ReactFlow,
   Background,
@@ -19,18 +18,20 @@ import "@xyflow/react/dist/style.css";
 import { type BaseNodeData } from "@/utils/layouts/layoutSettings";
 import BaseNode from "@/components/result/visualization/nodes/BaseNode";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
-// import resetIcon from "@/assets/reset.svg";
 import { NodeData } from "@/types/visualization";
 import { useNodeHighlight } from "@/hooks/useNodeHighlight";
 import { convertToNodeData } from "@/utils/nodeHelpers";
 import { useExplorerStore } from "@/stores/useExplorerStore";
+import { resetVisualization } from "@/api/visualization";
+import { transformApiToReactFlow } from "@/utils/transformNodes";
+import { HiOutlineRefresh } from "react-icons/hi";
 
 const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
 };
 
 interface VisualizationViewProps {
-  visualizationId?: string;
+  visualizationId: string;
   initialNodes: Node<BaseNodeData>[];
   initialEdges: Edge[];
   onNodeClick: (node: NodeData) => void;
@@ -39,22 +40,21 @@ interface VisualizationViewProps {
 }
 
 export default function VisualizationView({
+  visualizationId,
   onNodeClick,
   onPaneClick,
   initialNodes = [],
   initialEdges = [],
 }: VisualizationViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges] = useEdgesState(initialEdges);
+  const [edges, setEdges] = useEdgesState(initialEdges);
+  const [isResetting, setIsResetting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const router = useRouter();
   const params = useParams();
   const projectId = params.projectId as string;
   const analysisId = params.analysisId as string;
-
-  // 해결: 사용하지 않는 setter와 변수 정리 (lint error 대응)
-  // const [isReseting] = useState(false);
-  // const [isInitialized, setIsInitialized] = useState(false);
 
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
   const setHighlightedPaths = useExplorerStore((s) => s.setHighlightedPaths);
@@ -160,6 +160,38 @@ export default function VisualizationView({
     setStoreViewport(currentViewport);
   }, [getViewport, setStoreViewport]);
 
+  const handleReset = useCallback(async () => {
+    try {
+      setIsResetting(true);
+      const originalData = await resetVisualization(visualizationId);
+      const { reactFlowNodes, reactFlowEdges } =
+        transformApiToReactFlow(originalData);
+
+      setNodes(reactFlowNodes);
+      setEdges(reactFlowEdges);
+
+      setSelectedNodeId(null);
+      resetHighlights();
+      clearHighlightedPaths();
+
+      setTimeout(() => {
+        fitView({ duration: 800 });
+      }, 100);
+    } catch (error) {
+      console.error("레이아웃 초기화 실패:", error);
+    } finally {
+      setIsResetting(false);
+    }
+  }, [
+    visualizationId,
+    setNodes,
+    setEdges,
+    setSelectedNodeId,
+    resetHighlights,
+    clearHighlightedPaths,
+    fitView,
+  ]);
+
   return (
     <div className="relative h-full w-full" id="visualization-canvas">
       <ReactFlow
@@ -171,7 +203,7 @@ export default function VisualizationView({
         onPaneClick={handlePaneClick}
         onMoveEnd={handleMoveEnd}
         onInit={(instance) => {
-          // setIsInitialized(true);
+          setIsInitialized(true);
           const state = useVisualizationStore.getState();
           if (state.viewport) {
             instance.setViewport(state.viewport);
@@ -190,7 +222,7 @@ export default function VisualizationView({
         deleteKeyCode={null}
         elementsSelectable
         nodesDraggable
-        minZoom={0.2}
+        minZoom={0.1}
         maxZoom={1.0}
         defaultEdgeOptions={{
           type: "smoothstep",
@@ -207,15 +239,18 @@ export default function VisualizationView({
         <Controls className="rounded-lg border-slate-700 bg-slate-800 [&>button]:border-slate-700 [&>button]:bg-slate-800 [&>button]:text-slate-400 [&>button:hover]:bg-slate-700" />
       </ReactFlow>
 
-      {/* 해결: isInitialized 변수 사용 예시 (린트 방지) */}
-      {/* <button
-        disabled={isReseting || !isInitialized}
+      <button
+        disabled={isResetting || !isInitialized}
         title="초기화"
-        // onClick={handleReset}
-        className="absolute top-4 right-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+        onClick={handleReset}
+        className="absolute top-6 right-6 z-10 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border border-slate-700 bg-slate-800/80 text-slate-300 shadow-xl backdrop-blur-sm transition-all hover:scale-110 hover:bg-slate-700 hover:text-white active:scale-95 disabled:opacity-50"
       >
-        <Image src={resetIcon} alt="초기화" width={32} height={32} />
-      </button> */}
+        {isResetting ? (
+          <HiOutlineRefresh className="h-6 w-6 animate-spin text-blue-400" />
+        ) : (
+          <HiOutlineRefresh className="h-6 w-6 text-blue-400" />
+        )}
+      </button>
     </div>
   );
 }
