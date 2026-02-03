@@ -1,10 +1,54 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@theme {
+  /* 배경 */
+  --color-page: #0f172a;          /* 페이지 배경 */
+  --color-surface: #1e293b;       /* 카드/패널 배경 */
+  --color-hover: #334155;         /* 호버 상태 */
+
+  /* 텍스트 */
+  --color-heading: #f1f5f9;       /* 제목/강조 텍스트 */
+  --color-body: #cbd5e1;          /* 본문 텍스트 */
+  --color-subtle: #94a3b8;        /* 보조 텍스트 */
+  --color-muted: #64748b;         /* 약한 텍스트 */
+
+  /* 테두리 */
+  --color-line: #334155;          /* 기본 테두리 */
+
+  /* 액센트 */
+  --color-accent: #38bdf8;        /* 강조 색상 */
+  --color-accent-dim: #0ea5e9;    /* 어두운 강조 */
+
+  /* 버튼 */
+  --color-primary: #3b82f6;       /* 기본 버튼 */
+  --color-primary-hover: #60a5fa; /* 버튼 호버 */
+}
+
+/* 라이트 모드 색상 오버라이드 */
+html.light {
+  --color-page: #f8fafc;
+  --color-surface: #ffffff;
+  --color-hover: #f1f5f9;
+
+  --color-heading: #0f172a;
+  --color-body: #334155;
+  --color-subtle: #64748b;
+  --color-muted: #94a3b8;
+
+  --color-line: #e2e8f0;
+
+  --color-accent: #0284c7;
+  --color-accent-dim: #0369a1;
+
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+}
+
 @layer base {
   /* prose 내부 기본 텍스트 가독성 보강 */
   .prose {
-    color: rgb(30 41 59); /* slate-800 */
+    color: var(--color-body);
     line-height: 1.75;
   }
 
@@ -85,7 +129,7 @@
 
   .thin-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: var(--color-hover) transparent;
 
     &::-webkit-scrollbar {
       width: 6px;
@@ -96,12 +140,12 @@
     }
 
     &::-webkit-scrollbar-thumb {
-      background-color: #cbd5e1;
+      background-color: var(--color-hover);
       border-radius: 3px;
     }
 
     &::-webkit-scrollbar-thumb:hover {
-      background-color: #94a3b8;
+      background-color: var(--color-muted);
     }
   }
 

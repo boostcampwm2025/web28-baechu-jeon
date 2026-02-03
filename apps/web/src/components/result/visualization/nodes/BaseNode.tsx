@@ -1,7 +1,10 @@
 "use client";
 
 import { Handle, Position, NodeProps, type Node } from "@xyflow/react";
+import { useParams } from "next/navigation";
 import { type BaseNodeData } from "@/utils/layouts/layoutSettings";
+import { useVisualizationStore } from "@/store/useVisualizationStore";
+import { maybeDecode } from "@/utils/url";
 
 export default function BaseNode({
   data,
@@ -21,6 +24,8 @@ export default function BaseNode({
 
   const isGroupHeader = groups === "GROUP_HEADER";
   const isCategoryHeader = groups === "CATEGORY_HEADER";
+  const params = useParams<{ analysisId: string }>();
+  const setCachedCode = useVisualizationStore((s) => s.setCachedCode);
 
   // 하이라이트 여부
   const isHighlighted = !!highlightClass;
@@ -29,6 +34,26 @@ export default function BaseNode({
     if (isGroupHeader) return "48px";
     if (diagramType === "STEP1" || diagramType === "STEP2") return "26px";
     return "16px";
+  };
+
+  // 호버 시 프리패치
+  const handleMouseEnter = () => {
+    if (!isHighlighted || !data.path || !params.analysisId) return;
+    const decoded = maybeDecode(data.path) ?? data.path;
+    if (
+      useVisualizationStore.getState().getCachedCode(params.analysisId, decoded)
+    )
+      return;
+
+    (async () => {
+      try {
+        const { getCode } = await import("@/api/code");
+        const result = await getCode(params.analysisId, decoded);
+        setCachedCode(params.analysisId, decoded, result.markdownContent);
+      } catch {
+        /* ignore */
+      }
+    })();
   };
 
   const baseStyle: React.CSSProperties = {
@@ -73,7 +98,11 @@ export default function BaseNode({
   };
 
   return (
-    <div style={baseStyle} className={containerClasses}>
+    <div
+      style={baseStyle}
+      className={containerClasses}
+      onMouseEnter={handleMouseEnter}
+    >
       <Handle
         type="target"
         position={Position.Left}

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { HiFolder, HiDocument, HiOutlineChevronRight } from "react-icons/hi";
 import { FileNode } from "@/utils/pathTree";
 import { useExplorerStore } from "@/stores/useExplorerStore";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
+import { maybeDecode } from "@/utils/url";
 
 interface FileItemProps {
   node: FileNode;
@@ -20,16 +21,36 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFolder = node.type === "folder";
 
-  const router = useRouter();
-  const params = useParams<{ projectId: string; analysisId: string }>();
+  const params = useParams<{ analysisId: string }>();
   const highlightedPaths = useExplorerStore((s) => s.highlightedPaths);
   const setSelectedFilePath = useVisualizationStore(
     (s) => s.setSelectedFilePath,
   );
+  const setActiveTab = useVisualizationStore((s) => s.setActiveTab);
+  const setCachedCode = useVisualizationStore((s) => s.setCachedCode);
 
   const isHighlighted = highlightedPaths.includes(node.path);
   const shouldExpand =
     isFolder && highlightedPaths.some((hp) => hp.startsWith(node.path + "/"));
+
+  const handleMouseEnter = useCallback(() => {
+    if (!isHighlighted || isFolder || !node.path || !params.analysisId) return;
+    const decoded = maybeDecode(node.path) ?? node.path;
+    if (
+      useVisualizationStore.getState().getCachedCode(params.analysisId, decoded)
+    )
+      return;
+
+    (async () => {
+      try {
+        const { getCode } = await import("@/api/code");
+        const result = await getCode(params.analysisId, decoded);
+        setCachedCode(params.analysisId, decoded, result.markdownContent);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [isHighlighted, isFolder, node.path, params.analysisId, setCachedCode]);
 
   useEffect(() => {
     if (shouldExpand) {
@@ -68,8 +89,10 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
       timeoutRef.current = setTimeout(() => setShowTooltip(false), 2000);
       return;
     }
-    setSelectedFilePath(node.path);
-    router.push(`/result/${params.projectId}/${params.analysisId}/code`);
+    const decoded = maybeDecode(node.path) ?? node.path;
+    setSelectedFilePath(decoded);
+    // URL 이동 없이 내부 탭으로 전환
+    setActiveTab("code");
   };
 
   return (
@@ -78,13 +101,14 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
         <div
           ref={itemRef}
           onClick={handleClick}
+          onMouseEnter={handleMouseEnter}
           title={node.path}
           className={`group flex items-center gap-1 px-2 py-1 pr-4 text-sm transition-colors select-none ${
             isHighlighted
-              ? "cursor-pointer rounded-sm bg-amber-50 font-semibold text-amber-700"
+              ? "cursor-pointer rounded-sm bg-amber-500/15 font-semibold text-amber-400"
               : isFolder
-                ? "cursor-pointer font-medium text-slate-700 hover:bg-slate-100"
-                : "cursor-default text-slate-600 hover:bg-slate-50"
+                ? "text-body hover:bg-hover cursor-pointer font-medium"
+                : "text-subtle hover:bg-hover/50 cursor-default"
           } `}
           style={{ paddingLeft: `${depth * 10 + 5}px` }}
         >
@@ -94,7 +118,7 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
             }`}
           >
             {isFolder && (
-              <HiOutlineChevronRight className="h-3 w-3 text-slate-400" />
+              <HiOutlineChevronRight className="text-muted h-3 w-3" />
             )}
           </span>
 
@@ -114,7 +138,7 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
         </div>
 
         {showTooltip && (
-          <div className="absolute -top-8 left-1/2 z-50 -translate-x-1/2 rounded bg-slate-700 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg">
+          <div className="bg-hover text-heading absolute -top-8 left-1/2 z-50 -translate-x-1/2 rounded px-2 py-1 text-xs whitespace-nowrap shadow-lg">
             코드 요약을 제공하지 않는 파일입니다
           </div>
         )}

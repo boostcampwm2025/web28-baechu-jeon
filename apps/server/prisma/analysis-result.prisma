@@ -1,12 +1,11 @@
-// AnalysisResult 테이블 스키마
+// AnalysisResult 테이블 스키마 (3단계: step1=기능분석, step2=가설+의도, step3=코드요약)
 
 model AnalysisResult {
   id        String   @id @default(uuid()) @db.Uuid
   projectId String   @map("project_id") @db.Uuid
-  step1     Json     @db.JsonB
-  step2     Json     @db.JsonB
-  step3     Json     @db.JsonB
-  step4     Json     @db.JsonB
+  step1     Json     @db.JsonB // 주요 파일 추천
+  step2     Json     @db.JsonB // responsibility_hypotheses + project_intent + user_stories
+  step3     Json     @db.JsonB // file_summaries (코드 설명)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
 
   project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)

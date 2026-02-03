@@ -10,6 +10,9 @@ interface VisualizationState {
   selectedNodeId: string | null;
   selectedFilePath: string | null;
 
+  // 현재 활성 탭 (code | visualization)
+  activeTab: "code" | "visualization";
+
   // STEP 1 클릭으로 인한 하이라이트 상태
   activeStep1Id: string | null;
   highlightNodeIds: string[];
@@ -28,10 +31,15 @@ interface VisualizationState {
     isNodeOpen: boolean;
     isProjectOpen: boolean;
   } | null;
+  // 코드 프리패치 캐시 (key: "analysisId::filePath", value: markdownContent)
+  codeCache: Record<string, string>;
+  // LRU 캐시를 위한 접근 순서 추적
+  cacheAccessOrder: string[];
 
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
   setSelectedNodeId: (id: string | null) => void;
   setSelectedFilePath: (path: string | null) => void;
+  setActiveTab: (tab: "code" | "visualization") => void;
   setActiveStep1Id: (id: string | null) => void;
   setHighlights: (ids: string[]) => void;
   setPanelNode: (node: NodeData | null) => void;
@@ -44,12 +52,21 @@ interface VisualizationState {
   ) => void;
 
   setPreGuideState: (state: VisualizationState["preGuideState"]) => void; // ✅ 추가
+  setCachedCode: (
+    analysisId: string,
+    filePath: string,
+    content: string,
+  ) => void;
+  getCachedCode: (analysisId: string, filePath: string) => string | undefined;
 }
 
-export const useVisualizationStore = create<VisualizationState>((set) => ({
+const MAX_CACHE_SIZE = 20;
+
+export const useVisualizationStore = create<VisualizationState>((set, get) => ({
   viewport: null,
   selectedNodeId: null,
   selectedFilePath: null,
+  activeTab: "visualization",
   activeStep1Id: null,
   highlightNodeIds: [],
   panelNode: null,
@@ -58,10 +75,13 @@ export const useVisualizationStore = create<VisualizationState>((set) => ({
   isSidebarOpen: true,
   focusTargetType: "STEP1",
   preGuideState: null,
+  codeCache: {},
+  cacheAccessOrder: [],
 
   setViewport: (viewport) => set({ viewport }),
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
   setSelectedFilePath: (path) => set({ selectedFilePath: path }),
+  setActiveTab: (tab) => set({ activeTab: tab }),
   setActiveStep1Id: (id) => set({ activeStep1Id: id }),
   setHighlights: (ids) => set({ highlightNodeIds: ids }),
   setPanelNode: (node) => set({ panelNode: node }),
@@ -70,4 +90,51 @@ export const useVisualizationStore = create<VisualizationState>((set) => ({
   setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
   setFocusTargetType: (type) => set({ focusTargetType: type }),
   setPreGuideState: (state) => set({ preGuideState: state }),
+  setCachedCode: (analysisId, filePath, content) =>
+    set((s) => {
+      const key = `${analysisId}::${filePath}`;
+      const newCache = { ...s.codeCache };
+      const newAccessOrder = [...s.cacheAccessOrder];
+
+      // 이미 존재하면 접근 순서에서 제거
+      const existingIndex = newAccessOrder.indexOf(key);
+      if (existingIndex > -1) {
+        newAccessOrder.splice(existingIndex, 1);
+      }
+
+      // 새 데이터 추가
+      newCache[key] = content;
+      newAccessOrder.push(key); // 맨 뒤에 추가 (가장 최근)
+
+      // LRU: 크기 초과 시 가장 오래된 항목 제거
+      if (newAccessOrder.length > MAX_CACHE_SIZE) {
+        const oldestKey = newAccessOrder.shift(); // 맨 앞 제거 (가장 오래됨)
+        if (oldestKey) {
+          delete newCache[oldestKey];
+        }
+      }
+
+      return {
+        codeCache: newCache,
+        cacheAccessOrder: newAccessOrder,
+      };
+    }),
+  getCachedCode: (analysisId, filePath) => {
+    const key = `${analysisId}::${filePath}`;
+    const state = get();
+    const cached = state.codeCache[key];
+
+    // 캐시 히트 시 접근 순서 갱신 (가장 최근으로 이동)
+    if (cached) {
+      const newAccessOrder = [...state.cacheAccessOrder];
+      const index = newAccessOrder.indexOf(key);
+      if (index > -1) {
+        newAccessOrder.splice(index, 1);
+        newAccessOrder.push(key);
+        set({ cacheAccessOrder: newAccessOrder });
+      }
+    }
+
+    return cached;
+  },
 }));

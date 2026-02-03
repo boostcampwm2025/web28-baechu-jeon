@@ -11,7 +11,6 @@ export interface Step3Analysis {
       database: string[];
       extra: string[];
     };
-    evidence: string[];
     confidence: 'low' | 'medium' | 'high';
   };
   user_stories: [
@@ -29,7 +28,6 @@ export interface Step2Analysis {
     {
       path: string;
       hypothesis: string;
-      evidence: string;
       confidence: 'low' | 'medium' | 'high';
     },
   ];

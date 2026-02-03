@@ -14,7 +14,7 @@ interface LayoutClientProps {
   treeData: FileNode[];
 }
 
-// const CLOSE_THRESHOLD = 100;
+const CLOSE_THRESHOLD = 100;
 const MIN_WIDTH = 250;
 const MAX_WIDTH = 350;
 const DEFAULT_WIDTH = 288;
@@ -55,6 +55,16 @@ export default function LayoutClient({
       setIsDragging(false);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
+      setSidebarWidth((prev) => {
+        if (prev < CLOSE_THRESHOLD) {
+          setIsSidebarOpen(false);
+          return prev; // 현재 위치에서 트랜지션으로 자연스럽게 닫힘
+        }
+        if (prev < MIN_WIDTH) {
+          return MIN_WIDTH;
+        }
+        return prev;
+      });
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -79,6 +89,11 @@ export default function LayoutClient({
           } ${isSidebarOpen ? "translate-x-0" : "-translate-x-full opacity-0"}`}
           style={{
             width: isSidebarOpen ? `${sidebarWidth}px` : 0,
+            opacity: !isSidebarOpen
+              ? 0
+              : isDragging && sidebarWidth < CLOSE_THRESHOLD
+                ? Math.max(0.3, sidebarWidth / CLOSE_THRESHOLD)
+                : 1,
           }}
         >
           <div className="h-full overflow-y-auto">
@@ -90,11 +105,11 @@ export default function LayoutClient({
 
           <div
             onMouseDown={handleMouseDown}
-            className="absolute top-0 -right-1 z-10 h-full w-2.5 cursor-col-resize transition-colors hover:bg-slate-300 active:bg-slate-400"
+            className="hover:bg-hover active:bg-subtle absolute top-0 -right-1 z-10 h-full w-2.5 cursor-col-resize transition-colors"
           />
         </aside>
 
-        <section className="relative flex min-w-0 flex-1 flex-col bg-white">
+        <section className="bg-page relative flex min-w-0 flex-1 flex-col">
           <div
             className={`absolute top-4 left-4 z-20 transition-opacity duration-200 ${
               !isSidebarOpen
@@ -103,13 +118,15 @@ export default function LayoutClient({
             }`}
           >
             <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="cursor-pointer rounded-md border border-slate-200 bg-white p-2 text-slate-500 shadow-sm hover:bg-slate-50"
+              onClick={() => {
+                setSidebarWidth(DEFAULT_WIDTH);
+                setIsSidebarOpen(true);
+              }}
+              className="border-line bg-surface text-muted hover:bg-hover hover:text-body cursor-pointer rounded-md border p-2 shadow-sm"
             >
               <HiFolderOpen className="h-5 w-5" />
             </button>
           </div>
-
           <div className="no-scrollbar flex-1 overflow-y-auto">{children}</div>
         </section>
       </div>
