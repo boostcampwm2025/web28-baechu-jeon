@@ -7,8 +7,16 @@ export default function BaseNode({
   data,
   selected,
 }: NodeProps<Node<BaseNodeData>>) {
-  const { width, height, theme, label, highlightClass, diagramType } = data;
-
+  const {
+    width,
+    height,
+    theme,
+    label,
+    paddingX = 16,
+    paddingY = 16,
+    highlightClass,
+    diagramType,
+  } = data;
   // 하이라이트 여부
   const isHighlighted = !!highlightClass;
 
@@ -55,13 +63,17 @@ export default function BaseNode({
         <span
           style={{
             color: theme.textColor,
-            wordBreak: "keep-all",
             lineHeight: 1.5,
             fontSize: getFontSize(),
             fontWeight: diagramType === "STEP1" ? 800 : 600,
             whiteSpace: "pre-wrap",
             display: "block",
             width: "100%",
+            textAlign: "center",
+            paddingLeft: `${paddingX}px`,
+            paddingRight: `${paddingX}px`,
+            paddingTop: `${paddingY}px`,
+            paddingBottom: `${paddingY}px`,
           }}
         >
           {label}
