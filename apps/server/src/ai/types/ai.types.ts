@@ -71,6 +71,8 @@ export interface Step3CodeSummaryResult {
 export interface AiClientRequest {
   userPrompt: string;
   systemPrompt: string;
+  /** step별 JSON 응답 형식 강제용. 있으면 config.responseJsonSchema로 전달 */
+  responseJsonSchema?: object;
 }
 
 export interface PromptResponse {
