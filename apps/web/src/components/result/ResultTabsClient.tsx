@@ -1,13 +1,22 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import CodeView from "@/components/result/code/CodeView";
-import VisualizationClient from "@/components/result/visualization/VisualizationClient";
+import dynamic from "next/dynamic";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
 import { transformApiToReactFlow } from "@/utils/transformNodes";
 import type { VisualizationResponse } from "@/api/visualization";
 import type { GetIntentionsResponse } from "@/types/intentionApi";
+
+const CodeView = dynamic(
+  () => import("@/components/result/code/CodeView"),
+  { ssr: false },
+);
+
+const VisualizationClient = dynamic(
+  () => import("@/components/result/visualization/VisualizationClient"),
+  { ssr: false },
+);
 
 type Props = {
   projectId: string;
@@ -34,6 +43,15 @@ export default function ResultTabsClient({
   const setSelectedFilePath = useVisualizationStore(
     (s) => s.setSelectedFilePath,
   );
+
+  // 한번 로드된 탭은 계속 유지 (상태 보존)
+  const [codeLoaded, setCodeLoaded] = useState(initialTab === "code");
+  const [vizLoaded, setVizLoaded] = useState(initialTab === "visualization");
+
+  useEffect(() => {
+    if (activeTab === "code") setCodeLoaded(true);
+    if (activeTab === "visualization") setVizLoaded(true);
+  }, [activeTab]);
 
   // URL searchParams 로만 상태 동기화
   useEffect(() => {
@@ -78,28 +96,30 @@ export default function ResultTabsClient({
   return (
     <div className="relative h-full w-full overflow-hidden">
       <div
-        className={`absolute inset-0 transition-all duration-300 ease-in-out ${
+        className={`absolute inset-0 transition-[transform,opacity] duration-300 ease-in-out ${
           activeTab === "code"
             ? "z-10 translate-x-0 opacity-100"
             : "pointer-events-none z-0 -translate-x-8 opacity-0"
         }`}
       >
-        <CodeView initialFilePath={initialFilePath} />
+        {codeLoaded && <CodeView initialFilePath={initialFilePath} />}
       </div>
 
       <div
-        className={`absolute inset-0 transition-all duration-300 ease-in-out ${
+        className={`absolute inset-0 transition-[transform,opacity] duration-300 ease-in-out ${
           activeTab === "visualization"
             ? "z-10 translate-x-0 opacity-100"
             : "pointer-events-none z-0 translate-x-8 opacity-0"
         }`}
       >
-        <VisualizationClient
-          visualizationId={analysisId}
-          initialNodes={initialNodes}
-          initialEdges={initialEdges}
-          initialPurposes={initialPurposes}
-        />
+        {vizLoaded && (
+          <VisualizationClient
+            visualizationId={analysisId}
+            initialNodes={initialNodes}
+            initialEdges={initialEdges}
+            initialPurposes={initialPurposes}
+          />
+        )}
       </div>
     </div>
   );
