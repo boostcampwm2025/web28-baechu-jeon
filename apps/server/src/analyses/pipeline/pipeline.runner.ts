@@ -258,7 +258,8 @@ export class PipelineRunner {
       await this.emitter.emitFailed({
         analysisId,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        reason: err.message,
+        reason:
+          '죄송합니다. Gemini 서버의 일시적인 오류로 인해 분석에 실패했습니다. 메인화면으로 돌아가서 다시 시도해 주세요.',
       });
       throw err;
     }
