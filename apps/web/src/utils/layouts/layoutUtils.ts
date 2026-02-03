@@ -29,25 +29,59 @@ export function createReactFlowNode(
   };
 }
 
-export function calculateTextDimensions(
+interface TextDimensionOptions {
+  fontSize?: number; // 기본 16px
+  lineHeight?: number; // 기본 1.5
+  maxWidth?: number; // 이 너비를 넘으면 줄바꿈 (없으면 한 줄)
+  paddingX?: number; // 좌우 패딩 합
+  paddingY?: number; // 상하 패딩 합
+  minWidth?: number; // 최소 너비 보장
+  minHeight?: number; // 최소 높이 보장
+}
+
+// 노드의 { width, height }를 계산하는 함수
+export const calculateTextDimensions = (
   text: string,
-  targetWidth: number = 300,
-  fontSize: number = 20,
-) {
-  let estimatedTotalLength = 0;
+  options: TextDimensionOptions = {},
+) => {
+  const {
+    fontSize = 16,
+    lineHeight = 1.5,
+    maxWidth = Infinity,
+    paddingX = 40,
+    paddingY = 40,
+    minWidth = 0,
+    minHeight = 0,
+  } = options;
+
+  if (!text) return { width: minWidth, height: minHeight };
+
+  let totalLength = 30;
   for (const char of text) {
-    estimatedTotalLength += /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(char)
-      ? fontSize
-      : fontSize * 0.7; // 영문 비율 조정
+    totalLength += /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(char) ? fontSize : fontSize * 0.7; // 영문 비율 조정
   }
 
-  const availableWidth = targetWidth - 50;
-  const lines = Math.ceil(estimatedTotalLength / availableWidth);
+  // 너비와 높이 결정 로직
+  let finalWidth = 0;
+  let finalHeight = 0;
 
-  const lineHeight = fontSize * 1.6;
-  const verticalPadding = 100;
+  if (totalLength <= maxWidth) {
+    // 제한 너비보다 짧은 경우 -> 한 줄 표시
+    // 텍스트 길이 + 패딩
+    finalWidth = totalLength + paddingX;
+    finalHeight = fontSize * lineHeight + paddingY;
+  } else {
+    // 제한 너비보다 긴 경우 -> 줄바꿈 발생
+    finalWidth = maxWidth + paddingX; // 너비는 최대폭으로 고정
 
-  const height = Math.max(90, lines * lineHeight + verticalPadding);
+    // 줄 수 계산: (전체 길이 / 한 줄에 들어가는 길이)
+    const lines = Math.ceil(totalLength / maxWidth);
+    finalHeight = lines * fontSize * lineHeight + paddingY + 10;
+  }
 
-  return { width: targetWidth, height };
-}
+  // 노드 크기 반환
+  return {
+    width: Math.max(minWidth, Math.round(finalWidth)),
+    height: Math.max(minHeight, Math.round(finalHeight)),
+  };
+};
