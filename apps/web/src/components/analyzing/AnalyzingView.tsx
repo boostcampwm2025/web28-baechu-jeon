@@ -41,12 +41,14 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
   const [estimatedTime, setEstimatedTime] = useState<number>(180); // 총 예상 시간 (초, 3단계)
   const [error, setError] = useState<string | null>(null);
   const [isNotiGranted, setIsNotiGranted] = useState(false);
+  const [isNotiDenied, setIsNotiDenied] = useState(false);
   const totalSteps = 3;
-  
+
   // 알림 권한 확인
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setIsNotiGranted(Notification.permission === "granted");
+      setIsNotiDenied(Notification.permission === "denied");
     }
   }, []);
 
@@ -59,9 +61,12 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       setIsNotiGranted(true);
+      setIsNotiDenied(false);
       new Notification("알림 설정 완료!", {
         body: "분석이 완료되면 알려드릴게요. 편하게 다른 일을 보셔도 됩니다!",
       });
+    } else if (permission === "denied") {
+      setIsNotiDenied(true);
     }
   };
   // 분석 시작 및 SSE 연결
@@ -106,10 +111,12 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
               setEstimatedTime(0);
               eventSource?.close();
 
-              if (Notification.permission === "granted") {
-                new Notification("분석 완료! 🚀", {
-                  body: "프로젝트 분석이 끝났습니다. 결과를 확인해보세요!",
-                });
+              if (typeof window !== "undefined" && "Notification" in window) {
+                if (Notification.permission === "granted") {
+                  new Notification("분석 완료! 🚀", {
+                    body: "프로젝트 분석이 끝났습니다. 결과를 확인해보세요!",
+                  });
+                }
               }
 
               router.replace(`/result/${projectId}/${result.analysisId}`);
@@ -191,6 +198,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
           {/* 알림 신청 버튼 */}
           <NotificationButton
             isGranted={isNotiGranted}
+            isDenied={isNotiDenied}
             onRequest={requestNotification}
           />
           {/* 단계 완료 및 예상 소요 시간 표시 */}

@@ -49,11 +49,25 @@ export class ZipParserService {
           return reject(err instanceof Error ? err : new Error(String(err)));
         }
 
+        let rootPrefix: string | null = null;
+
         zipfile.readEntry();
 
         zipfile.on('entry', (entry: yauzl.Entry) => {
           const normEntry = entry.fileName.replace(/\\/g, '/');
-          const requestedPath = normalizedToOriginal.get(normEntry);
+
+          // 첫 번째 엔트리에서 루트 폴더명 추출
+          if (rootPrefix === null && normEntry.includes('/')) {
+            rootPrefix = normEntry.split('/')[0] + '/';
+          }
+
+          // 루트 폴더를 제거한 상대 경로로 매칭
+          let relativePath = normEntry;
+          if (rootPrefix && normEntry.startsWith(rootPrefix)) {
+            relativePath = normEntry.slice(rootPrefix.length);
+          }
+
+          const requestedPath = normalizedToOriginal.get(relativePath);
 
           if (!requestedPath) {
             zipfile.readEntry();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   ReactFlow,
   Background,
@@ -47,6 +48,10 @@ export default function VisualizationView({
   initialNodes = [],
   initialEdges = [],
 }: VisualizationViewProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isResetting, setIsResetting] = useState(false);
@@ -63,9 +68,6 @@ export default function VisualizationView({
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   const { toggleHighlight, resetHighlights } = useNodeHighlight(setNodes);
-
-  const setActiveTab = useVisualizationStore((s) => s.setActiveTab);
-
   const setHighlightedPaths = useExplorerStore((s) => s.setHighlightedPaths);
   const clearHighlightedPaths = useExplorerStore(
     (s) => s.clearHighlightedPaths,
@@ -74,13 +76,9 @@ export default function VisualizationView({
   const { fitView, getViewport } = useReactFlow();
   const setStoreViewport = useVisualizationStore((state) => state.setViewport);
 
-  const {
-    selectedNodeId,
-    highlightNodeIds,
-    setSelectedNodeId,
-    setSelectedFilePath,
-    setFocusTargetType,
-  } = useVisualizationStore();
+  const setSelectedNodeId = useVisualizationStore((s) => s.setSelectedNodeId);
+  const { selectedNodeId, highlightNodeIds, setFocusTargetType } =
+    useVisualizationStore();
 
   useVisualizationFocus();
   useEffect(() => {
@@ -97,7 +95,6 @@ export default function VisualizationView({
       })),
     );
   }, [selectedNodeId, setNodes, highlightNodeIds]);
-
   /**
    * 노드 클릭 핸들러
    */
@@ -115,21 +112,38 @@ export default function VisualizationView({
 
       if (node.data.diagramType === "STEP1") {
         if (node.data.relatedNodeIds?.length) {
-          toggleHighlight(node.id, [node.id, ...node.data.relatedNodeIds]);
-          setHighlightedPaths(node.data.relatedPaths || []);
-        } else {
-          resetHighlights();
+          const isHighlighted = toggleHighlight(node.id, [
+            node.id,
+            ...node.data.relatedNodeIds,
+          ]);
+
+          if (isHighlighted) {
+            setHighlightedPaths(node.data.relatedPaths || []);
+            return;
+          }
+
           clearHighlightedPaths();
+          return;
         }
+        resetHighlights();
+        clearHighlightedPaths();
+        return;
       }
 
       if (node.data.type === "FILE") {
         if (node.data.path) {
           const decoded = maybeDecode(node.data.path) ?? node.data.path;
-          setSelectedFilePath(decoded);
-          setActiveTab("code");
+
+          // URL만 변경 (상태는 ResultTabsClient에서 URL 감시하여 동기화)
+          const params = new URLSearchParams(searchParams.toString());
+          params.set("tab", "code");
+          params.set("filePath", decoded);
+          router.push(`${pathname}?${params.toString()}`, { scroll: false });
         } else {
-          setActiveTab("code");
+          // 파일 경로 없이 코드 탭으로만 이동
+          const params = new URLSearchParams(searchParams.toString());
+          params.set("tab", "code");
+          router.push(`${pathname}?${params.toString()}`, { scroll: false });
         }
       }
     },
@@ -140,9 +154,9 @@ export default function VisualizationView({
       clearHighlightedPaths,
       setHighlightedPaths,
       setSelectedNodeId,
-      setSelectedFilePath,
-      setFocusTargetType,
-      setActiveTab,
+      router,
+      pathname,
+      searchParams,
     ],
   );
 
@@ -158,7 +172,8 @@ export default function VisualizationView({
    * 뷰포트 이동 종료 시 저장
    */
   const handleMoveEnd = useCallback(() => {
-    setStoreViewport(getViewport());
+    const currentViewport = getViewport();
+    setStoreViewport(currentViewport);
   }, [getViewport, setStoreViewport]);
 
   const handleReset = useCallback(async () => {

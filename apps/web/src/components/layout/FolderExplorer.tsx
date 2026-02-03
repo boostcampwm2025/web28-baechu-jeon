@@ -17,7 +17,7 @@ export default function FolderExplorer({ tree, onClose }: FolderExplorerProps) {
           Project Files
         </h3>
         <button onClick={onClose} className="cursor-pointer">
-          <HiOutlineChevronDoubleLeft className="transition-color text-muted hover:text-body" />
+          <HiOutlineChevronDoubleLeft className="text-muted hover:text-body" />
         </button>
       </div>
 

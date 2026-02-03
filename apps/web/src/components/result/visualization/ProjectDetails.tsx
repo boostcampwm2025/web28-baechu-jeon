@@ -16,7 +16,7 @@ export default function ProjectDetails({ data, onClose }: ProjectDetailsProps) {
         <h2 className="text-lg font-bold text-heading">프로젝트 상세</h2>
         <button
           onClick={onClose}
-          className="rounded-md p-1 text-subtle transition-colors hover:bg-hover hover:text-heading"
+          className="cursor-pointer rounded-md p-1 text-subtle transition-colors hover:bg-hover hover:text-heading"
         >
           <IoClose size={20} />
         </button>

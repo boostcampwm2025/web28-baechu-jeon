@@ -5,6 +5,8 @@ import { diskStorage } from 'multer';
 import { ZipParserService } from './services/zip-parser.service';
 import { ProjectStructureService } from './services/project-structure.service';
 import { GitignoreMatcherService } from './services/gitignore-matcher.service';
+import { GithubArchiveService } from './services/github-archive.service';
+import { GithubDownloadService } from './services/github-download.service';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ProjectsController } from './projects.controller';
@@ -37,6 +39,8 @@ if (!fs.existsSync(uploadDir)) {
     ZipParserService,
     ProjectStructureService,
     GitignoreMatcherService,
+    GithubArchiveService,
+    GithubDownloadService,
   ],
   exports: [ZipParserService, ProjectsService],
 })

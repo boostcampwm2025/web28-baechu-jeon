@@ -49,7 +49,7 @@ export default function MemeSlider() {
           fill
           className="object-contain"
           sizes="256px"
-          priority
+          priority={currentIndex === 0}
         />
       </div>
     </div>
