@@ -19,8 +19,10 @@ export function buildDiagram2(
 
   const map = new Map<string, NodeTemp>();
 
+  const hypotheses = step2AnalysisResult?.responsibility_hypotheses ?? [];
+
   // 1. path -> node (중복 제거)
-  for (const item of step2AnalysisResult.responsibility_hypotheses) {
+  for (const item of hypotheses) {
     const path = normalize(item.path, maxDepth);
     const type = inferPathType(item.path, path, maxDepth);
 

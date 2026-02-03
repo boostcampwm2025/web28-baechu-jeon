@@ -1,10 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GeminiService } from 'src/ai/gemini/gemini.service';
+import { RetryableAnalysisError } from 'src/ai/gemini/gemini.client';
 import { PipelineContext } from './pipeline.context';
 import { AnalysisEmitter } from '../events/analysis.emitter';
-import { AnalysisStep } from '../analysis.events';
+import { AnalysisStep } from '../events/analysis.events';
 import { ProjectsService } from 'src/projects/projects.service';
 import { Step1Result } from 'src/ai/types/ai.types';
+import { AnalysisResult } from '@prisma/client/edge';
+import { analysisMetricsLogger } from '../../common/logger/winston.config';
 
 // TODO: 에러 핸들링 추가: 한 단계에서 에러가 나면 context에 에러 상태를 기록하고 작업을 중단하거나 >>재시도하는 로직<<
 @Injectable()
@@ -35,6 +38,8 @@ export class PipelineRunner {
 
   async run(context: PipelineContext) {
     const { analysisId, projectId } = context;
+    const pipelineStartTime = Date.now();
+    let geminiCallCount = 0;
 
     try {
       // STEP 1
@@ -48,6 +53,7 @@ export class PipelineRunner {
           context.step1,
         );
       } else {
+        const step1StartTime = Date.now();
         await this.emitStep(
           analysisId,
           'STEP1_FEATURE_ANALYSIS',
@@ -58,8 +64,14 @@ export class PipelineRunner {
           projectId,
           step: 1,
         });
+        geminiCallCount++;
 
         context.step1 = step1.result;
+
+        const step1Duration = Date.now() - step1StartTime;
+        analysisMetricsLogger.info(
+          `${analysisId},${projectId},Step1,${step1Duration},1,true`,
+        );
 
         await this.emitStep(
           analysisId,
@@ -70,102 +82,148 @@ export class PipelineRunner {
         );
       }
 
-      // STEP 2 (가설 + 의도·스토리 통합)
+      // STEP 2 & STEP 3 병렬 실행 (Step3는 Step1 결과만 사용)
       const step2Merged = context.step2 as Record<string, unknown> | undefined;
-      if (step2Merged?.project_intent != null || step2Merged?.user_stories != null) {
-        this.logger.log(
-          `[${analysisId}] Step 2 (가설+의도) 이미 완료됨. 스킵.`,
-        );
-        await this.emitStep(
-          analysisId,
-          'STEP2_HYPOTHESIS_AND_INTENT',
-          'COMPLETED',
-          66,
-          context.step2,
-        );
-      } else {
-        await this.emitStep(
-          analysisId,
-          'STEP2_HYPOTHESIS_AND_INTENT',
-          'STARTED',
-          33,
-        );
-        if (!context.step1) throw new Error('Step 1 result missing');
+      const step2AlreadyDone =
+        Array.isArray(step2Merged?.responsibility_hypotheses) &&
+        step2Merged.responsibility_hypotheses.length > 0 &&
+        step2Merged.project_intent != null &&
+        Array.isArray(step2Merged.user_stories);
 
-        const additionalFileContents =
-          await this.projectsService.extractMainFiles(
-            projectId,
-            context.step1 as Step1Result,
-          );
-        context.mainFileContents = additionalFileContents;
+      // 주요 파일 추출 (Step2, Step3 공통 사용)
+      if (!context.step1) throw new Error('Step 1 result missing');
 
-        const merged = await this.geminiService.getResult({
-          projectId,
-          step: 2,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          analysisResult: { step1: context.step1 } as any,
-          additionalFileContents,
-        });
-
-        const mergedResult = merged.result as {
-          step2: { responsibility_hypotheses: unknown[] };
-          step3: { project_intent: unknown; user_stories: unknown[] };
-        };
-        context.step2 = {
-          ...mergedResult.step2,
-          ...mergedResult.step3,
-        };
-
-        await this.emitStep(
-          analysisId,
-          'STEP2_HYPOTHESIS_AND_INTENT',
-          'COMPLETED',
-          66,
-          context.step2,
-        );
-      }
-
-      // STEP 3 (주요 파일 코드 설명)
-      if (!context.mainFileContents && context.step1) {
+      if (
+        !context.mainFileContents ||
+        Object.keys(context.mainFileContents).length === 0
+      ) {
         context.mainFileContents = await this.projectsService.extractMainFiles(
           projectId,
           context.step1 as Step1Result,
         );
       }
 
-      await this.emitStep(analysisId, 'STEP3_CODE_SUMMARY', 'STARTED', 66);
+      const fileCount = context.mainFileContents
+        ? Object.keys(context.mainFileContents).length
+        : 0;
 
-      if (!context.step1 || !context.step2)
-        throw new Error('Previous results missing');
-      if (!context.mainFileContents)
-        throw new Error('주요 파일 소스코드를 찾을 수 없습니다.');
+      // Step2 Promise
+      const step2Promise = (async () => {
+        if (step2AlreadyDone) {
+          this.logger.log(`[${analysisId}] Step 2 이미 완료됨. 스킵.`);
+          await this.emitStep(
+            analysisId,
+            'STEP2_HYPOTHESIS_AND_INTENT',
+            'COMPLETED',
+            50,
+            context.step2,
+          );
+          return;
+        }
 
-      const step3Result = await this.geminiService.getResult({
-        projectId,
-        step: 3,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        analysisResult: {
-          step1: context.step1,
-          step2: context.step2,
-        } as any,
-        fileContents: context.mainFileContents,
-      });
+        const step2StartTime = Date.now();
+        await this.emitStep(
+          analysisId,
+          'STEP2_HYPOTHESIS_AND_INTENT',
+          'STARTED',
+          33,
+        );
 
-      context.step3 = step3Result.result;
+        const merged = await this.geminiService.getResult({
+          projectId,
+          step: 2,
 
-      await this.emitStep(
-        analysisId,
-        'STEP3_CODE_SUMMARY',
-        'COMPLETED',
-        100,
-        context.step3,
+          analysisResult: context.step1 as AnalysisResult,
+          additionalFileContents: context.mainFileContents,
+        });
+        geminiCallCount++;
+
+        this.logger.log(
+          `[${analysisId}] Step2 raw result keys: ${Object.keys(merged?.result || {}).join(', ')}`,
+        );
+
+        const mergedResult = merged.result as {
+          step2: { responsibility_hypotheses: unknown[] };
+          step3: { project_intent: unknown; user_stories: unknown[] };
+        };
+
+        this.logger.log(
+          `[${analysisId}] Step2 mergedResult.step2 keys: ${Object.keys(mergedResult?.step2 || {}).join(', ')}`,
+        );
+        if (mergedResult && typeof mergedResult === 'object') {
+          this.logger.log(
+            `[${analysisId}] Step2 mergedResult.step2 keys: ${Object.keys((mergedResult as { step2?: object }).step2 || {}).join(', ')}`,
+          );
+          this.logger.log(
+            `[${analysisId}] Step2 mergedResult.step3 keys: ${Object.keys((mergedResult as { step3?: object }).step3 || {}).join(', ')}`,
+          );
+        }
+
+        context.step2 = {
+          ...mergedResult.step2,
+          ...mergedResult.step3,
+        };
+
+        this.logger.log(
+          `[${analysisId}] context.step2 keys after merge: ${Object.keys(context.step2 || {}).join(', ')}`,
+        );
+
+        const step2Duration = Date.now() - step2StartTime;
+        analysisMetricsLogger.info(
+          `${analysisId},${projectId},Step2,${step2Duration},1,true`,
+        );
+
+        await this.emitStep(
+          analysisId,
+          'STEP2_HYPOTHESIS_AND_INTENT',
+          'COMPLETED',
+          50,
+          context.step2,
+        );
+      })();
+
+      // Step3 Promise
+      const step3Promise = (async () => {
+        const step3StartTime = Date.now();
+        await this.emitStep(analysisId, 'STEP3_CODE_SUMMARY', 'STARTED', 33);
+
+        if (fileCount === 0) {
+          this.logger.warn(`[${analysisId}] Step3: 주요 파일 없음, 스킵`);
+          context.step3 = { file_summaries: [] };
+        } else {
+          const step3Result = await this.geminiService.getResult({
+            projectId,
+            step: 3,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            analysisResult: { step1: context.step1 } as any,
+            fileContents: context.mainFileContents,
+          });
+          geminiCallCount++;
+          context.step3 = step3Result.result;
+        }
+
+        const step3Duration = Date.now() - step3StartTime;
+        analysisMetricsLogger.info(
+          `${analysisId},${projectId},Step3,${step3Duration},${fileCount > 0 ? 1 : 0},true`,
+        );
+
+        await this.emitStep(
+          analysisId,
+          'STEP3_CODE_SUMMARY',
+          'COMPLETED',
+          100,
+          context.step3,
+        );
+      })();
+
+      // Step2, Step3 병렬 실행
+      await Promise.all([step2Promise, step3Promise]);
+
+      // 전체 파이프라인 완료 메트릭
+      const totalDuration = Date.now() - pipelineStartTime;
+      analysisMetricsLogger.info(
+        `${analysisId},${projectId},Total,${totalDuration},${geminiCallCount},true`,
       );
-
-      // 전체 완료
-      await this.emitter.emitCompleted({
-        analysisId,
-        completedAt: new Date(),
-      });
 
       // 분석 완료 후 NCloud ZIP 삭제
       try {
@@ -178,7 +236,23 @@ export class PipelineRunner {
           err,
         );
       }
+
+      // emitCompleted는 DB 저장 후 analyses.service.ts에서 호출
     } catch (err: any) {
+      // 실패 시에도 메트릭 기록
+      const totalDuration = Date.now() - pipelineStartTime;
+      analysisMetricsLogger.info(
+        `${analysisId},${projectId},Total,${totalDuration},${geminiCallCount},false`,
+      );
+
+      // RetryableAnalysisError(429)면 job 레벨에서 재시도하도록 throw만 하고, 로그만 남김
+      if (err instanceof RetryableAnalysisError) {
+        this.logger.warn(
+          `Pipeline Step: Gemini 429/TPM 초과 - job 재시도 필요: ${err.message}`,
+        );
+        throw err;
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       this.logger.error(`Pipeline failed at ${analysisId}: ${err.message}`);
       await this.emitter.emitFailed({

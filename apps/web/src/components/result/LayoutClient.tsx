@@ -84,7 +84,7 @@ export default function LayoutClient({
 
         <aside
           id="folder-sidebar"
-          className={`border-line bg-surface relative overflow-hidden border-r ${
+          className={`relative overflow-hidden border-r border-line bg-surface ${
             shouldAnimate
               ? "transition-[width,opacity] duration-300 ease-in-out"
               : ""

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { GeminiClient } from './gemini.client';
 import { ProjectRepository } from 'src/projects/repository/project.repository';
 import {
@@ -12,11 +12,17 @@ import { buildStep2Prompts } from '../prompts/step2.prompt';
 import { buildStep3Prompts } from '../prompts/step3.prompt';
 import { parseAiJson } from '../utils/parse-ai-json.util';
 import { Step2And3CombinedResult } from '../types/ai.types';
+import {
+  STEP1_RESPONSE_JSON_SCHEMA,
+  STEP2_AND_3_RESPONSE_JSON_SCHEMA,
+  STEP3_CODE_SUMMARY_RESPONSE_JSON_SCHEMA,
+} from '../schemas/response-schemas';
 
 // TODO: 단계별로 systemPrompt, userPrompt 넣기
 
 @Injectable()
 export class GeminiService implements AiProvider {
+  private readonly logger = new Logger(GeminiService.name);
   constructor(
     private readonly geminiClient: GeminiClient,
     private readonly projectRepository: ProjectRepository,
@@ -55,9 +61,12 @@ export class GeminiService implements AiProvider {
 
   async getResult(input: AnalysisRequest): Promise<AnalysisResponse> {
     const { systemPrompt, userPrompt } = await this.buildPrompt(input);
+    const responseJsonSchema = this.getResponseJsonSchemaForStep(input.step);
     const analysisResult = await this.geminiClient.generateResponse({
       userPrompt,
       systemPrompt,
+      step: input.step,
+      ...(responseJsonSchema && { responseJsonSchema }),
     });
 
     const content = analysisResult.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -65,8 +74,19 @@ export class GeminiService implements AiProvider {
 
     // Step 2: 2·3 통합 응답 파싱 후 step2/step3 형태로 분리
     if (input.step === 2) {
-      /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
       const parsed = parseAiJson<Step2And3CombinedResult>(content);
+
+      // 디버그 로그 추가
+      this.logger.log(
+        `[Step2] Parsed keys: ${Object.keys(parsed || {}).join(', ')}`,
+      );
+      this.logger.log(
+        `[Step2] user_stories count: ${parsed?.user_stories?.length ?? 'undefined'}`,
+      );
+      this.logger.log(
+        `[Step2] project_intent exists: ${!!parsed?.project_intent}`,
+      );
+
       return {
         result: {
           step2: {
@@ -78,10 +98,22 @@ export class GeminiService implements AiProvider {
           },
         },
       };
-      /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
     }
 
     const result = parseAiJson<AnalysisResponse>(content);
     return { result };
+  }
+
+  private getResponseJsonSchemaForStep(step: number): object | undefined {
+    switch (step) {
+      case 1:
+        return STEP1_RESPONSE_JSON_SCHEMA;
+      case 2:
+        return STEP2_AND_3_RESPONSE_JSON_SCHEMA;
+      case 3:
+        return STEP3_CODE_SUMMARY_RESPONSE_JSON_SCHEMA;
+      default:
+        return undefined;
+    }
   }
 }

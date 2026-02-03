@@ -9,12 +9,14 @@ export default async function ResultPage({
   searchParams,
 }: {
   params: Promise<{ projectId: string; analysisId: string }>;
-  searchParams?: { tab?: string; filePath?: string };
+  searchParams: Promise<{ tab?: string; filePath?: string }>;
 }) {
   const { projectId, analysisId } = await params;
+  const resolvedSearchParams = await searchParams;
 
-  const initialTab = searchParams?.tab === "code" ? "code" : "visualization";
-  const initialFilePath = searchParams?.filePath ?? null;
+  const initialTab =
+    resolvedSearchParams?.tab === "code" ? "code" : "visualization";
+  const initialFilePath = resolvedSearchParams?.filePath ?? null;
 
   let initialVisualizationData: VisualizationResponse | null = null;
   let initialIntentionsData: GetIntentionsResponse | null = null;

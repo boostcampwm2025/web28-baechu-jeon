@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { uploadZipFile, ProjectError } from "@/api/project";
 import { ZIP_UPLOAD } from "@/constants/upload";
@@ -12,6 +12,7 @@ export function useZipUpload() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   // 파일 유효성 검사
@@ -125,6 +126,10 @@ export function useZipUpload() {
       setAbortController(null);
       setSelectedFile(null);
       setError(null);
+      // 파일 input 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       return;
     }
 
@@ -132,6 +137,10 @@ export function useZipUpload() {
     setProjectId(null);
     setSelectedFile(null);
     setError(null);
+    // 파일 input 초기화
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleAnalyze = () => {
@@ -148,6 +157,8 @@ export function useZipUpload() {
     uploadError,
     isUploading,
     projectId,
+    // Ref
+    fileInputRef,
     // 핸들러
     handleDragEnter,
     handleDragLeave,

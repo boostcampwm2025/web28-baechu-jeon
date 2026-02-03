@@ -16,19 +16,24 @@ function applyTheme(theme: Theme) {
   setCookie(COOKIE_THEME_NAME, theme, 365);
 }
 
-export const useThemeStore = create<ThemeState>((set) => ({
-  theme:
-    typeof window !== "undefined"
-      ? ((getCookie(COOKIE_THEME_NAME) as Theme) ?? DEFAULT_THEME)
-      : DEFAULT_THEME,
-  toggleTheme: () =>
-    set((state) => {
-      const next = state.theme === "dark" ? "light" : "dark";
-      applyTheme(next);
-      return { theme: next };
-    }),
-  setTheme: (theme) => {
-    applyTheme(theme);
-    set({ theme });
-  },
-}));
+export const useThemeStore = create<ThemeState>((set) => {
+  const cookieTheme =
+    typeof window !== "undefined" ? getCookie(COOKIE_THEME_NAME) : null;
+  const initialTheme: Theme =
+    cookieTheme === "dark" || cookieTheme === "light"
+      ? cookieTheme
+      : DEFAULT_THEME;
+  return {
+    theme: initialTheme,
+    toggleTheme: () =>
+      set((state) => {
+        const next = state.theme === "dark" ? "light" : "dark";
+        applyTheme(next);
+        return { theme: next };
+      }),
+    setTheme: (theme) => {
+      applyTheme(theme);
+      set({ theme });
+    },
+  };
+});
