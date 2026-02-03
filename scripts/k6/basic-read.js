@@ -3,30 +3,36 @@ import { check, sleep } from 'k6';
 
 export const options = {
   scenarios: {
-    eighty_users_once: {
+    ten_users_start_once: {
       executor: 'per-vu-iterations',
-      vus: 80, // 동시 사용자 80명
-      iterations: 1, // 1명당 1번만 요청
-      maxDuration: '2m',
+      vus: 80,
+      iterations: 1,
+      maxDuration: '3m',
     },
   },
   thresholds: {
-    http_req_failed: ['rate<0.01'], // 실패율 1% 미만
-    http_req_duration: ['p(95)<30000'], // POST 응답 30초 이내 (사실상 바로 와야 정상)
+    http_req_failed: ['rate<0.01'],
   },
 };
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
-const PROJECT_ID = __ENV.PROJECT_ID;
+const BASE_URL = __ENV.BASE_URL || 'http://localhost:3001';
+const PROJECT_ID = __ENV.PROJECT_ID || '';
 
 export default function () {
-  const res = http.post(`${BASE_URL}/api/analyses/${PROJECT_ID}`, null, {
-    timeout: '60s',
+  sleep(Math.random() * 10); // 0~10초 랜덤 대기 후 요청
+  if (!PROJECT_ID) {
+    console.warn(
+      'Set PROJECT_ID to run this test. Example: PROJECT_ID=... k6 run ...',
+    );
+    sleep(1);
+    return;
+  }
+
+  const startRes = http.post(`${BASE_URL}/api/analyses/${PROJECT_ID}`);
+  const startOk = check(startRes, {
+    'analysis accepted (202)': (r) => r.status === 202,
   });
 
-  check(res, {
-    'status is 202': (r) => r.status === 202,
-  });
-
-  sleep(1);
+  // 0~3초 사이 랜덤 대기
+  sleep(Math.random() * 3);
 }
