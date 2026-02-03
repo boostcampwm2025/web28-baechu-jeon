@@ -3,7 +3,7 @@
 import { BaseNodeData } from "@/utils/layouts/layoutSettings";
 import { useEffect, useCallback, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { ReactFlowProvider, type Node, type Edge } from "@xyflow/react";
+import { type Node, type Edge } from "@xyflow/react";
 import type { VisualizationResponse } from "@/api/visualization";
 import NodeDetails from "./NodeDetails";
 import ProjectDetails from "./ProjectDetails";

@@ -73,7 +73,7 @@ export default function LayoutClient({
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, []);
+  }, [setIsSidebarOpen]);
 
   const shouldAnimate = !isDragging && !run;
 

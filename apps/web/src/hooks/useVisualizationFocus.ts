@@ -44,7 +44,7 @@ export function useVisualizationFocus() {
         fitView({
           nodes: stepNodes,
           duration: 1000,
-          padding: 0.5,
+          padding: 0.6,
         });
       }
     }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
 import {
   ReactFlow,
   Background,
@@ -52,11 +51,6 @@ export default function VisualizationView({
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isResetting, setIsResetting] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-
-  const router = useRouter();
-  const params = useParams();
-  const projectId = params.projectId as string;
-  const analysisId = params.analysisId as string;
 
   // 데이터 도착 시 1회만 동기화 (빈 배열 → 데이터 로드 완료)
   const hasSynced = useRef(initialNodes.length > 0);
@@ -147,11 +141,6 @@ export default function VisualizationView({
       setHighlightedPaths,
       setSelectedNodeId,
       setSelectedFilePath,
-      projectId,
-      analysisId,
-      resetHighlights,
-      setHighlightedPaths,
-      clearHighlightedPaths,
       setFocusTargetType,
       setActiveTab,
     ],
