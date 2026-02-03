@@ -7,6 +7,8 @@ import { useVisualizationStore } from "@/store/useVisualizationStore";
 import { transformApiToReactFlow } from "@/utils/transformNodes";
 import type { VisualizationResponse } from "@/api/visualization";
 import type { GetIntentionsResponse } from "@/types/intentionApi";
+import { Node, Edge } from "@xyflow/react";
+import { BaseNodeData } from "@/utils/layouts/layoutSettings";
 
 type Props = {
   projectId: string;
@@ -36,14 +38,18 @@ export default function ResultTabsClient({
   // 서버에서 받은 raw 데이터를 ReactFlow 형식으로 변환
   const { initialNodes, initialEdges, initialPurposes } = useMemo(() => {
     if (!initialVisualizationData) {
-      return { initialNodes: [], initialEdges: [], initialPurposes: undefined };
+      return {
+        initialNodes: [] as Node<BaseNodeData>[],
+        initialEdges: [] as Edge[],
+        initialPurposes: undefined,
+      };
     }
     const { reactFlowNodes, reactFlowEdges } = transformApiToReactFlow(
       initialVisualizationData,
     );
     return {
-      initialNodes: reactFlowNodes,
-      initialEdges: reactFlowEdges,
+      initialNodes: reactFlowNodes as Node<BaseNodeData>[],
+      initialEdges: reactFlowEdges as Edge[],
       initialPurposes: initialIntentionsData?.contents,
     };
   }, [initialVisualizationData, initialIntentionsData]);
