@@ -1,5 +1,6 @@
 services:
   web:
+    platform: linux/amd64
     image: ghcr.io/boostcampwm2025/web28-baechu-jeon/client:latest
     ports:
       - '${WEB_PORT}:${WEB_PORT}'
@@ -19,6 +20,7 @@ services:
       - server
 
   server:
+    platform: linux/amd64
     image: ghcr.io/boostcampwm2025/web28-baechu-jeon/server:latest
     ports:
       - '${SERVER_PORT}:${SERVER_PORT}'
@@ -33,3 +35,17 @@ services:
       - NCLOUD_SECRET_ACCESS_KEY=${NCLOUD_SECRET_ACCESS_KEY}
       - NCLOUD_S3_ENDPOINT=${NCLOUD_S3_ENDPOINT}
       - NCLOUD_BUCKET=${NCLOUD_BUCKET}
+
+  influxdb:
+    image: influxdb:1.8
+    ports:
+      - '8086:8086'
+    environment:
+      - INFLUXDB_DB=k6
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - '3002:3000'
+    depends_on:
+      - influxdb

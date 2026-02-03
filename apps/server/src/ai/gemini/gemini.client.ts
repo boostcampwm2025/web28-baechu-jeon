@@ -2,17 +2,63 @@ import { Injectable, Logger } from '@nestjs/common';
 import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
 import { ConfigService } from '@nestjs/config';
 import { AiClientRequest } from '../types/ai.types';
+import { geminiMetricsLogger } from '../../common/logger/winston.config';
+
+/**
+ * 간단한 세마포어 구현: Gemini API 동시 호출 수 제한
+ */
+class Semaphore {
+  private current = 0;
+  private queue: (() => void)[] = [];
+
+  constructor(private readonly max: number) {}
+
+  async acquire(): Promise<void> {
+    if (this.current < this.max) {
+      this.current++;
+      return;
+    }
+    return new Promise((resolve) => {
+      this.queue.push(() => {
+        this.current++;
+        resolve();
+      });
+    });
+  }
+
+  release(): void {
+    this.current--;
+    const next = this.queue.shift();
+    if (next) next();
+  }
+}
 
 // TODO: input 타입 처리하기
 // TODO: 발생할 수 있는 에러 예외처리하기
-// TODO: 단계 분석 구현 후 config 수정하기
 // TODO: usageMetadata 정보 추가하기 (GenerateContentResponse 확인)
+
+// Gemini API 동시 호출 제한 (모델별 세마포어)
+// Step2 실제 토큰: 평균 ~150K, 최대 385K (TPM 1M)
+// Step1/3: 평균 ~50K, 최대 ~130K
+// 안전 마진 60% 기준
+const geminiSemaphoreFlash25 = new Semaphore(11); // gemini-2.5-flash용 (Step 1, 3)
+const geminiSemaphoreStep2 = new Semaphore(2); // gemini-3-flash-preview용 (Step 2) - TPM 병목 (권장: 2)
+// RetryableAnalysisError: 429 등 job 레벨에서 재시도할 에러
+export class RetryableAnalysisError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RetryableAnalysisError';
+  }
+}
+
+// 모델 설정
+const MODEL_FLASH_25 = 'gemini-2.5-flash';
+const MODEL_FLASH_STEP2 = 'gemini-3-flash-preview'; // Step 2 전용 (별도 TPM 한도 활용)
 
 @Injectable()
 export class GeminiClient {
   private readonly logger = new Logger(GeminiClient.name);
   private readonly ai: GoogleGenAI;
-  private readonly modelName: string;
   private readonly maxRetries: number;
   private readonly baseDelay: number;
   private readonly retryableStatusCodes: number[];
@@ -22,8 +68,6 @@ export class GeminiClient {
     if (!apiKey)
       throw new Error('환경변수에 GEMINI_API_KEY가 정의되지 않았습니다.');
 
-    this.modelName =
-      this.configService.get<string>('GEMINI_MODEL_NAME') || 'gemini-2.5-flash';
     this.maxRetries = this.configService.get<number>('GEMINI_MAX_RETRIES') || 5;
     this.baseDelay =
       this.configService.get<number>('GEMINI_BASE_DELAY') || 1000;
@@ -31,10 +75,54 @@ export class GeminiClient {
     this.ai = new GoogleGenAI({ apiKey });
   }
 
+  /**
+   * Step에 따라 적절한 모델과 세마포어를 선택
+   * - Step 1, 3: gemini-2.5-flash
+   * - Step 2: gemini-2.0-flash (별도 TPM 한도 활용)
+   */
+  private getModelConfig(step?: number): {
+    modelName: string;
+    semaphore: Semaphore;
+  } {
+    if (step === 2) {
+      return { modelName: MODEL_FLASH_STEP2, semaphore: geminiSemaphoreStep2 };
+    }
+    return { modelName: MODEL_FLASH_25, semaphore: geminiSemaphoreFlash25 };
+  }
+
   async generateResponse(
     input: AiClientRequest,
   ): Promise<GenerateContentResponse> {
-    const { userPrompt, systemPrompt, responseJsonSchema } = input;
+    const { userPrompt, systemPrompt, step } = input;
+    const { modelName, semaphore } = this.getModelConfig(step);
+
+    // 세마포어로 동시 호출 제한
+    await semaphore.acquire();
+    this.logger.debug(`Gemini 세마포어 획득 (${modelName})`);
+
+    try {
+      return await this.executeWithRetry(
+        userPrompt,
+        systemPrompt,
+        step,
+        modelName,
+      );
+    } finally {
+      semaphore.release();
+      this.logger.debug(`Gemini 세마포어 해제 (${modelName})`);
+    }
+  }
+
+  private async executeWithRetry(
+    userPrompt: string,
+    systemPrompt: string,
+    step?: number,
+    modelName?: string,
+    responseJsonSchema?: object,
+  ): Promise<GenerateContentResponse> {
+    const model = modelName || MODEL_FLASH_25;
+
+    // Step3은 마크다운+코드 블록 포함으로 JSON 깨질 위험 → text/plain 사용
 
     const config = {
       systemInstruction: systemPrompt,
@@ -48,24 +136,56 @@ export class GeminiClient {
 
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
+        const startTime = Date.now();
         const response = await this.ai.models.generateContent({
-          model: this.modelName,
+          model,
           contents: userPrompt,
           config,
         });
+        const responseTimeMs = Date.now() - startTime;
+
+        // 토큰 사용량 로깅
+        const usage = response.usageMetadata;
+        const stepLabel = step ? `Step${step}` : 'Unknown';
+        const inputTokens = usage?.promptTokenCount ?? 0;
+        const outputTokens = usage?.candidatesTokenCount ?? 0;
+        const totalTokens = usage?.totalTokenCount ?? 0;
+
+        // 콘솔 로그 (기존)
+        this.logger.log(
+          `[Gemini 토큰] ${stepLabel} | 모델: ${model} | 입력: ${inputTokens} | 출력: ${outputTokens} | 총: ${totalTokens} | 응답시간: ${responseTimeMs}ms`,
+        );
+
+        // CSV 파일 로그 (분석용)
+        geminiMetricsLogger.info(
+          `${stepLabel},${inputTokens},${outputTokens},${totalTokens},${responseTimeMs},${model},true`,
+        );
 
         // 성공하면 응답 반환
         if (attempt > 0) {
           this.logger.log(`Gemini API 호출 성공 (${attempt + 1}번째 시도)`);
         }
         return response;
-      } catch (error: unknown) {
+      } catch (error: any) {
+        // 429면 즉시 throw (job 레벨에서 재시도)
+        if (this.hasStatus(error) && error.status === 429) {
+          const stepLabel = step ? `Step${step}` : 'Unknown';
+          geminiMetricsLogger.info(`${stepLabel},0,0,0,0,${model},false`);
+          this.logger.error(
+            `Gemini API 429 (TPM 초과, 즉시 job 재시도 필요): ${this.getErrorMessage(error)}`,
+          );
+          throw new RetryableAnalysisError('Gemini 429: TPM exceeded');
+        }
         const isLastAttempt = attempt === this.maxRetries;
         const shouldRetry = this.shouldRetry(error);
 
         if (isLastAttempt || !shouldRetry) {
+          // 실패 시에도 메트릭 기록
+          const stepLabel = step ? `Step${step}` : 'Unknown';
+          geminiMetricsLogger.info(`${stepLabel},0,0,0,0,${model},false`);
+
           this.logger.error(
-            `Gemini API 호출 실패 (최종 실패, ${attempt + 1}/${this.maxRetries + 1}번째 시도)`,
+            `Gemini API 호출 실패 (최종 실패, ${attempt + 1}/${this.maxRetries + 1}번째 시도, 모델: ${model})`,
             this.getErrorMessage(error),
           );
           throw error;

@@ -12,7 +12,7 @@ export const buildDiagram1 = (
   const nodes: NodeInput[] = [];
   const edges: EdgeInput[] = [];
 
-  const stories = step3AnalysisResult.user_stories;
+  const stories = step3AnalysisResult?.user_stories ?? [];
   stories.forEach((story) => {
     const relatedPaths = new Set(
       story.related_paths?.map((path) => normalize(path, maxDepth)) ?? [],

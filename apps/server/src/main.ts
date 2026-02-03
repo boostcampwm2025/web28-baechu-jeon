@@ -2,10 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { json, urlencoded } from 'express';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './common/logger/winston.config';
 import 'dotenv/config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: WinstonModule.createLogger(winstonConfig),
+  });
 
   // Configure body size limits
   app.use(json({ limit: '50mb' }));

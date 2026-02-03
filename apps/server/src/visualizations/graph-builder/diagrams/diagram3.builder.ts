@@ -7,7 +7,12 @@ import {
 export function buildDiagram3(step3AnalysisResult: Step3Analysis) {
   const edges: EdgeInput[] = [];
 
-  const tech_stack = step3AnalysisResult.project_intent.technology_stack;
+  const tech_stack = step3AnalysisResult?.project_intent?.technology_stack ?? {
+    frontend: [],
+    backend: [],
+    infrastructure: [],
+    database: [],
+  };
 
   const categoryMap = [
     { key: 'frontend', group: 'FE' },
@@ -17,7 +22,7 @@ export function buildDiagram3(step3AnalysisResult: Step3Analysis) {
   ] as const;
 
   const nodes: NodeInput[] = categoryMap.flatMap(({ key, group }) =>
-    tech_stack[key].map((tech) => ({
+    (tech_stack[key] ?? []).map((tech) => ({
       label: tech,
       groups: group,
     })),
