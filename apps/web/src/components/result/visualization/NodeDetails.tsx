@@ -28,7 +28,7 @@ export default function NodeDetails({
         </button>
       </div>
 
-      <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto p-5">
+      <div className="thin-scrollbar flex-1 space-y-3 overflow-y-auto p-5">
         <div className="space-y-1.5">
           <h3 className="text-heading text-xl leading-tight font-bold">
             {node.label}
