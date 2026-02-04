@@ -4,284 +4,91 @@ import { ConfigService } from '@nestjs/config';
 import { AiClientRequest } from '../types/ai.types';
 import { geminiMetricsLogger } from '../../common/logger/winston.config';
 
-/**
- * 간단한 세마포어 구현: Gemini API 동시 호출 수 제한
- */
-class Semaphore {
-  private current = 0;
-  private queue: (() => void)[] = [];
+// 모델 고정
+const MODEL_FIXED = 'gemini-2.5-flash';
 
-  constructor(private readonly max: number) {}
-
-  async acquire(): Promise<void> {
-    if (this.current < this.max) {
-      this.current++;
-      return;
-    }
-    return new Promise((resolve) => {
-      this.queue.push(() => {
-        this.current++;
-        resolve();
-      });
-    });
+const getMaxTokens = (step: number) => {
+  switch (step) {
+    case 1:
+      return 8192; // 목록 추출: 타이트하게 유지
+    case 2:
+      return 60000; // 분석: 상세 분석을 위해 64k까지 허용
+    case 3:
+      return 40960; // 요약: 40k면 충분 (로그상 최대 2만)
+    default:
+      return 16384;
   }
-
-  release(): void {
-    this.current--;
-    const next = this.queue.shift();
-    if (next) next();
-  }
-}
-
-// TODO: input 타입 처리하기
-// TODO: 발생할 수 있는 에러 예외처리하기
-// TODO: usageMetadata 정보 추가하기 (GenerateContentResponse 확인)
-
-// Gemini API 동시 호출 제한 (모델별 세마포어)
-// Step2 실제 토큰: 평균 ~150K, 최대 385K (TPM 1M)
-// Step1/3: 평균 ~50K, 최대 ~130K
-// 안전 마진 60% 기준
-const geminiSemaphoreFlash25 = new Semaphore(11);
-const geminiSemaphoreStep2 = new Semaphore(3);
-// RetryableAnalysisError: 429 등 job 레벨에서 재시도할 에러
-export class RetryableAnalysisError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'RetryableAnalysisError';
-  }
-}
-
-// 모델 설정
-const MODEL_FLASH_25 = 'gemini-2.5-flash';
-const MODEL_FLASH_STEP2 = 'gemini-2.5-pro'; // Step 2 전용 (별도 TPM 한도 활용)
+};
 
 @Injectable()
 export class GeminiClient {
   private readonly logger = new Logger(GeminiClient.name);
   private readonly ai: GoogleGenAI;
-  private readonly maxRetries: number;
-  private readonly baseDelay: number;
-  private readonly retryableStatusCodes: number[];
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-    if (!apiKey)
-      throw new Error('환경변수에 GEMINI_API_KEY가 정의되지 않았습니다.');
-
-    this.maxRetries = this.configService.get<number>('GEMINI_MAX_RETRIES') || 5;
-    this.baseDelay =
-      this.configService.get<number>('GEMINI_BASE_DELAY') || 15000;
-    this.retryableStatusCodes = [429, 500, 502, 503, 504];
-    this.ai = new GoogleGenAI({ apiKey });
-  }
-
-  /**
-   * Step에 따라 적절한 모델과 세마포어를 선택
-   * - Step 1, 3: gemini-2.5-flash
-   * - Step 2: gemini-2.0-flash (별도 TPM 한도 활용)
-   */
-  private getModelConfig(step?: number): {
-    modelName: string;
-    semaphore: Semaphore;
-  } {
-    if (step === 2) {
-      return { modelName: MODEL_FLASH_STEP2, semaphore: geminiSemaphoreStep2 };
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY가 설정되지 않았습니다.');
     }
-    return { modelName: MODEL_FLASH_25, semaphore: geminiSemaphoreFlash25 };
+    this.ai = new GoogleGenAI({ apiKey });
   }
 
   async generateResponse(
     input: AiClientRequest,
   ): Promise<GenerateContentResponse> {
-    const { userPrompt, systemPrompt, step, responseJsonSchema } = input;
-    const { modelName, semaphore } = this.getModelConfig(step);
+    const { projectId, userPrompt, systemPrompt, step, responseJsonSchema } =
+      input;
+    const stepLabel = step ? `Step${step}` : 'Unknown';
+    const stepNum = step ?? 0;
 
-    // 세마포어로 동시 호출 제한
-    await semaphore.acquire();
-    this.logger.debug(`Gemini 세마포어 획득 (${modelName})`);
+    const modelName = stepNum === 2 ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
 
-    try {
-      return await this.executeWithRetry(
-        userPrompt,
-        systemPrompt,
-        step,
-        modelName,
-        responseJsonSchema,
-      );
-    } finally {
-      semaphore.release();
-      this.logger.debug(`Gemini 세마포어 해제 (${modelName})`);
-    }
-  }
-
-  private async executeWithRetry(
-    userPrompt: string,
-    systemPrompt: string,
-    step?: number,
-    modelName?: string,
-    responseJsonSchema?: object,
-  ): Promise<GenerateContentResponse> {
-    const model = modelName || MODEL_FLASH_25;
-
-    // Step3은 마크다운+코드 블록 포함으로 JSON 깨질 위험 → text/plain 사용
-
+    // 설정: 복잡한 분기 없이 기본 JSON 모드 및 스키마 적용
     const config = {
       systemInstruction: systemPrompt,
-      temperature: 0.2,
-      topK: 40,
-      topP: 0.85,
+      temperature: 0, // 분석용이라 낮게 설정
+      // topK: 40,
+      // topP: 0.8,
       responseMimeType: 'application/json' as const,
-      maxOutputTokens: 60000,
+      // maxOutputTokens: 60000, // Flash 2.5의 넉넉한 출력 한도 활용
+      maxOutputTokens: getMaxTokens(stepNum),
+      // thinkingConfig: {
+      //   // Step 2일 때는 2048 토큰 정도 고민하게 하고, 나머지는 0(즉시 응답)이나 낮게 설정
+      //   thinkingBudget: stepNum === 2 ? 2048 : 0, //4096
+      // },
       ...(responseJsonSchema && { responseJsonSchema }),
     };
 
-    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
-      try {
-        const startTime = Date.now();
-        const response = await this.ai.models.generateContent({
-          model,
-          contents: userPrompt,
-          config,
-        });
-        const responseTimeMs = Date.now() - startTime;
+    this.logger.debug(`[Gemini 요청 시작] ${stepLabel} | 모델: ${modelName}`);
+    const startTime = Date.now();
 
-        // 토큰 사용량 로깅
-        const usage = response.usageMetadata;
-        const stepLabel = step ? `Step${step}` : 'Unknown';
-        const inputTokens = usage?.promptTokenCount ?? 0;
-        const outputTokens = usage?.candidatesTokenCount ?? 0;
-        const totalTokens = usage?.totalTokenCount ?? 0;
+    // API 호출 (Retry, Semaphore, Try-Catch 제거)
+    // 에러 발생 시 NestJS 필터로 전파되도록 둠
+    const response = await this.ai.models.generateContent({
+      model: modelName,
+      contents: userPrompt,
+      config,
+    });
 
-        // 콘솔 로그 (기존)
-        this.logger.log(
-          `[Gemini 토큰] ${stepLabel} | 모델: ${model} | 입력: ${inputTokens} | 출력: ${outputTokens} | 총: ${totalTokens} | 응답시간: ${responseTimeMs}ms`,
-        );
+    const responseTimeMs = Date.now() - startTime;
 
-        // CSV 파일 로그 (분석용)
-        geminiMetricsLogger.info(
-          `${stepLabel},${inputTokens},${outputTokens},${totalTokens},${responseTimeMs},${model},true`,
-        );
+    // 토큰 사용량 측정
+    const usage = response.usageMetadata;
+    const inputTokens = usage?.promptTokenCount ?? 0;
+    const outputTokens = usage?.candidatesTokenCount ?? 0;
+    const totalTokens = usage?.totalTokenCount ?? 0;
 
-        // 성공하면 응답 반환
-        if (attempt > 0) {
-          this.logger.log(`Gemini API 호출 성공 (${attempt + 1}번째 시도)`);
-        }
-        return response;
-      } catch (error: any) {
-        // 429면 즉시 throw (job 레벨에서 재시도)
-        if (this.hasStatus(error) && error.status === 429) {
-          const stepLabel = step ? `Step${step}` : 'Unknown';
-          geminiMetricsLogger.info(`${stepLabel},0,0,0,0,${model},false`);
-          this.logger.error(
-            `Gemini API 429 (TPM 초과, 즉시 job 재시도 필요): ${this.getErrorMessage(error)}`,
-          );
-          throw new RetryableAnalysisError('Gemini 429: TPM exceeded');
-        }
-        const isLastAttempt = attempt === this.maxRetries;
-        const shouldRetry = this.shouldRetry(error);
-
-        if (isLastAttempt || !shouldRetry) {
-          // 실패 시에도 메트릭 기록
-          const stepLabel = step ? `Step${step}` : 'Unknown';
-          geminiMetricsLogger.info(`${stepLabel},0,0,0,0,${model},false`);
-
-          this.logger.error(
-            `Gemini API 호출 실패 (최종 실패, ${attempt + 1}/${this.maxRetries + 1}번째 시도, 모델: ${model})`,
-            this.getErrorMessage(error),
-          );
-          throw error;
-        }
-
-        const delay = this.calculateDelay(attempt);
-        this.logger.warn(
-          `Gemini API 호출 실패, ${delay}ms 후 재시도 (${attempt + 1}/${this.maxRetries + 1}번째 시도): ${this.getErrorMessage(error)}`,
-        );
-
-        await this.sleep(delay);
-      }
-    }
-
-    throw new Error('모든 재시도 실패');
-  }
-
-  private shouldRetry(error: unknown): boolean {
-    // HTTP 상태 코드 확인
-    if (
-      this.hasStatus(error) &&
-      this.retryableStatusCodes.includes(error.status)
-    ) {
-      return true;
-    }
-
-    // 네트워크 에러나 타임아웃 등
-    if (
-      this.hasCode(error, 'ECONNRESET') ||
-      this.hasCode(error, 'ETIMEDOUT') ||
-      this.hasCode(error, 'ENOTFOUND') ||
-      this.hasMessageContaining(error, 'timeout') ||
-      this.hasMessageContaining(error, 'network') ||
-      this.hasMessageContaining(error, 'connection')
-    ) {
-      return true;
-    }
-
-    return false;
-  }
-
-  private calculateDelay(attempt: number): number {
-    // Exponential backoff with jitter
-    const exponentialDelay = this.baseDelay * Math.pow(2, attempt);
-    const jitter = Math.random() * this.baseDelay;
-    return Math.min(exponentialDelay + jitter, 30000); // 최대 30초
-  }
-
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  private getErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-      return error.message;
-    }
-    if (typeof error === 'string') {
-      return error;
-    }
-    if (
-      error &&
-      typeof error === 'object' &&
-      'message' in error &&
-      typeof error.message === 'string'
-    ) {
-      return error.message;
-    }
-    return String(error);
-  }
-
-  private hasStatus(error: unknown): error is { status: number } {
-    return (
-      error !== null &&
-      typeof error === 'object' &&
-      'status' in error &&
-      typeof error.status === 'number'
+    // 콘솔 로그: 실시간 확인용
+    this.logger.log(
+      `[Gemini 토큰 측정] ${stepLabel} | 입력: ${inputTokens} | 출력: ${outputTokens} | 총: ${totalTokens} | 시간: ${responseTimeMs}ms`,
     );
-  }
 
-  private hasCode(error: unknown, code: string): boolean {
-    return (
-      error !== null &&
-      typeof error === 'object' &&
-      'code' in error &&
-      error.code === code
+    // CSV 로그: 데이터 분석용 (엑셀로 긁어서 보기 위함)
+    // format: Step,Input,Output,Total,Time,Model,Success
+    geminiMetricsLogger.info(
+      `${projectId},${stepLabel},${inputTokens},${outputTokens},${totalTokens},${responseTimeMs},${modelName},true`,
     );
-  }
 
-  private hasMessageContaining(error: unknown, text: string): boolean {
-    return (
-      error !== null &&
-      typeof error === 'object' &&
-      'message' in error &&
-      typeof error.message === 'string' &&
-      error.message.includes(text)
-    );
+    return response;
   }
 }

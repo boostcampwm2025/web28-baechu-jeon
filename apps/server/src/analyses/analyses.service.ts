@@ -5,7 +5,7 @@ import { PipelineContext } from './pipeline/pipeline.context.js';
 import { Prisma } from '@prisma/client';
 import { analysisResultsKey } from './infra/analysis.redis.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { Step3CodeSummaryResult } from '../ai/types/ai.types.js';
+import { Step3Result } from '../ai/types/ai.types.js';
 import { AnalysisEmitter } from './events/analysis.emitter.js';
 
 @Injectable()
@@ -34,106 +34,62 @@ export class AnalysesService {
         analysisResultsKey(analysisId),
       );
 
+      // 저장된 결과가 있다면 Context에 넣음
       if (cachedResults) {
-        // 저장된 결과가 있다면 Context에 넣음
-        if (cachedResults['STEP1_FEATURE_ANALYSIS']) {
+        if (cachedResults['STEP1_MAIN_FILE']) {
           try {
             context.step1 = JSON.parse(
-              cachedResults['STEP1_FEATURE_ANALYSIS'],
+              cachedResults['STEP1_MAIN_FILE'],
             ) as Record<string, unknown>;
           } catch {
             context.step1 = {};
           }
           this.logger.log(`[${String(analysisId)}] Step 1 결과 복구 완료`);
         }
-        // Step 2+3 통합 키 (가설+의도 한 덩어리)
+
         if (cachedResults['STEP2_HYPOTHESIS_AND_INTENT']) {
-          let parsed: unknown;
           try {
-            parsed = JSON.parse(cachedResults['STEP2_HYPOTHESIS_AND_INTENT']);
-          } catch {
-            parsed = {};
-          }
-          if (
-            typeof parsed === 'object' &&
-            parsed !== null &&
-            'step2' in parsed &&
-            typeof (parsed as { step2: unknown }).step2 === 'object' &&
-            'step3' in parsed &&
-            typeof (parsed as { step3: unknown }).step3 === 'object'
-          ) {
-            const step2 = (parsed as { step2: Record<string, unknown> }).step2;
-            const step3 = (parsed as { step3: Record<string, unknown> }).step3;
-            const merged = { ...step2, ...step3 };
-            if (
-              Array.isArray(
-                (merged as Record<string, unknown>).responsibility_hypotheses,
-              ) &&
-              (
-                (merged as Record<string, unknown>)
-                  .responsibility_hypotheses as unknown[]
-              ).length > 0 &&
-              (merged as Record<string, unknown>).project_intent &&
-              Array.isArray((merged as Record<string, unknown>).user_stories)
-            ) {
-              context.step2 = merged;
-              this.logger.log(`[${String(analysisId)}] Step2 복구 완료 (유효)`);
-            } else {
-              this.logger.warn(
-                `[${String(analysisId)}] Step2 복구 스킵 (불완전 데이터)`,
-              );
-            }
-          } else if (
-            cachedResults['STEP2_HYPOTHESIS'] &&
-            cachedResults['STEP3_INTENT']
-          ) {
-            const step2 = JSON.parse(
-              cachedResults['STEP2_HYPOTHESIS'],
+            context.step2 = JSON.parse(
+              cachedResults['STEP2_HYPOTHESIS_AND_INTENT'],
             ) as Record<string, unknown>;
-            const step3 = JSON.parse(cachedResults['STEP3_INTENT']) as Record<
-              string,
-              unknown
-            >;
-            context.step2 = { ...step2, ...step3 };
-            this.logger.log(
-              `[${analysisId}] Step 2 결과 복구 완료 (이전 형식)`,
-            );
+          } catch {
+            context.step2 = {};
           }
-          if (cachedResults['STEP3_CODE_SUMMARY']) {
-            try {
-              context.step3 = JSON.parse(
-                cachedResults['STEP3_CODE_SUMMARY'],
-              ) as Record<string, unknown>;
-            } catch {
-              context.step3 = {};
-            }
-            this.logger.log(
-              `[${String(analysisId)}] Step 3 (코드요약) 결과 복구 완료`,
-            );
-          }
+          this.logger.log(`[${String(analysisId)}] Step2 결과 복구 완료`);
         }
 
-        // 파이프라인
-        await this.pipelineRunner.run(context);
-
-        // 최종 결과를 DB에 저장
-        await this.saveResultToDatabase(analysisId, projectId, context);
-
-        // DB 저장 후 완료 이벤트 발송 (프론트엔드에서 시각화 요청 가능)
-        await this.emitter.emitCompleted({
-          analysisId,
-          completedAt: new Date(),
-        });
-
-        this.logger.log(`[${analysisId}] 모든 분석 완료 및 DB 저장`);
-
-        // Redis 청소
-        // await this.redis.del(analysisResultsKey(analysisId));
+        if (cachedResults['STEP3_CODE_SUMMARY']) {
+          try {
+            context.step3 = JSON.parse(
+              cachedResults['STEP3_CODE_SUMMARY'],
+            ) as Record<string, unknown>;
+          } catch {
+            context.step3 = {};
+          }
+          this.logger.log(`[${String(analysisId)}] Step 3 결과 복구 완료`);
+        }
       }
+
+      // 파이프라인
+      await this.pipelineRunner.run(context);
+
+      // 최종 결과를 DB에 저장
+      await this.saveResultToDatabase(analysisId, projectId, context);
+
+      // DB 저장 후 완료 이벤트 발송 (프론트엔드에서 시각화 요청 가능)
+      await this.emitter.emitCompleted({
+        analysisId,
+        completedAt: new Date(),
+      });
+
+      this.logger.log(`[${analysisId}] 모든 분석 완료 및 DB 저장`);
+
+      // Redis 청소
+      await this.redis.del(analysisResultsKey(analysisId));
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      this.logger.error(`[${analysisId}] 처리 중 치명적 오류: ${errorMessage}`);
+      this.logger.error(`[${analysisId}] 처리 중 오류 발생: ${errorMessage}`);
       throw error;
     } finally {
       const endMemory = process.memoryUsage();
@@ -190,12 +146,6 @@ export class AnalysesService {
     context: PipelineContext,
   ): Promise<void> {
     try {
-      // 디버그 로그
-      this.logger.log(
-        `[${String(analysisId)}] saveResultToDatabase - context.step2 keys: ${Array.isArray(context.step2) ? 'ARRAY' : Object.keys(context.step2 || {}).join(', ') || 'EMPTY'}`,
-      );
-
-      // step2 = 가설+의도 통합, step3 = 코드요약
       await this.prisma.analysisResult.create({
         data: {
           id: analysisId,
@@ -206,7 +156,7 @@ export class AnalysesService {
         },
       });
 
-      const codeSummary = context.step3 as Step3CodeSummaryResult | undefined;
+      const codeSummary = context.step3 as Step3Result | undefined;
       if (codeSummary?.file_summaries?.length) {
         await this.prisma.fileSummary.createMany({
           data: codeSummary.file_summaries.map((s) => ({
