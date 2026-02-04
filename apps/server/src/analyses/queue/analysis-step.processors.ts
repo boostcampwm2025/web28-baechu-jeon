@@ -3,7 +3,7 @@ import { AnalysesService } from '../analyses.service';
 import { Job, Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 
-@Processor('analysis-step1-3', { concurrency: 10 })
+@Processor('analysis-step1-3', { concurrency: 8 })
 export class AnalysisStep13Processor extends WorkerHost {
   constructor(
     private readonly analysesService: AnalysesService,

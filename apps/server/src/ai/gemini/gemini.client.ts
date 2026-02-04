@@ -7,11 +7,11 @@ import { geminiMetricsLogger } from '../../common/logger/winston.config';
 const getMaxTokens = (step: number) => {
   switch (step) {
     case 1:
-      return 20000; // 목록 추출: 타이트하게 유지
+      return 20000;
     case 2:
-      return 60000; // 분석: 상세 분석을 위해 64k까지 허용
+      return 60000;
     case 3:
-      return 40960; // 요약: 40k면 충분 (로그상 최대 2만)
+      return 60000;
     default:
       return 16384;
   }
@@ -71,16 +71,19 @@ export class GeminiClient {
 
       const response = await this.withRetry(
         () =>
-          this.ai.models.generateContent({
-            model: modelName,
-            contents: userPrompt,
-            config: {
-              systemInstruction: systemPrompt,
-              temperature: 0,
-              responseMimeType: 'application/json',
-              maxOutputTokens: getMaxTokens(step ?? 0),
-            },
-          }),
+          this.withTimeout(
+            this.ai.models.generateContent({
+              model: modelName,
+              contents: userPrompt,
+              config: {
+                systemInstruction: systemPrompt,
+                temperature: 0,
+                responseMimeType: 'application/json',
+                maxOutputTokens: getMaxTokens(step ?? 0),
+              },
+            }),
+            180000, // 180초 timeout
+          ),
         stepLabel,
       );
 
@@ -101,7 +104,7 @@ export class GeminiClient {
     fn: () => Promise<T>,
     stepLabel: string,
   ): Promise<T> {
-    const maxRetries = 3;
+    const maxRetries = 5;
     const baseDelay = 2000;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -129,5 +132,23 @@ export class GeminiClient {
     }
 
     throw new Error('unreachable');
+  }
+
+  private async withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error(`Request timed out after ${ms}ms`));
+      }, ms);
+
+      promise
+        .then((value) => {
+          clearTimeout(timer);
+          resolve(value);
+        })
+        .catch((err) => {
+          clearTimeout(timer);
+          reject(err);
+        });
+    });
   }
 }

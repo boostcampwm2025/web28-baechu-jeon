@@ -24,7 +24,7 @@ export class AnalysesController {
         projectId,
       },
       {
-        attempts: 3,
+        attempts: 5,
         backoff: {
           type: 'exponential',
           delay: 60_000,

@@ -34,6 +34,11 @@ export class AnalysesService {
 
       this.logger.log(`[${analysisId}] Step1 & Step3 완료`);
     } catch (error) {
+      // 에러 상세 로그 남기기
+      this.logger.error(
+        `[${analysisId}] Step1 & Step3 실패: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       await this.emitter.emitFailed({
         analysisId,
         reason:
@@ -61,6 +66,11 @@ export class AnalysesService {
       await this.redis.del(analysisResultsKey(analysisId));
       this.logger.log(`[${analysisId}] 분석 전체 완료`);
     } catch (error) {
+      // 에러 상세 로그 남기기
+      this.logger.error(
+        `[${analysisId}] Step2 실패: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       await this.emitter.emitFailed({
         analysisId,
         reason:
