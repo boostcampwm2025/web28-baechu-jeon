@@ -4,13 +4,10 @@ import { ConfigService } from '@nestjs/config';
 import { AiClientRequest } from '../types/ai.types';
 import { geminiMetricsLogger } from '../../common/logger/winston.config';
 
-// 모델 고정
-const MODEL_FIXED = 'gemini-2.5-flash';
-
 const getMaxTokens = (step: number) => {
   switch (step) {
     case 1:
-      return 8192; // 목록 추출: 타이트하게 유지
+      return 20000; // 목록 추출: 타이트하게 유지
     case 2:
       return 60000; // 분석: 상세 분석을 위해 64k까지 허용
     case 3:
@@ -20,6 +17,31 @@ const getMaxTokens = (step: number) => {
   }
 };
 
+class Semaphore {
+  private current = 0;
+  private queue: (() => void)[] = [];
+
+  constructor(private readonly max: number) {}
+
+  async acquire() {
+    if (this.current < this.max) {
+      this.current++;
+      return;
+    }
+    await new Promise<void>((resolve) => this.queue.push(resolve));
+    this.current++;
+  }
+
+  release() {
+    this.current--;
+    const next = this.queue.shift();
+    if (next) next();
+  }
+}
+
+const flashSemaphore = new Semaphore(8);
+const proSemaphore = new Semaphore(2);
+
 @Injectable()
 export class GeminiClient {
   private readonly logger = new Logger(GeminiClient.name);
@@ -27,68 +49,85 @@ export class GeminiClient {
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY가 설정되지 않았습니다.');
-    }
+    if (!apiKey) throw new Error('GEMINI_API_KEY가 설정되지 않았습니다.');
     this.ai = new GoogleGenAI({ apiKey });
   }
 
   async generateResponse(
     input: AiClientRequest,
   ): Promise<GenerateContentResponse> {
-    const { projectId, userPrompt, systemPrompt, step, responseJsonSchema } =
-      input;
+    const { projectId, userPrompt, systemPrompt, step } = input;
     const stepLabel = step ? `Step${step}` : 'Unknown';
-    const stepNum = step ?? 0;
 
-    const modelName = stepNum === 2 ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+    const modelName = step === 2 ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+    const semaphore = step === 2 ? proSemaphore : flashSemaphore;
 
-    // 설정: 복잡한 분기 없이 기본 JSON 모드 및 스키마 적용
-    const config = {
-      systemInstruction: systemPrompt,
-      temperature: 0, // 분석용이라 낮게 설정
-      // topK: 40,
-      // topP: 0.8,
-      responseMimeType: 'application/json' as const,
-      // maxOutputTokens: 60000, // Flash 2.5의 넉넉한 출력 한도 활용
-      maxOutputTokens: getMaxTokens(stepNum),
-      // thinkingConfig: {
-      //   // Step 2일 때는 2048 토큰 정도 고민하게 하고, 나머지는 0(즉시 응답)이나 낮게 설정
-      //   thinkingBudget: stepNum === 2 ? 2048 : 0, //4096
-      // },
-      ...(responseJsonSchema && { responseJsonSchema }),
-    };
-
-    this.logger.debug(`[Gemini 요청 시작] ${stepLabel} | 모델: ${modelName}`);
+    await semaphore.acquire();
     const startTime = Date.now();
 
-    // API 호출 (Retry, Semaphore, Try-Catch 제거)
-    // 에러 발생 시 NestJS 필터로 전파되도록 둠
-    const response = await this.ai.models.generateContent({
-      model: modelName,
-      contents: userPrompt,
-      config,
-    });
+    try {
+      // 작은 jitter
+      await new Promise((r) => setTimeout(r, Math.random() * 300));
 
-    const responseTimeMs = Date.now() - startTime;
+      const response = await this.withRetry(
+        () =>
+          this.ai.models.generateContent({
+            model: modelName,
+            contents: userPrompt,
+            config: {
+              systemInstruction: systemPrompt,
+              temperature: 0,
+              responseMimeType: 'application/json',
+              maxOutputTokens: getMaxTokens(step ?? 0),
+            },
+          }),
+        stepLabel,
+      );
 
-    // 토큰 사용량 측정
-    const usage = response.usageMetadata;
-    const inputTokens = usage?.promptTokenCount ?? 0;
-    const outputTokens = usage?.candidatesTokenCount ?? 0;
-    const totalTokens = usage?.totalTokenCount ?? 0;
+      const responseTimeMs = Date.now() - startTime;
 
-    // 콘솔 로그: 실시간 확인용
-    this.logger.log(
-      `[Gemini 토큰 측정] ${stepLabel} | 입력: ${inputTokens} | 출력: ${outputTokens} | 총: ${totalTokens} | 시간: ${responseTimeMs}ms`,
-    );
+      const usage = response.usageMetadata;
+      geminiMetricsLogger.info(
+        `${projectId},${stepLabel},${usage?.promptTokenCount ?? 0},${usage?.candidatesTokenCount ?? 0},${usage?.totalTokenCount ?? 0},${responseTimeMs},${modelName},true`,
+      );
 
-    // CSV 로그: 데이터 분석용 (엑셀로 긁어서 보기 위함)
-    // format: Step,Input,Output,Total,Time,Model,Success
-    geminiMetricsLogger.info(
-      `${projectId},${stepLabel},${inputTokens},${outputTokens},${totalTokens},${responseTimeMs},${modelName},true`,
-    );
+      return response;
+    } finally {
+      semaphore.release();
+    }
+  }
 
-    return response;
+  private async withRetry<T>(
+    fn: () => Promise<T>,
+    stepLabel: string,
+  ): Promise<T> {
+    const maxRetries = 3;
+    const baseDelay = 2000;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (err: any) {
+        const status = err?.status;
+        const msg = err?.message?.toLowerCase() ?? '';
+        const retryable =
+          [429, 500, 502, 503, 504].includes(status) ||
+          msg.includes('timeout') ||
+          msg.includes('network');
+        if (!retryable || attempt === maxRetries) {
+          throw err;
+        }
+
+        const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 500;
+
+        this.logger.warn(
+          `[${stepLabel}] ${status} 발생 → ${delay}ms 후 재시도 (${attempt + 1})`,
+        );
+
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+
+    throw new Error('unreachable');
   }
 }
