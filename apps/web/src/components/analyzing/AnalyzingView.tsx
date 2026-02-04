@@ -11,20 +11,20 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // 분석 단계 타입 (3단계: 1=기능분석, 2=가설+의도, 3=코드설명)
 type AnalysisStep =
-  | "STEP1_STEP1_MAIN_FILE"
+  | "STEP1_MAIN_FILE"
   | "STEP2_HYPOTHESIS_AND_INTENT"
   | "STEP3_CODE_SUMMARY";
 
 // 단계별 메시지 매핑
 const STEP_MESSAGES: Record<AnalysisStep, string> = {
-  STEP1_STEP1_MAIN_FILE: "프로젝트 기능 분석 중...",
+  STEP1_MAIN_FILE: "프로젝트 기능 분석 중...",
   STEP2_HYPOTHESIS_AND_INTENT: "폴더·파일 가설 및 프로젝트 의도 분석 중...",
   STEP3_CODE_SUMMARY: "코드 설명 생성 중...",
 };
 
 // 각 단계별 예상 소요 시간 (초)
 const STEP_DURATIONS: Record<AnalysisStep, number> = {
-  STEP1_STEP1_MAIN_FILE: 30,
+  STEP1_MAIN_FILE: 30,
   STEP2_HYPOTHESIS_AND_INTENT: 90,
   STEP3_CODE_SUMMARY: 60,
 };
