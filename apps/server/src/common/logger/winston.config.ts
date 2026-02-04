@@ -1,12 +1,19 @@
+import * as fs from 'fs';
 import * as winston from 'winston';
 import { utilities as nestWinstonModuleUtilities } from 'nest-winston';
 import * as path from 'path';
+import 'winston-daily-rotate-file';
 
 const logsDir = path.join(process.cwd(), 'logs');
 
+// logsDir이 없으면 자동 생성
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
+}
+
 /**
  * Gemini API 메트릭 전용 로그 포맷
- * CSV 형식으로 저장하여 나중에 분석하기 쉽게
+ * CSV 형식으로 저장
  */
 const geminiMetricsFormat = winston.format.printf(({ message, timestamp }) => {
   return `${String(timestamp)},${String(message)}`;
@@ -30,69 +37,88 @@ export const winstonConfig: winston.LoggerOptions = {
       ),
     }),
 
-    // 전체 로그 파일
-    new winston.transports.File({
-      filename: path.join(logsDir, 'app.log'),
+    // 전체 로그 파일 (일별 로테이션)
+    new winston.transports.DailyRotateFile({
+      dirname: logsDir,
+      filename: 'app-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '10m',
+      maxFiles: '14d',
       level: 'info',
       format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.json(),
       ),
-      maxsize: 10 * 1024 * 1024, // 10MB
-      maxFiles: 5,
     }),
 
-    // 에러 로그 파일
-    new winston.transports.File({
-      filename: path.join(logsDir, 'error.log'),
+    // 에러 로그 파일 (일별 로테이션)
+    new winston.transports.DailyRotateFile({
+      dirname: logsDir,
+      filename: 'error-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '10m',
+      maxFiles: '14d',
       level: 'error',
       format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.json(),
       ),
-      maxsize: 10 * 1024 * 1024,
-      maxFiles: 5,
     }),
   ],
 };
 
 /**
- * Gemini 메트릭 전용 로거 (CSV 형식)
- * 사용: geminiMetricsLogger.info('step,inputTokens,outputTokens,totalTokens,responseTimeMs')
+ * Gemini 메트릭 전용 로거 (CSV)
  */
-export const geminiMetricsLogger = winston.createLogger({
-  transports: [
-    new winston.transports.File({
-      filename: path.join(logsDir, 'gemini-metrics.csv'),
-      format: winston.format.combine(
-        winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-        geminiMetricsFormat,
-      ),
-    }),
-  ],
+const geminiMetricsTransport = new winston.transports.DailyRotateFile({
+  dirname: logsDir,
+  filename: 'gemini-metrics-%DATE%.csv',
+  datePattern: 'YYYY-MM-DD',
+  zippedArchive: true,
+  maxSize: '20m',
+  maxFiles: '14d',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    geminiMetricsFormat,
+  ),
 });
 
-// CSV 헤더 추가 (파일이 새로 생성될 때)
-geminiMetricsLogger.info(
-  'step,inputTokens,outputTokens,totalTokens,responseTimeMs,model,success',
-);
+export const geminiMetricsLogger = winston.createLogger({
+  transports: [geminiMetricsTransport],
+});
+
+// CSV 헤더 추가 (파일이 새로 생성될 때만)
+geminiMetricsTransport.on('new', () => {
+  geminiMetricsLogger.info(
+    'step,inputTokens,outputTokens,totalTokens,responseTimeMs,model,success',
+  );
+});
 
 /**
- * 분석 Job 메트릭 전용 로거 (CSV 형식)
+ * 분석 Job 메트릭 전용 로거 (CSV)
  */
+const analysisMetricsTransport = new winston.transports.DailyRotateFile({
+  dirname: logsDir,
+  filename: 'analysis-metrics-%DATE%.csv',
+  datePattern: 'YYYY-MM-DD',
+  zippedArchive: true,
+  maxSize: '20m',
+  maxFiles: '14d',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    geminiMetricsFormat,
+  ),
+});
+
 export const analysisMetricsLogger = winston.createLogger({
-  transports: [
-    new winston.transports.File({
-      filename: path.join(logsDir, 'analysis-metrics.csv'),
-      format: winston.format.combine(
-        winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-        geminiMetricsFormat,
-      ),
-    }),
-  ],
+  transports: [analysisMetricsTransport],
 });
 
 // CSV 헤더 추가
-analysisMetricsLogger.info(
-  'analysisId,projectId,step,durationMs,geminiCalls,success',
-);
+analysisMetricsTransport.on('new', () => {
+  analysisMetricsLogger.info(
+    'analysisId,projectId,step,durationMs,geminiCalls,success',
+  );
+});
