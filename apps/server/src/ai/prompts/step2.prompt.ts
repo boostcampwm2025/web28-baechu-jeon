@@ -1,16 +1,12 @@
 import { Step21Input } from '../types/ai.types';
 
-export const buildStep2Prompts = ({
-  project,
-  analysisResult,
-  additionalFileContents,
-}: Step21Input) => {
+export const buildStep2Prompts = ({ project, analysisResult }: Step21Input) => {
   const systemPrompt = `당신은 전문 소프트웨어 아키텍트입니다.
 1단계(주요 파일 추천) 결과, 프로젝트 구조, 그리고 파일 내용을 바탕으로 **폴더**와 **주요 파일**이 프로젝트 내에서 어떤 역할을 하는지 설명해야 합니다. \`path\`에는 **폴더 경로**와 **1단계 project_main_files에 있는 파일 경로**를 모두 넣습니다.
 
 **중요 제한:**
 - 파일 path는 \`project_main_files\` 중 아래 "트리 범위" 안에 있는 것만 넣습니다.
-- **트리 범위:** path에는 **실제 애플리케이션/서비스 소스 코드**가 들어 있는 폴더·파일만 포함하세요. **제외할 것:** 설정·CI·배포·스크립트·인프라 전용 폴더(예: \`.github\`, \`scripts\`, Docker/nginx 설정용 폴더)와 루트 설정 파일(예: \`docker-compose.yml\`, \`compose.local.yml\`). 프로젝트 구조가 모노레포인지 단일 앱인지에 따라 "앱 코드 영역"이 다르므로, **비즈니스/앱 소스가 있는 경로만** 포함하면 됩니다.
+- **트리 범위:** path에는 꼭 **주요 파일**이 들어 있는 폴더·파일만 포함하세요. **제외할 것:** 설정·CI·배포·스크립트·인프라 전용 폴더(예: \`.github\`, \`scripts\`, Docker/nginx 설정용 폴더)와 루트 설정 파일(예: \`docker-compose.yml\`, \`compose.local.yml\`). 프로젝트 구조가 모노레포인지 단일 앱인지에 따라 "앱 코드 영역"이 다르므로, **비즈니스/앱 소스가 있는 경로만** 포함하면 됩니다.
 - **트리 연결 필수:** 넣는 **모든 path(폴더·파일)에 대해, 그 path의 상위 경로(부모, 조부모, … 최상위까지)도 반드시 responsibility_hypotheses에 포함**하세요. 예: \`apps/frontend/src/entities/node/model\`을 넣으면 \`apps/frontend/src/entities/node\`, \`apps/frontend/src/entities\`, \`apps/frontend/src\`, \`apps/frontend\`도 리스트에 있어야 합니다. **중간 경로를 생략하면 해당 하위 노드들이 트리에서 붕 떠 보이므로, 상위 경로를 누락하지 마세요.**
 
 # 분석 대상
@@ -82,7 +78,6 @@ export const buildStep2Prompts = ({
 }
 `;
 
-  const contents: Record<string, string> = additionalFileContents ?? {};
   const userPrompt = `## 1단계 분석 결과 (주요 파일 추천)
 ${JSON.stringify(analysisResult.step1, null, 2)}
 
@@ -91,9 +86,7 @@ ${JSON.stringify(project.structure, null, 2)}
 
 ## 기존 파일 내용 (리드미, 패키지, 테스트 등)
 ${JSON.stringify(project.files, null, 2)}
-
-## 1단계에서 요청한 주요 파일 내용
-${JSON.stringify(contents, null, 2)}`;
+`;
 
   return { systemPrompt, userPrompt };
 };
