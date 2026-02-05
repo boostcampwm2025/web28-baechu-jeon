@@ -28,12 +28,12 @@ export class AnalysisEmitter {
     const { analysisId, step, progress } = payload;
 
     // 상태 저장: 항상 PROCESSING (단계별 진행 상황은 step과 progress로 추적)
-    await this.redis.set(
-      analysisStatusKey(analysisId),
-      JSON.stringify({ step, progress, status: 'PROCESSING' }),
-      'EX',
-      3600 * 24,
-    );
+    // await this.redis.set(
+    //   analysisStatusKey(analysisId),
+    //   JSON.stringify({ step, progress, status: 'PROCESSING' }),
+    //   'EX',
+    //   3600 * 24,
+    // );
 
     // 결과 저장: COMPLETED일 때만 저장 (명확성)
     if (type === 'COMPLETED' && result) {
@@ -54,23 +54,23 @@ export class AnalysisEmitter {
 
   // 최종 완료
   async emitCompleted(payload: AnalysisCompletedPayload) {
-    await this.redis.set(
-      analysisStatusKey(payload.analysisId),
-      JSON.stringify({ status: 'COMPLETED', progress: 100 }),
-      'EX',
-      3600,
-    );
+    // await this.redis.set(
+    //   analysisStatusKey(payload.analysisId),
+    //   JSON.stringify({ status: 'COMPLETED', progress: 100 }),
+    //   'EX',
+    //   3600,
+    // );
     this.eventEmitter.emit(AnalysisEvent.COMPLETED, payload);
   }
 
   // 실패
   async emitFailed(payload: AnalysisFailedPayload) {
-    await this.redis.set(
-      analysisStatusKey(payload.analysisId),
-      JSON.stringify({ status: 'FAILED', reason: payload.reason }),
-      'EX',
-      3600,
-    );
+    // await this.redis.set(
+    //   analysisStatusKey(payload.analysisId),
+    //   JSON.stringify({ status: 'FAILED', reason: payload.reason }),
+    //   'EX',
+    //   3600,
+    // );
     this.eventEmitter.emit(AnalysisEvent.FAILED, payload);
   }
 }
