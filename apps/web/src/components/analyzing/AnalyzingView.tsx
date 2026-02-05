@@ -164,7 +164,7 @@ export default function AnalyzingView({ projectId }: AnalyzingViewProps) {
   };
 
   return (
-    <div className="bg-page flex h-full flex-col items-center justify-center">
+    <div className="thin-scrollbar bg-page flex h-full flex-col items-center justify-center overflow-y-auto">
       <div className="w-full max-w-2xl px-6">
         {/* 제목 영역 */}
         <div className="mb-8 text-center">

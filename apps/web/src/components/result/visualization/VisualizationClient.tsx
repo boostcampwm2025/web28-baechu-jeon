@@ -218,8 +218,8 @@ export default function VisualizationClient({
   }
 
   return (
-    <div>
-      <div className="bg-page relative h-full w-full overflow-hidden">
+    <div className="bg-page relative h-full w-full overflow-hidden">
+      <div>
         {/* 모바일/작은 화면 경고 메시지 */}
         <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm md:hidden">
           <div className="bg-surface mx-4 max-w-md rounded-lg p-8 text-center shadow-2xl">
@@ -238,7 +238,7 @@ export default function VisualizationClient({
         </div>
       </div>
 
-      <div className="relative h-screen w-full">
+      <div className="relative h-full w-full">
         <VisualizationView
           visualizationId={visualizationId}
           analysisId={analysisId}

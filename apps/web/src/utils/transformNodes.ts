@@ -136,7 +136,7 @@ function transformStep2(apiNodes: ApiNode[]): Node<BaseNodeData>[] {
     type: "baseNode",
     position: {
       x: bounds.minX + bounds.width / 2 - LABEL_W / 2,
-      y: bounds.minY - 120,
+      y: bounds.minY - 180,
     },
     data: {
       label: "Project File Tree",

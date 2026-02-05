@@ -20,12 +20,12 @@ export function useVisualizationFocus() {
       );
 
       if (focusTargetType === "STEP1") {
-        const groupNode = allNodes.find((n) => n.id === "group-STEP1");
+        const groupNode = allNodes.find((n) => n.id === "group-STEP1-label");
         if (groupNode) {
           const zoom = 0.6;
           const centerX =
             groupNode.position.x + (groupNode.data.width || 700) / 2;
-          const topY = groupNode.position.y - 300;
+          const topY = groupNode.position.y;
           const targetCenterY = topY + 350 / zoom;
 
           setCenter(centerX, targetCenterY, { zoom, duration: 1000 });
@@ -36,7 +36,7 @@ export function useVisualizationFocus() {
           const zoom = 0.5;
           const centerX =
             labelNode.position.x + (labelNode.data.width || 600) / 2;
-          const targetCenterY = labelNode.position.y + 150 / zoom;
+          const targetCenterY = labelNode.position.y + 200 / zoom;
 
           setCenter(centerX, targetCenterY, { zoom, duration: 1000 });
         }

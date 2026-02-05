@@ -44,7 +44,7 @@ interface VisualizationViewProps {
 
 export default function VisualizationView({
   visualizationId,
-  analysisId,
+
   onNodeClick,
   onPaneClick,
   initialNodes = [],
@@ -156,6 +156,7 @@ export default function VisualizationView({
       clearHighlightedPaths,
       setHighlightedPaths,
       setSelectedNodeId,
+      setFocusTargetType,
       router,
       pathname,
       searchParams,
@@ -200,7 +201,7 @@ export default function VisualizationView({
       setIsResetting(false);
     }
   }, [
-    analysisId,
+    visualizationId,
     setNodes,
     setEdges,
     setSelectedNodeId,

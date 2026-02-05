@@ -1,10 +1,12 @@
 "use client";
 
+import { useCallback } from "react";
 import { Handle, Position, NodeProps, type Node } from "@xyflow/react";
 import { useParams } from "next/navigation";
 import { type BaseNodeData } from "@/utils/layouts/layoutSettings";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
 import { maybeDecode } from "@/utils/url";
+import { useDebouncedPrefetch } from "@/hooks/useDebouncedPrefetch";
 
 export default function BaseNode({
   data,
@@ -26,6 +28,7 @@ export default function BaseNode({
   const isCategoryHeader = groups === "CATEGORY_HEADER";
   const params = useParams<{ analysisId: string }>();
   const setCachedCode = useVisualizationStore((s) => s.setCachedCode);
+  const { debouncedPrefetch, cancel: cancelPrefetch } = useDebouncedPrefetch(150);
 
   // 하이라이트 여부
   const isHighlighted = !!highlightClass;
@@ -36,25 +39,33 @@ export default function BaseNode({
     return "16px";
   };
 
-  // 호버 시 프리패치
-  const handleMouseEnter = () => {
-    if (!isHighlighted || !data.path || !params.analysisId) return;
-    const decoded = maybeDecode(data.path) ?? data.path;
-    if (
-      useVisualizationStore.getState().getCachedCode(params.analysisId, decoded)
-    )
-      return;
+  // 호버 시 프리패치 (디바운싱 적용)
+  const handleMouseEnter = useCallback(() => {
+    const path = data.path;
+    const analysisId = params.analysisId;
+    if (!isHighlighted || !path || !analysisId) return;
 
-    (async () => {
-      try {
-        const { getCode } = await import("@/api/code");
-        const result = await getCode(params.analysisId, decoded);
-        setCachedCode(params.analysisId, decoded, result.markdownContent);
-      } catch {
-        /* ignore */
-      }
-    })();
-  };
+    const decoded = maybeDecode(path) ?? path;
+
+    debouncedPrefetch(() => {
+      if (useVisualizationStore.getState().getCachedCode(analysisId, decoded))
+        return;
+
+      (async () => {
+        try {
+          const { getCode } = await import("@/api/code");
+          const result = await getCode(analysisId, decoded);
+          setCachedCode(analysisId, decoded, result.markdownContent);
+        } catch {
+          /* ignore */
+        }
+      })();
+    });
+  }, [isHighlighted, data.path, params.analysisId, setCachedCode, debouncedPrefetch]);
+
+  const handleMouseLeave = useCallback(() => {
+    cancelPrefetch();
+  }, [cancelPrefetch]);
 
   const baseStyle: React.CSSProperties = {
     width: `${width}px`,
@@ -102,6 +113,7 @@ export default function BaseNode({
       style={baseStyle}
       className={containerClasses}
       onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <Handle
         type="target"

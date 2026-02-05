@@ -105,7 +105,7 @@ export class GeminiClient {
     stepLabel: string,
   ): Promise<T> {
     const maxRetries = 5;
-    const baseDelay = 2000;
+    const baseDelay = 10000;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
