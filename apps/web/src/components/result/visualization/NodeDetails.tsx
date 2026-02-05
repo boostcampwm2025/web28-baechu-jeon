@@ -54,8 +54,8 @@ export default function NodeDetails({
       </div>
 
       <div className="thin-scrollbar flex-1 space-y-3 overflow-y-auto p-5">
-        <div className="space-y-1.5">
-          <h3 className="text-heading text-xl leading-tight font-bold">
+        <div className="mb-5">
+          <h3 className="text-heading mb-3 text-xl leading-tight font-bold">
             {node.label}
           </h3>
           <span className="border-primary/20 bg-primary/10 text-accent rounded border px-2 py-1 text-xs break-all">
