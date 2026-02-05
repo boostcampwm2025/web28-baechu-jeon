@@ -41,20 +41,21 @@ export default function BaseNode({
 
   // 호버 시 프리패치 (디바운싱 적용)
   const handleMouseEnter = useCallback(() => {
-    if (!isHighlighted || !data.path || !params.analysisId) return;
+    const path = data.path;
+    const analysisId = params.analysisId;
+    if (!isHighlighted || !path || !analysisId) return;
+
+    const decoded = maybeDecode(path) ?? path;
 
     debouncedPrefetch(() => {
-      const decoded = maybeDecode(data.path) ?? data.path;
-      if (
-        useVisualizationStore.getState().getCachedCode(params.analysisId, decoded)
-      )
+      if (useVisualizationStore.getState().getCachedCode(analysisId, decoded))
         return;
 
       (async () => {
         try {
           const { getCode } = await import("@/api/code");
-          const result = await getCode(params.analysisId, decoded);
-          setCachedCode(params.analysisId, decoded, result.markdownContent);
+          const result = await getCode(analysisId, decoded);
+          setCachedCode(analysisId, decoded, result.markdownContent);
         } catch {
           /* ignore */
         }
