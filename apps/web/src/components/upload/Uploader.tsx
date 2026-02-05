@@ -13,11 +13,13 @@ export default function Uploader() {
   return (
     <div>
       {/* 탭 메뉴 */}
-      <div className="relative mb-4 flex rounded-xl bg-page/50 p-1">
+      <div className="bg-page/50 relative mb-4 flex rounded-xl p-1">
         {/* 슬라이딩 배경 */}
         <div
-          className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-hover shadow-sm transition-transform duration-300 ease-in-out ${
-            activeTab === "zip" ? "translate-x-1" : "translate-x-[calc(100%+4px)]"
+          className={`bg-hover absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg shadow-sm transition-transform duration-300 ease-in-out ${
+            activeTab === "zip"
+              ? "translate-x-1"
+              : "translate-x-[calc(100%+4px)]"
           }`}
         />
         <button
@@ -44,7 +46,9 @@ export default function Uploader() {
         <button
           onClick={() => setActiveTab("github")}
           className={`relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300 ${
-            activeTab === "github" ? "text-accent" : "text-muted hover:text-body"
+            activeTab === "github"
+              ? "text-accent"
+              : "text-muted hover:text-body"
           }`}
         >
           <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">

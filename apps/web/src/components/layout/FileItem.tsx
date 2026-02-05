@@ -7,6 +7,7 @@ import { FileNode } from "@/utils/pathTree";
 import { useExplorerStore } from "@/stores/useExplorerStore";
 import { useVisualizationStore } from "@/store/useVisualizationStore";
 import { maybeDecode } from "@/utils/url";
+import { useDebouncedPrefetch } from "@/hooks/useDebouncedPrefetch";
 
 interface FileItemProps {
   node: FileNode;
@@ -29,6 +30,7 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
   const setCachedCode = useVisualizationStore((s) => s.setCachedCode);
 
   const indicatedPaths = useExplorerStore((s) => s.indicatedPaths);
+  const { debouncedPrefetch, cancel: cancelPrefetch } = useDebouncedPrefetch(150);
 
   const isHighlighted = highlightedPaths.includes(node.path);
   const isIndicated = !isFolder && indicatedPaths.has(node.path);
@@ -43,22 +45,29 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
 
   const handleMouseEnter = useCallback(() => {
     if (!isClickable || isFolder || !node.path || !params.analysisId) return;
-    const decoded = maybeDecode(node.path) ?? node.path;
-    if (
-      useVisualizationStore.getState().getCachedCode(params.analysisId, decoded)
-    )
-      return;
 
-    (async () => {
-      try {
-        const { getCode } = await import("@/api/code");
-        const result = await getCode(params.analysisId, decoded);
-        setCachedCode(params.analysisId, decoded, result.markdownContent);
-      } catch {
-        /* ignore */
-      }
-    })();
-  }, [isClickable, isFolder, node.path, params.analysisId, setCachedCode]);
+    debouncedPrefetch(() => {
+      const decoded = maybeDecode(node.path) ?? node.path;
+      if (
+        useVisualizationStore.getState().getCachedCode(params.analysisId, decoded)
+      )
+        return;
+
+      (async () => {
+        try {
+          const { getCode } = await import("@/api/code");
+          const result = await getCode(params.analysisId, decoded);
+          setCachedCode(params.analysisId, decoded, result.markdownContent);
+        } catch {
+          /* ignore */
+        }
+      })();
+    });
+  }, [isClickable, isFolder, node.path, params.analysisId, setCachedCode, debouncedPrefetch]);
+
+  const handleMouseLeave = useCallback(() => {
+    cancelPrefetch();
+  }, [cancelPrefetch]);
 
   useEffect(() => {
     if (shouldExpand) {
@@ -113,6 +122,7 @@ export const FileItem = ({ node, depth }: FileItemProps) => {
           ref={itemRef}
           onClick={handleClick}
           onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
           title={node.path}
           className={`group flex items-center gap-1 px-2 py-1 pr-4 text-sm select-none ${
             isHighlighted
