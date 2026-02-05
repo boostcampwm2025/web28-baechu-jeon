@@ -30,7 +30,7 @@ export const AnalysisEvent = {
 } as const;
 
 export type AnalysisStep =
-  | 'STEP1_FEATURE_ANALYSIS'
+  | 'STEP1_MAIN_FILE'
   | 'STEP2_HYPOTHESIS_AND_INTENT'
   | 'STEP3_CODE_SUMMARY';
 

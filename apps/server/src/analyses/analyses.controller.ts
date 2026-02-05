@@ -8,7 +8,8 @@ import { SseService } from '../sse/sse.service';
 @Controller('analyses')
 export class AnalysesController {
   constructor(
-    @InjectQueue('analyses') private readonly analysisQueue: Queue,
+    @InjectQueue('analysis-step1-3')
+    private readonly step13Queue: Queue,
     private readonly sseService: SseService,
   ) {}
 
@@ -16,11 +17,20 @@ export class AnalysesController {
   @HttpCode(202)
   async requestAnalysis(@Param('projectId') projectId: string) {
     const analysisId = uuidv4();
-    await this.analysisQueue.add('run-analysis', {
-      analysisId,
-      projectId,
-    });
-
+    await this.step13Queue.add(
+      'step1-3',
+      {
+        analysisId,
+        projectId,
+      },
+      {
+        attempts: 5,
+        backoff: {
+          type: 'exponential',
+          delay: 60_000,
+        },
+      },
+    );
     return { analysisId, status: 'pending' };
   }
 

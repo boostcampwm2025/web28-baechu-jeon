@@ -58,20 +58,6 @@ export class IntentionsService {
       firstAnalysis.step2 as unknown as Step3Response | null,
     );
 
-    await this.prisma.$transaction([
-      // 해당 분석 결과와 연결된 purposes 삭제
-      this.prisma.purpose.deleteMany({
-        where: { analysisResultId: analysisId },
-      }),
-      // 원본 데이터를 purposes 테이블에 생성
-      this.prisma.purpose.create({
-        data: {
-          contents: formattedData.contents.purpose,
-          analysisResultId: analysisId,
-        },
-      }),
-    ]);
-
     return formattedData;
   }
 
