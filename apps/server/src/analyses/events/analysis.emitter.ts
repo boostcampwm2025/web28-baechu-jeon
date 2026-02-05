@@ -7,10 +7,7 @@ import {
   AnalysisFailedPayload,
   AnalysisStepEventPayload,
 } from './analysis.events.js';
-import {
-  analysisResultsKey,
-  analysisStatusKey,
-} from '../infra/analysis.redis.js';
+import { analysisResultsKey } from '../infra/analysis.redis.js';
 
 @Injectable()
 export class AnalysisEmitter {
@@ -25,7 +22,7 @@ export class AnalysisEmitter {
     type: 'STARTED' | 'COMPLETED',
     result?: any,
   ) {
-    const { analysisId, step, progress } = payload;
+    const { analysisId, step } = payload;
 
     // 상태 저장: 항상 PROCESSING (단계별 진행 상황은 step과 progress로 추적)
     // await this.redis.set(
@@ -53,7 +50,7 @@ export class AnalysisEmitter {
   }
 
   // 최종 완료
-  async emitCompleted(payload: AnalysisCompletedPayload) {
+  emitCompleted(payload: AnalysisCompletedPayload) {
     // await this.redis.set(
     //   analysisStatusKey(payload.analysisId),
     //   JSON.stringify({ status: 'COMPLETED', progress: 100 }),
@@ -64,7 +61,7 @@ export class AnalysisEmitter {
   }
 
   // 실패
-  async emitFailed(payload: AnalysisFailedPayload) {
+  emitFailed(payload: AnalysisFailedPayload) {
     // await this.redis.set(
     //   analysisStatusKey(payload.analysisId),
     //   JSON.stringify({ status: 'FAILED', reason: payload.reason }),

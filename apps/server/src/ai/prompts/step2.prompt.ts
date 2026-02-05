@@ -51,7 +51,7 @@ export const buildStep2Prompts = ({ project, analysisResult }: Step21Input) => {
 {
   "responsibility_hypotheses": [
     {
-      "path": "1단계 project_main_files에 있는 파일 경로 혹은 그 상위 폴더더",
+      "path": "1단계 project_main_files에 있는 파일 경로 혹은 그 상위 폴더",
       "hypothesis": "폴더만 작성, 파일은 """,
       "confidence": "low" | "medium" | "high"
     }
