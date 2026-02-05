@@ -39,7 +39,7 @@ export class AnalysesService {
         `[${analysisId}] Step1 & Step3 실패: ${error instanceof Error ? error.message : String(error)}`,
         error instanceof Error ? error.stack : undefined,
       );
-      await this.emitter.emitFailed({
+      this.emitter.emitFailed({
         analysisId,
         reason:
           '죄송합니다. Gemini 서버의 일시적인 오류로 인해 분석에 실패했습니다. 메인화면으로 돌아가서 다시 시도해 주세요.',
@@ -59,7 +59,7 @@ export class AnalysesService {
     try {
       await this.pipelineRunner.runStep2(context);
       await this.saveResultToDatabase(analysisId, projectId, context);
-      await this.emitter.emitCompleted({
+      this.emitter.emitCompleted({
         analysisId,
         completedAt: new Date(),
       });
@@ -71,7 +71,7 @@ export class AnalysesService {
         `[${analysisId}] Step2 실패: ${error instanceof Error ? error.message : String(error)}`,
         error instanceof Error ? error.stack : undefined,
       );
-      await this.emitter.emitFailed({
+      this.emitter.emitFailed({
         analysisId,
         reason:
           '죄송합니다. Gemini 서버의 일시적인 오류로 인해 분석에 실패했습니다. 메인화면으로 돌아가서 다시 시도해 주세요.',
