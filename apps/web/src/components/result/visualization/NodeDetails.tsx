@@ -58,6 +58,9 @@ export default function NodeDetails({
           <h3 className="text-heading text-xl leading-tight font-bold">
             {node.label}
           </h3>
+          <span className="border-primary/20 bg-primary/10 text-accent rounded border px-2 py-1 text-xs break-all">
+            {node.path}
+          </span>
         </div>
         <div className="text-body text-sm leading-relaxed">
           <div
