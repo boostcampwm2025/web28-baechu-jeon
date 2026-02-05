@@ -6,12 +6,11 @@ import {
   AnalysisRequest,
   AnalysisResponse,
 } from '../interface/ai.interface';
-import { PromptResponse } from '../types/ai.types';
+import { PromptResponse, Step2Result } from '../types/ai.types';
 import { buildStep1Prompts } from '../prompts/step1.prompt';
 import { buildStep2Prompts } from '../prompts/step2.prompt';
 import { buildStep3Prompts } from '../prompts/step3.prompt';
 import { parseAiJson } from '../utils/parse-ai-json.util';
-import { Step2And3CombinedResult } from '../types/ai.types';
 import {
   STEP1_RESPONSE_JSON_SCHEMA,
   STEP2_AND_3_RESPONSE_JSON_SCHEMA,
@@ -62,7 +61,9 @@ export class GeminiService implements AiProvider {
   async getResult(input: AnalysisRequest): Promise<AnalysisResponse> {
     const { systemPrompt, userPrompt } = await this.buildPrompt(input);
     const responseJsonSchema = this.getResponseJsonSchemaForStep(input.step);
+    const projectId = input.projectId;
     const analysisResult = await this.geminiClient.generateResponse({
+      projectId,
       userPrompt,
       systemPrompt,
       step: input.step,
@@ -72,29 +73,16 @@ export class GeminiService implements AiProvider {
     const content = analysisResult.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!content) throw new Error('AI 응답을 생성하지 못했습니다.');
 
-    // Step 2: 2·3 통합 응답 파싱 후 step2/step3 형태로 분리
     if (input.step === 2) {
-      const parsed = parseAiJson<Step2And3CombinedResult>(content);
-
-      // 디버그 로그 추가
-      this.logger.log(
-        `[Step2] Parsed keys: ${Object.keys(parsed || {}).join(', ')}`,
-      );
-      this.logger.log(
-        `[Step2] user_stories count: ${parsed?.user_stories?.length ?? 'undefined'}`,
-      );
-      this.logger.log(
-        `[Step2] project_intent exists: ${!!parsed?.project_intent}`,
-      );
-
+      const result = parseAiJson<Step2Result>(content);
       return {
         result: {
-          step2: {
-            responsibility_hypotheses: parsed.responsibility_hypotheses,
+          step21: {
+            responsibility_hypotheses: result.responsibility_hypotheses,
           },
-          step3: {
-            project_intent: parsed.project_intent,
-            user_stories: parsed.user_stories,
+          step22: {
+            project_intent: result.project_intent,
+            user_stories: result.user_stories,
           },
         },
       };

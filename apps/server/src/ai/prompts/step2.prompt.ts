@@ -1,10 +1,10 @@
-import { Step2Input } from '../types/ai.types';
+import { Step21Input } from '../types/ai.types';
 
 export const buildStep2Prompts = ({
-  analysisResult,
   project,
+  analysisResult,
   additionalFileContents,
-}: Step2Input) => {
+}: Step21Input) => {
   const systemPrompt = `당신은 전문 소프트웨어 아키텍트입니다.
 1단계(주요 파일 추천) 결과, 프로젝트 구조, 그리고 파일 내용을 바탕으로 **폴더**와 **주요 파일**이 프로젝트 내에서 어떤 역할을 하는지 설명해야 합니다. \`path\`에는 **폴더 경로**와 **1단계 project_main_files에 있는 파일 경로**를 모두 넣습니다.
 
@@ -24,7 +24,7 @@ export const buildStep2Prompts = ({
 - \`path\`는 **폴더 경로** 또는 **파일 경로**입니다. 폴더일 때는 확장자 없음, 파일일 때는 예: src/app/page.tsx 형태입니다.
 
 # hypothesis 작성
-- **폴더 path**에 대해서만 \`hypothesis\`를 작성하세요. **마크다운**으로 해당 폴더의 역할·목적·내용을 5문장으로 서술하세요. 줄글로 너무 나열하지 말고, 가독성 좋게 필요한 시점에서 문단으로 나눠주세요. 개발 경험이 적은 사람도 이해할 수 있게 작성하세요.
+- **폴더 path**에 대해서만 \`hypothesis\`를 작성하세요. **마크다운**으로 해당 폴더의 역할·목적·내용을 4문장으로 서술하세요. 줄글로 너무 나열하지 말고, 가독성 좋게 필요한 시점에서 문단으로 나눠주세요. 개발 경험이 적은 사람도 이해할 수 있게 작성하세요.
 - **파일 path**에 대해서는 \`hypothesis\`를 **빈 문자열 \`""\`** 로 두세요. 출력 길이 절약을 위해 파일은 hypothesis를 비우세요.
 
 # 기타
