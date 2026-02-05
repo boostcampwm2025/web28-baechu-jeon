@@ -3,6 +3,7 @@
 import { IoClose } from "react-icons/io5";
 // Fix: Import from types file instead of VisualizationClient
 import { ProjectDetailsData } from "@/types/visualization";
+import { HiOutlineDocumentSearch } from "react-icons/hi";
 
 interface ProjectDetailsProps {
   data: ProjectDetailsData;
@@ -13,7 +14,10 @@ export default function ProjectDetails({ data, onClose }: ProjectDetailsProps) {
   return (
     <div className="border-line bg-surface/90 flex h-full flex-col rounded-xl border shadow-2xl backdrop-blur-md">
       <div className="border-line flex items-center justify-between border-b p-4">
-        <h2 className="text-heading text-lg font-bold">프로젝트 상세</h2>
+        <span className="flex items-center gap-2">
+          <HiOutlineDocumentSearch size={25} />
+          <h2 className="text-heading text-lg font-bold">프로젝트 상세</h2>
+        </span>
         <button
           onClick={onClose}
           className="text-subtle hover:bg-hover hover:text-heading cursor-pointer rounded-md p-1 transition-colors"
