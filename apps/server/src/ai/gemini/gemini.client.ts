@@ -59,7 +59,7 @@ export class GeminiClient {
     const { projectId, userPrompt, systemPrompt, step } = input;
     const stepLabel = step ? `Step${step}` : 'Unknown';
 
-    const modelName = step === 2 ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+    const modelName = step === 2 ? 'gemini-3-pro-preview' : 'gemini-2.5-flash';
     const semaphore = step === 2 ? proSemaphore : flashSemaphore;
 
     await semaphore.acquire();

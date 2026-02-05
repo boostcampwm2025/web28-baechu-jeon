@@ -131,7 +131,7 @@ export class VisualizationsService {
           diagramType: 'STEP1',
           x: 0,
           y: 0,
-          label: node.label,
+          label: node.label ?? '',
           relatedNodeIds: relatedNodeIds,
           relatedPaths: node.relatedPaths,
         },
