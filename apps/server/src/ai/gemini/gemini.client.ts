@@ -39,7 +39,7 @@ class Semaphore {
   }
 }
 
-const flashSemaphore = new Semaphore(8);
+const flashSemaphore = new Semaphore(6);
 const proSemaphore = new Semaphore(2);
 
 @Injectable()
