@@ -110,21 +110,38 @@ export class GeminiClient {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         return await fn();
-      } catch (err: any) {
-        const status = err?.status;
-        const msg = err?.message?.toLowerCase() ?? '';
+      } catch (err) {
+        // Type guard for error object
+        let status: number | undefined = undefined;
+        let msg = '';
+        if (typeof err === 'object' && err !== null) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          if ('status' in err && typeof err.status === 'number') {
+            status = (err as { status: number }).status;
+          }
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          if ('message' in err && typeof err.message === 'string') {
+            msg = (err as { message: string }).message.toLowerCase();
+          }
+        }
         const retryable =
-          [429, 500, 502, 503, 504].includes(status) ||
+          (status !== undefined &&
+            [429, 500, 502, 503, 504].includes(status)) ||
           msg.includes('timeout') ||
           msg.includes('network');
         if (!retryable || attempt === maxRetries) {
-          throw err;
+          // Always throw an Error object for Promise rejection
+          if (err instanceof Error) {
+            throw err;
+          } else {
+            throw new Error(typeof err === 'string' ? err : 'Unknown error');
+          }
         }
 
         const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 500;
 
         this.logger.warn(
-          `[${stepLabel}] ${status} 발생 → ${delay}ms 후 재시도 (${attempt + 1})`,
+          `[${stepLabel}] ${status ?? 'unknown'} 발생 → ${delay}ms 후 재시도 (${attempt + 1})`,
         );
 
         await new Promise((r) => setTimeout(r, delay));
@@ -147,7 +164,12 @@ export class GeminiClient {
         })
         .catch((err) => {
           clearTimeout(timer);
-          reject(err);
+          // Always reject with an Error object
+          if (err instanceof Error) {
+            reject(err);
+          } else {
+            reject(new Error(typeof err === 'string' ? err : 'Unknown error'));
+          }
         });
     });
   }

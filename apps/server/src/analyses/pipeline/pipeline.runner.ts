@@ -104,9 +104,27 @@ export class PipelineRunner {
       analysisResult: context.step1 as AnalysisResult,
       additionalFileContents: context.mainFileContents,
     });
+    // Safe extraction and spreading of step21
+    const rawStep21 =
+      step2Result.result && typeof step2Result.result === 'object'
+        ? (step2Result.result as Record<string, unknown>).step21
+        : undefined;
+    const step21 =
+      rawStep21 && typeof rawStep21 === 'object' && rawStep21 !== null
+        ? rawStep21
+        : {};
+    // Safe extraction and spreading of step22
+    const rawStep22 =
+      step2Result.result && typeof step2Result.result === 'object'
+        ? (step2Result.result as Record<string, unknown>).step22
+        : undefined;
+    const step22 =
+      rawStep22 && typeof rawStep22 === 'object' && rawStep22 !== null
+        ? rawStep22
+        : {};
     context.step2 = {
-      ...step2Result.result.step21,
-      ...step2Result.result.step22,
+      ...step21,
+      ...step22,
     };
     const step2Duration = Date.now() - step2StartTime;
     analysisMetricsLogger.info(
