@@ -38,7 +38,7 @@ export default function NotFound() {
 
         <div className="mt-8">
           <a
-            href="https://github.com/boostcampwm2025/web28-baechu-jeon"
+            href="https://github.com/boostcampwm2025/web28-show-me-the-gujo"
             target="_blank"
             rel="noopener noreferrer"
             className="text-muted hover:text-accent inline-flex items-center gap-2 text-xs transition-colors"

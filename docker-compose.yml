@@ -1,6 +1,6 @@
 services:
   web:
-    image: ghcr.io/boostcampwm2025/web28-baechu-jeon/client:latest
+    image: ghcr.io/boostcampwm2025/web28-show-me-the-gujo/client:latest
     ports:
       - '${WEB_PORT}:${WEB_PORT}'
     environment:
@@ -19,7 +19,7 @@ services:
       - server
 
   server:
-    image: ghcr.io/boostcampwm2025/web28-baechu-jeon/server:latest
+    image: ghcr.io/boostcampwm2025/web28-show-me-the-gujo/server:latest
     ports:
       - '${SERVER_PORT}:${SERVER_PORT}'
     environment:

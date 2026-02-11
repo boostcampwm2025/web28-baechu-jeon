@@ -28,7 +28,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
-          script: mkdir -p ~/web28-baechu-jeon
+          script: mkdir -p ~/web28-show-me-the-gujo
 
       # docker-compose.yml, nginx.conf 파일을 서버로
       - name: Copy docker-compose to Server
@@ -39,7 +39,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
           source: 'docker-compose.yml, nginx/nginx.conf'
-          target: 'web28-baechu-jeon/'
+          target: 'web28-show-me-the-gujo/'
 
       # 배포 실행
       - name: Deploy via SSH
@@ -58,7 +58,7 @@ jobs:
             echo "🚀 배포 스크립트 시작: $(date)"
 
             # ~ (홈 디렉토리)로 이동
-            cd ~/web28-baechu-jeon
+            cd ~/web28-show-me-the-gujo
 
             echo "$ENV_FILE_CONTENT" > .env
             echo "NODE_ENV=production" >> .env

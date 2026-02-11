@@ -1,6 +1,5 @@
 <div align="center">
 
-
  <h3>안녕하세요! 저희는 SHOW ME THE 구조~!  </h3>
   <p> 프로젝트 업로드를 통한 AI 분석 및 시각화를 제공하여 프로젝트를 쉽게 파악할 수 있도록 도움을 주는 서비스입니다! </p>
    <p>
@@ -140,8 +139,8 @@ web28-boostcamp/
 ### 1. 저장소 클론
 
 ```bash
-git clone https://github.com/boostcampwm2025/web28-baechu-jeon.git
-cd web28-baechu-jeon
+git clone https://github.com/boostcampwm2025/web28-show-me-the-gujo.git
+cd web28-show-me-the-gujo
 ```
 
 ### 2. 의존성 설치
