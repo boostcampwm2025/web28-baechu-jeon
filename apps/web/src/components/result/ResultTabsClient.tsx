@@ -25,6 +25,7 @@ type Props = {
   visualizationId: string;
   initialTab?: "code" | "visualization";
   initialFilePath?: string | null;
+  initialContent?: string | null;
   initialVisualizationData?: VisualizationResponse | null;
   initialIntentionsData?: GetIntentionsResponse | null;
 };
@@ -34,6 +35,7 @@ export default function ResultTabsClient({
   analysisId,
   initialTab = "visualization",
   initialFilePath = null,
+  initialContent = null,
   initialVisualizationData = null,
   initialIntentionsData = null,
 }: Props) {
@@ -105,7 +107,7 @@ export default function ResultTabsClient({
             : "pointer-events-none z-0 opacity-0"
         }`}
       >
-        {codeLoaded && <CodeView initialFilePath={initialFilePath} />}
+        {codeLoaded && <CodeView initialFilePath={initialFilePath} initialContent={initialContent} />}
       </div>
 
       <div
